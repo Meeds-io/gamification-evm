@@ -22,6 +22,18 @@
                xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd http://www.exoplatform.org/xml/ns/kernel_1_2.xsd"
                xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
 
+  <component>
+    <key>EvmConnectorFeatureProperties</key>
+    <type>org.exoplatform.container.ExtendedPropertyConfigurator</type>
+    <init-params>
+       <properties-param>
+          <name>EvmConnectorFeatureProperties</name>
+          <description>Evm Connector Feature enablement flag</description>
+          <property name="exo.feature.EVMConnector.enabled" value="${exo.feature.EVMConnector.enabled:false}"/>
+       </properties-param>
+    </init-params>
+  </component>
+
   <external-component-plugins>
     <target-component>io.meeds.gamification.service.ConnectorService</target-component>
     <component-plugin>

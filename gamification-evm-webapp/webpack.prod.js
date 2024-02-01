@@ -6,6 +6,7 @@ const config = merge(webpackCommonConfig, {
   mode: 'production',
   entry: {
     engagementCenterExtensions: './src/main/webapp/vue-app/engagementCenterExtensions/extensions.js',
+    connectorExtensions: './src/main/webapp/vue-app/connectorExtensions/extensions.js',
   },
   output: {
     path: path.join(__dirname, 'target/gamification-evm/'),
