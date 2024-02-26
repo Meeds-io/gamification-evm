@@ -23,13 +23,8 @@ import java.math.BigInteger;
 
 public class Constants {
 
-
-  public static final String CONTRACT_ADDRESS = "0x334D85047da64738c065d36E10B2AdEb965000d0";
-
   private Constants() {
   }
-
-
 
   @NoArgsConstructor
   @AllArgsConstructor

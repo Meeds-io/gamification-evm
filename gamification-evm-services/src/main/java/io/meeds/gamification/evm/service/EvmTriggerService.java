@@ -1,3 +1,18 @@
+/*
+ * This file is part of the Meeds project (https://meeds.io/).
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ */
 package io.meeds.gamification.evm.service;
 
 import java.util.HashMap;
@@ -10,7 +25,6 @@ import jakarta.annotation.PostConstruct;
 import org.exoplatform.wallet.service.WalletAccountService;
 import org.exoplatform.wallet.model.Wallet;
 import io.meeds.gamification.evm.model.EvmTrigger;
-import io.meeds.gamification.evm.service.EvmTriggerService;
 import io.meeds.gamification.model.EventDTO;
 import io.meeds.gamification.service.ConnectorService;
 import io.meeds.gamification.service.EventService;
@@ -23,10 +37,8 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.manager.IdentityManager;
-import org.picocontainer.Startable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import static io.meeds.gamification.evm.utils.Utils.*;
 
@@ -92,12 +104,12 @@ public class EvmTriggerService {
       Identity socialIdentity = identityManager.getOrCreateUserIdentity(receiverId);
       if (socialIdentity != null) {
         String eventDetails = "{" + WALLET_ADDRESS + ": " + evmTrigger.getWalletAddress() + ", " + TRANSACTION_HASH + ": "
-                + evmTrigger.getTransactionHash() + "}";
+                              + evmTrigger.getTransactionHash() + "}";
         broadcastEvmEvent(evmTrigger.getTrigger(),
-                receiverId,
-                evmTrigger.getTransactionHash(),
-                evmTrigger.getType(),
-                eventDetails);
+                          receiverId,
+                          evmTrigger.getTransactionHash(),
+                          evmTrigger.getType(),
+                          eventDetails);
       }
     }
   }
