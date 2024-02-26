@@ -21,9 +21,9 @@ package io.meeds.gamification.evm.plugin;
 import io.meeds.gamification.plugin.ConnectorPlugin;
 import io.meeds.gamification.service.ConnectorSettingService;
 
-public class EvmConnectorPlugin extends ConnectorPlugin {
+import static io.meeds.gamification.evm.utils.Utils.*;
 
-  private static final String           CONNECTOR_NAME = "evm";
+public class EvmConnectorPlugin extends ConnectorPlugin {
 
   private final ConnectorSettingService connectorSettingService;
 
