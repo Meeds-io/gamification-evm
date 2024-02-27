@@ -1,8 +1,6 @@
 /*
  * This file is part of the Meeds project (https://meeds.io/).
- *
  * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -11,29 +9,28 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
- *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package io.meeds.gamification.evm.plugin;
+package io.meeds.gamification.evm.blockchain;
 
-import io.meeds.gamification.plugin.ConnectorPlugin;
-import io.meeds.gamification.service.ConnectorSettingService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-import static io.meeds.gamification.evm.utils.Utils.*;
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.http.HttpService;
 
-public class EvmConnectorPlugin extends ConnectorPlugin {
+@Configuration
+public class BlockchainConfiguration {
 
-  private final ConnectorSettingService connectorSettingService;
+    @Autowired
+    private BlockchainConfigurationProperties blockchainProperties;
 
-  public EvmConnectorPlugin(ConnectorSettingService connectorSettingsService) {
-    this.connectorSettingService = connectorSettingsService;
-  }
+    @Bean("polygonNetwork")
+    public Web3j getPolygonNetworkWeb3j() {
+      return Web3j.build(new HttpService(blockchainProperties.getPolygonNetworkUrl()));
+    }
 
-  @Override
-  public String getConnectorName() {
-    return CONNECTOR_NAME;
-  }
-    
 }
