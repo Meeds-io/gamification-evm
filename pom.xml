@@ -50,6 +50,7 @@
     <org.exoplatform.social.version>6.6.x-meed-SNAPSHOT</org.exoplatform.social.version>
     <org.exoplatform.platform-ui.version>6.6.x-meed-SNAPSHOT</org.exoplatform.platform-ui.version>
     <addon.exo.gamification.version>2.6.x-meed-SNAPSHOT</addon.exo.gamification.version>
+    <addon.exo.wallet.version>2.6.x-meed-SNAPSHOT</addon.exo.wallet.version>
 
     <!-- Sonar properties -->
     <sonar.organization>meeds-io</sonar.organization>
@@ -76,6 +77,13 @@
         <groupId>org.exoplatform.addons.gamification</groupId>
         <artifactId>gamification</artifactId>
         <version>${addon.exo.gamification.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.exoplatform.addons.wallet</groupId>
+        <artifactId>wallet</artifactId>
+        <version>${addon.exo.wallet.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
