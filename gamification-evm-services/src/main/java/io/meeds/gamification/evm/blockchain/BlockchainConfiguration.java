@@ -30,8 +30,7 @@ public class BlockchainConfiguration {
 
     @Bean("polygonNetwork")
     public Web3j getPolygonNetworkWeb3j() {
-      Web3j web3j = Web3j.build(new HttpService(blockchainProperties.getPolygonNetworkUrl()));
-      return web3j;
+      return Web3j.build(new HttpService(blockchainProperties.getPolygonNetworkUrl()));
     }
 
 }

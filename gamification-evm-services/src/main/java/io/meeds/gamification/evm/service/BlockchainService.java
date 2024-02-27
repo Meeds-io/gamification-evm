@@ -16,7 +16,7 @@
 package io.meeds.gamification.evm.service;
 
 import io.meeds.gamification.evm.blockchain.BlockchainConfigurationProperties;
-import io.meeds.gamification.evm.constant.Constants.TokenTransferEvent;
+import io.meeds.gamification.evm.model.TokenTransferEvent;
 import org.apache.commons.collections.CollectionUtils;
 import org.exoplatform.wallet.contract.MeedsToken;
 import org.springframework.beans.factory.annotation.Autowired;

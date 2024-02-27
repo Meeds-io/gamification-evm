@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import jakarta.annotation.PostConstruct;
 
+import jakarta.annotation.PreDestroy;
 import org.exoplatform.wallet.service.WalletAccountService;
 import org.exoplatform.wallet.model.Wallet;
 import io.meeds.gamification.evm.model.EvmTrigger;
@@ -81,6 +82,13 @@ public class EvmTriggerService {
     QueuedThreadPool threadFactory = new QueuedThreadPool(5, 1, 1);
     threadFactory.setName("Gamification - Evm connector");
     executorService = Executors.newCachedThreadPool(threadFactory);
+  }
+
+  @PreDestroy
+  public void stop() {
+    if (executorService != null) {
+      executorService.shutdownNow();
+    }
   }
 
   /**

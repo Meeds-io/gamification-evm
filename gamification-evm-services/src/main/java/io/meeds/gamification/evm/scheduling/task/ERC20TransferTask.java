@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Set;
 
 import io.meeds.common.ContainerTransactional;
+import io.meeds.gamification.constant.DateFilterType;
+import io.meeds.gamification.constant.EntityStatusType;
 import io.meeds.gamification.evm.blockchain.BlockchainConfigurationProperties;
 import io.meeds.gamification.evm.model.EvmTrigger;
 import io.meeds.gamification.evm.service.EvmTriggerService;
@@ -34,7 +36,7 @@ import org.exoplatform.commons.api.settings.data.Scope;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.services.listener.ListenerService;
 
-import io.meeds.gamification.evm.constant.Constants.TokenTransferEvent;
+import io.meeds.gamification.evm.model.TokenTransferEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.slf4j.Logger;
@@ -81,6 +83,9 @@ public class ERC20TransferTask {
     try {
       RuleFilter ruleFilter = new RuleFilter(true);
       ruleFilter.setEventType(CONNECTOR_NAME);
+      ruleFilter.setStatus(EntityStatusType.ENABLED);
+      ruleFilter.setProgramStatus(EntityStatusType.ENABLED);
+      ruleFilter.setDateFilterType(DateFilterType.STARTED);
       List<RuleDTO> rules = ruleService.getRules(ruleFilter, 0, -1);
       if (CollectionUtils.isNotEmpty(rules)) {
         long lastBlock = blockchainService.getLastBlock();

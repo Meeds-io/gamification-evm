@@ -31,9 +31,6 @@
   <artifactId>gamification-evm-service</artifactId>
   <packaging>jar</packaging>
   <name>Meeds:: Gamification EVM - Service</name>
-  <properties>
-    <org.web3j.version>4.9.4</org.web3j.version>
-  </properties>
   <dependencies>
     <dependency>
       <groupId>org.exoplatform.social</groupId>
@@ -55,7 +52,7 @@
     <dependency>
       <groupId>org.exoplatform.wallet</groupId>
       <artifactId>ert-contract</artifactId>
-      <scope>compile</scope>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>*</groupId>
