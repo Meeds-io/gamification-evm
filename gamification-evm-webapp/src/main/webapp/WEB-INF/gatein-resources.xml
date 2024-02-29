@@ -66,5 +66,25 @@
     </depends>
   </module>
 
+  <module>
+    <name>engagementCenterConnectorEventsEvmExtensions</name>
+    <load-group>engagement-center-connector-event-extensions</load-group>
+    <script>
+      <path>/js/connectorExtensions.bundle.js</path>
+    </script>
+    <depends>
+      <module>vue</module>
+    </depends>
+    <depends>
+      <module>vuetify</module>
+    </depends>
+    <depends>
+      <module>eXoVueI18n</module>
+    </depends>
+    <depends>
+      <module>extensionRegistry</module>
+    </depends>
+  </module>
+
 </gatein-resources>
 

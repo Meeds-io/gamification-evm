@@ -16,22 +16,15 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
+
 export function init() {
-  extensionRegistry.registerExtension('engagementCenterActions', 'user-actions', {
-    type: 'evm',
-    options: {
-      rank: 60,
-      image: '/gamification-evm/images/EVM.png',
-      match: (actionLabel) => [
-        'holdtoken',
-      ].includes(actionLabel),
-      getLink: realization => {
-        if (realization.objectType === 'evm' && realization.objectId !== '') {
-          realization.link = `https://mumbai.polygonscan.com/tx/${realization.objectId}`;
-          return realization.link;
-        }
-      },
-      isExtensible: true
-    }
+  extensionRegistry.registerComponent('engagementCenterEvent', 'connector-event-extensions', {
+    id: 'evm-event',
+    name: 'evm',
+    vueComponent: Vue.options.components['evm-connector-event-form'],
+    isEnabled: (params) => [
+      'holdtoken',
+    ].includes(params?.trigger),
+    rank: 1,
   });
 }
