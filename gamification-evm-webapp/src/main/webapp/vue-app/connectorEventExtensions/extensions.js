@@ -16,6 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
+import '../connectorEventExtensions/initComponents';
 
 export function init() {
   extensionRegistry.registerComponent('engagementCenterEvent', 'connector-event-extensions', {
@@ -23,8 +24,7 @@ export function init() {
     name: 'evm',
     vueComponent: Vue.options.components['evm-connector-event-form'],
     isEnabled: (params) => [
-      'holdtoken',
+      'holdToken',
     ].includes(params?.trigger),
-    rank: 1,
   });
 }

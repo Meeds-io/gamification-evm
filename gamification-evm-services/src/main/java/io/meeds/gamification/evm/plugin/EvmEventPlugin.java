@@ -22,7 +22,6 @@ import io.meeds.gamification.plugin.EventPlugin;
 
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 
 import static io.meeds.gamification.evm.utils.Utils.*;
 
@@ -36,6 +35,13 @@ public class EvmEventPlugin extends EventPlugin{
 
   public List<String> getTriggers() {
     return List.of(HOLD_TOKEN_EVENT);
+  }
+
+  @Override
+  public boolean isValidEvent(Map<String, String> eventProperties, String triggerDetails) {
+    String desiredContractAddress = eventProperties.get(CONTRACT_ADDRESS);
+    Map<String, String> triggerDetailsMop = stringToMap(triggerDetails);
+    return desiredContractAddress != null && desiredContractAddress.equals(triggerDetailsMop.get(CONTRACT_ADDRESS));
   }
 
 }

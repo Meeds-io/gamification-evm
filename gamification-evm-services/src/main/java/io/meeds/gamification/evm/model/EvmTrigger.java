@@ -28,11 +28,13 @@ public class EvmTrigger {
 
   private String walletAddress;
 
+  private String contractAddress;
+
   private String type;
 
   private String transactionHash;
 
   public EvmTrigger clone() {
-      return new EvmTrigger(trigger, walletAddress, type, transactionHash);
+      return new EvmTrigger(trigger, walletAddress, contractAddress, type, transactionHash);
   }
 }

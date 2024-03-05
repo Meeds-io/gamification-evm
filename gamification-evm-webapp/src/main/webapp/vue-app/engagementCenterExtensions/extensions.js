@@ -23,7 +23,7 @@ export function init() {
       rank: 60,
       image: '/gamification-evm/images/EVM.png',
       match: (actionLabel) => [
-        'holdtoken',
+        'holdToken',
       ].includes(actionLabel),
       getLink: realization => {
         if (realization.objectType === 'evm' && realization.objectId !== '') {
