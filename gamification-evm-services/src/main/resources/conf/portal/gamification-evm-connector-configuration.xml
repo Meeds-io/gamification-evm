@@ -39,7 +39,7 @@
               <string>evm</string>
             </field>
             <field name="trigger">
-              <string>holdtoken</string>
+              <string>holdToken</string>
             </field>
           </object>
         </object-param>
