@@ -16,22 +16,32 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-export function init() {
-  extensionRegistry.registerExtension('engagementCenterActions', 'user-actions', {
-    type: 'evm',
-    options: {
-      rank: 60,
-      image: '/gamification-evm/images/EVM.png',
-      match: (actionLabel) => [
-        'holdToken',
-      ].includes(actionLabel),
-      getLink: realization => {
-        if (realization.objectType === 'evm' && realization.objectId !== '') {
-          realization.link = `https://mumbai.polygonscan.com/tx/${realization.objectId}`;
-          return realization.link;
-        }
-      },
-      isExtensible: true
-    }
-  });
+package io.meeds.gamification.evm.plugin;
+
+import io.meeds.gamification.plugin.EventPlugin;
+
+import java.util.List;
+import java.util.Map;
+
+import static io.meeds.gamification.evm.utils.Utils.*;
+
+public class EvmEventPlugin extends EventPlugin{
+  public static final String EVENT_TYPE = "evm";
+
+  @Override
+  public String getEventType() {
+    return EVENT_TYPE;
+  }
+
+  public List<String> getTriggers() {
+    return List.of(HOLD_TOKEN_EVENT);
+  }
+
+  @Override
+  public boolean isValidEvent(Map<String, String> eventProperties, String triggerDetails) {
+    String desiredContractAddress = eventProperties.get(CONTRACT_ADDRESS);
+    Map<String, String> triggerDetailsMop = stringToMap(triggerDetails);
+    return desiredContractAddress != null && desiredContractAddress.equals(triggerDetailsMop.get(CONTRACT_ADDRESS));
+  }
+
 }
