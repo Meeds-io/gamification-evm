@@ -16,9 +16,13 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import EvmConnectorEventForm from './components/EvmEventForm.vue';
+import EvmConnectorEvent from './components/EvmEvent.vue';
+import EvmConnectorEventDisplay from './components/EvmEventDisplay.vue';
 
 const components = {
   'evm-connector-event-form': EvmConnectorEventForm,
+  'evm-connector-event': EvmConnectorEvent,
+  'evm-connector-event-display': EvmConnectorEventDisplay,
 };
 
 for (const key in components) {
