@@ -22,7 +22,7 @@ export function init() {
   extensionRegistry.registerComponent('engagementCenterEvent', 'connector-event-extensions', {
     id: 'evm-event',
     name: 'evm',
-    vueComponent: Vue.options.components['evm-connector-event-form'],
+    vueComponent: Vue.options.components['evm-connector-event'],
     isEnabled: (params) => [
       'holdToken',
     ].includes(params?.trigger),
