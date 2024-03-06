@@ -27,7 +27,7 @@ export function init() {
       ].includes(actionLabel),
       getLink: realization => {
         if (realization.objectType === 'evm' && realization.objectId !== '') {
-          realization.link = `https://mumbai.polygonscan.com/tx/${realization.objectId}`;
+          realization.link = `https://polygonscan.com/tx/${realization.objectId}`;
           return realization.link;
         }
       },
