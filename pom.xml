@@ -47,10 +47,10 @@
     <tag>HEAD</tag>
   </scm>
   <properties>
-    <org.exoplatform.social.version>6.6.x-meed-SNAPSHOT</org.exoplatform.social.version>
-    <org.exoplatform.platform-ui.version>6.6.x-meed-SNAPSHOT</org.exoplatform.platform-ui.version>
-    <addon.exo.gamification.version>2.6.x-meed-SNAPSHOT</addon.exo.gamification.version>
-    <addon.exo.wallet.version>2.6.x-meed-SNAPSHOT</addon.exo.wallet.version>
+    <org.exoplatform.social.version>6.6.0-meed-20240307</org.exoplatform.social.version>
+    <org.exoplatform.platform-ui.version>6.6.0-meed-20240307</org.exoplatform.platform-ui.version>
+    <addon.exo.gamification.version>2.6.0-meed-20240307</addon.exo.gamification.version>
+    <addon.exo.wallet.version>2.6.0-meed-20240307</addon.exo.wallet.version>
 
     <!-- Sonar properties -->
     <sonar.organization>meeds-io</sonar.organization>
