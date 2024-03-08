@@ -15,17 +15,35 @@
  */
 package io.meeds.gamification.evm.utils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Utils {
 
   public static final String CONNECTOR_NAME   = "evm";
 
-  public static final String HOLD_TOKEN_EVENT = "holdtoken";
+  public static final String HOLD_TOKEN_EVENT = "holdToken";
 
   public static final String WALLET_ADDRESS   = "walletAddress";
+
+  public static final String CONTRACT_ADDRESS = "contractAddress";
 
   public static final String TRANSACTION_HASH = "transactionHash";
 
   private Utils() {
 
+  }
+
+  public static Map<String, String> stringToMap(String mapAsString) {
+    Map<String, String> map = new HashMap<>();
+    mapAsString = mapAsString.substring(1, mapAsString.length() - 1);
+    String[] pairs = mapAsString.split(", ");
+    for (String pair : pairs) {
+      String[] keyValue = pair.split(": ");
+      String key = keyValue[0].trim();
+      String value = keyValue[1].trim();
+      map.put(key, value);
+    }
+    return map;
   }
 }
