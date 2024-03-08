@@ -16,7 +16,9 @@
 package io.meeds.gamification.evm.service;
 
 import io.meeds.gamification.evm.blockchain.BlockchainConfigurationProperties;
+import io.meeds.gamification.evm.model.ERC20Token;
 import io.meeds.gamification.evm.model.TokenTransferEvent;
+import io.micrometer.common.util.StringUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.exoplatform.wallet.contract.ERC20;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,9 +49,6 @@ public class BlockchainService {
   @Autowired
   @Qualifier("polygonNetwork")
   private Web3j polygonWeb3j;
-
-  @Autowired
-  BlockchainConfigurationProperties blockchainProperties;
 
   public static final Event TRANSFER_EVENT = new Event("Transfer",
           Arrays.<TypeReference<?>>asList(new TypeReference<Address>(true) {}, new TypeReference<Address>(true) {}, new TypeReference<Uint256>(false) {}));
@@ -89,6 +88,26 @@ public class BlockchainService {
     }
   }
 
+  public ERC20Token getERC20TokenDetails(String contractAddress) throws IOException {
+    String name = erc20Name(contractAddress);
+    String symbol = erc20Symbol(contractAddress);
+    BigInteger totalSupply = erc20TotalSupply(contractAddress);
+    BigInteger decimals = erc20Decimals(contractAddress);
+    ERC20Token erc20Token = new ERC20Token();
+    if (StringUtils.isNotBlank(name)
+        && StringUtils.isNotBlank(symbol)
+        && !totalSupply.equals(BigInteger.ZERO)
+        && !decimals.equals(BigInteger.ZERO)) {
+      erc20Token.setSymbol(symbol);
+      erc20Token.setDecimals(decimals);
+      erc20Token.setTotalSupply(totalSupply);
+      erc20Token.setName(name);
+      return erc20Token;
+    }
+    return null;
+
+  }
+
   /**
    * @return last block number
    */
@@ -98,6 +117,61 @@ public class BlockchainService {
     } catch (IOException e) {
       throw new IllegalStateException("Error getting last block number", e);
     }
+  }
+
+  /**
+   * @return ERC20 token name
+   */
+  public String erc20Name(String contractAddress) {
+    try {
+      ERC20 erc20Token = loadPolygonERC20Token(contractAddress);
+      return erc20Token.name().send();
+    } catch (Exception e) {
+      throw new IllegalStateException("Error calling symbol name", e);
+    }
+  }
+
+  /**
+   * @return ERC20 token symbol
+   */
+  public String erc20Symbol(String contractAddress) {
+    try {
+      ERC20 erc20Token = loadPolygonERC20Token(contractAddress);
+      return erc20Token.symbol().send();
+    } catch (Exception e) {
+      throw new IllegalStateException("Error calling symbol method", e);
+    }
+  }
+
+  /**
+   * @return ERC20 token decimals
+   */
+  public BigInteger erc20Decimals(String contractAddress) {
+    try {
+      ERC20 erc20Token = loadPolygonERC20Token(contractAddress);
+      return erc20Token.decimals().send();
+    } catch (Exception e) {
+      throw new IllegalStateException("Error calling decimals method", e);
+    }
+  }
+
+  /**
+   * @return ERC20 token totalSupply
+   */
+  public BigInteger erc20TotalSupply(String contractAddress) {
+    try {
+      ERC20 erc20Token = loadPolygonERC20Token(contractAddress);
+      return erc20Token.totalSupply().send();
+    } catch (Exception e) {
+      throw new IllegalStateException("Error calling totalSupply method", e);
+    }
+  }
+
+  public ERC20 loadPolygonERC20Token(String contractAddress) {
+    return ERC20.load(contractAddress,
+            polygonWeb3j,
+            new ReadonlyTransactionManager(polygonWeb3j, Address.DEFAULT.toString()),
+            new StaticGasProvider(BigInteger.valueOf(20000000000l), BigInteger.valueOf(300000l)));
   }
 
   private Stream<TokenTransferEvent> getTransferEvents(TransactionReceipt transactionReceipt, String contractAddress) {
