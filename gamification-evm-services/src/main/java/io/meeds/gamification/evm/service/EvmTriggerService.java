@@ -112,7 +112,7 @@ public class EvmTriggerService {
       Identity socialIdentity = identityManager.getOrCreateUserIdentity(receiverId);
       if (socialIdentity != null) {
         String eventDetails = "{" + WALLET_ADDRESS + ": " + evmTrigger.getWalletAddress() + ", " + TRANSACTION_HASH + ": "
-                              + evmTrigger.getTransactionHash() + "}";
+                              + evmTrigger.getTransactionHash() +  ", " + CONTRACT_ADDRESS + ": " + evmTrigger.getContractAddress() + "}";
         broadcastEvmEvent(evmTrigger.getTrigger(),
                           receiverId,
                           evmTrigger.getTransactionHash(),

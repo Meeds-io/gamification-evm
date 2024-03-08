@@ -18,12 +18,15 @@ package io.meeds.gamification.evm.service;
 import io.meeds.gamification.evm.blockchain.BlockchainConfigurationProperties;
 import io.meeds.gamification.evm.model.TokenTransferEvent;
 import org.apache.commons.collections.CollectionUtils;
-import org.exoplatform.wallet.contract.MeedsToken;
+import org.exoplatform.wallet.contract.ERC20;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.web3j.abi.EventEncoder;
+import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.Event;
+import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterNumber;
 import org.web3j.protocol.core.methods.request.EthFilter;
@@ -38,7 +41,6 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Stream;
 
-
 @Component
 public class BlockchainService {
 
@@ -48,6 +50,9 @@ public class BlockchainService {
 
   @Autowired
   BlockchainConfigurationProperties blockchainProperties;
+
+  public static final Event TRANSFER_EVENT = new Event("Transfer",
+          Arrays.<TypeReference<?>>asList(new TypeReference<Address>(true) {}, new TypeReference<Address>(true) {}, new TypeReference<Uint256>(false) {}));
 
   /**
    * Retrieves the list of ERC20 Token transfer transactions
@@ -61,21 +66,21 @@ public class BlockchainService {
     EthFilter ethFilter = new EthFilter(new DefaultBlockParameterNumber(fromBlock),
                                         new DefaultBlockParameterNumber(toBlock),
                                         contractAddress);
-    ethFilter.addSingleTopic(EventEncoder.encode(MeedsToken.TRANSFER_EVENT));
+    ethFilter.addSingleTopic(EventEncoder.encode(TRANSFER_EVENT));
     try {
       EthLog ethLog = polygonWeb3j.ethGetLogs(ethFilter).send();
       @SuppressWarnings("rawtypes")
       List<EthLog.LogResult> ethLogs = ethLog.getLogs();
       if (CollectionUtils.isEmpty(ethLogs)) {
         return Collections.emptySet();
-        }
+      }
       List<TokenTransferEvent> transferEvents = ethLogs.stream()
                 .map(logResult -> (EthLog.LogObject) logResult.get())
                 .filter(logObject -> !logObject.isRemoved())
                 .map(EthLog.LogObject::getTransactionHash)
                 .map(this::getTransactionReceipt)
                 .filter(TransactionReceipt::isStatusOK)
-                .flatMap(this::getTransferEvents)
+                .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt, contractAddress))
                 .filter(Objects::nonNull)
                 .toList();
       return new LinkedHashSet<>(transferEvents);
@@ -95,18 +100,18 @@ public class BlockchainService {
     }
   }
 
-  private Stream<TokenTransferEvent> getTransferEvents(TransactionReceipt transactionReceipt) {
-    MeedsToken meedsToken = MeedsToken.load(blockchainProperties.getMeedAddress(),
-                                            polygonWeb3j,
-                                            new ReadonlyTransactionManager(polygonWeb3j, Address.DEFAULT.toString()),
-                                            new StaticGasProvider(BigInteger.valueOf(20000000000l), BigInteger.valueOf(300000l)));
-    List<MeedsToken.TransferEventResponse> transferEvents = meedsToken.getTransferEvents(transactionReceipt);
+  private Stream<TokenTransferEvent> getTransferEvents(TransactionReceipt transactionReceipt, String contractAddress) {
+    ERC20 erc20Token = ERC20.load(contractAddress,
+                                  polygonWeb3j,
+                                  new ReadonlyTransactionManager(polygonWeb3j, Address.DEFAULT.toString()),
+                                  new StaticGasProvider(BigInteger.valueOf(20000000000l), BigInteger.valueOf(300000l)));
+    List<ERC20.TransferEventResponse> transferEvents = erc20Token.getTransferEvents(transactionReceipt);
     if (transferEvents != null && !transferEvents.isEmpty()) {
       return transferEvents.stream()
               .map(transferEventResponse -> new TokenTransferEvent(transferEventResponse.from,
-                                                                   transferEventResponse.to,
-                                                                   transferEventResponse.value,
-                                                                   transferEventResponse.log.getTransactionHash()));
+                      transferEventResponse.to,
+                      transferEventResponse.value,
+                      transferEventResponse.log.getTransactionHash()));
     }
     return Stream.empty();
   }
