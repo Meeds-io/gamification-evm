@@ -21,7 +21,6 @@ import java.util.Set;
 import io.meeds.common.ContainerTransactional;
 import io.meeds.gamification.constant.DateFilterType;
 import io.meeds.gamification.constant.EntityStatusType;
-import io.meeds.gamification.evm.blockchain.BlockchainConfigurationProperties;
 import io.meeds.gamification.evm.model.EvmTrigger;
 import io.meeds.gamification.evm.service.EvmTriggerService;
 import io.meeds.gamification.evm.service.BlockchainService;
@@ -30,6 +29,7 @@ import io.meeds.gamification.model.filter.RuleFilter;
 import io.meeds.gamification.service.EventService;
 import io.meeds.gamification.service.RuleService;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
@@ -71,9 +71,6 @@ public class ERC20TransferTask {
   private EvmTriggerService                 evmTriggerService;
 
   @Autowired
-  private BlockchainConfigurationProperties blockchainProperties;
-
-  @Autowired
   private RuleService                       ruleService;
 
   @ContainerTransactional
@@ -87,34 +84,42 @@ public class ERC20TransferTask {
       ruleFilter.setProgramStatus(EntityStatusType.ENABLED);
       ruleFilter.setDateFilterType(DateFilterType.STARTED);
       List<RuleDTO> rules = ruleService.getRules(ruleFilter, 0, -1);
-      if (CollectionUtils.isNotEmpty(rules)) {
-        long lastBlock = blockchainService.getLastBlock();
-        long lastCheckedBlock = getLastCheckedBlock(blockchainProperties.getMeedAddress());
-        if (lastCheckedBlock == 0) {
-          // If this is the first time that it's started, save the last block as
-          // last checked one
-          saveLastCheckedBlock(lastBlock, blockchainProperties.getMeedAddress());
-          return;
-        }
-        Set<TokenTransferEvent> events = blockchainService.getTransferredTokensTransactions(lastCheckedBlock + 1,
-                                                                                            lastBlock,
-                                                                                            blockchainProperties.getMeedAddress());
-        if (!CollectionUtils.isEmpty(events)) {
-          events.forEach(event -> {
-            try {
-              EvmTrigger evmTrigger = new EvmTrigger();
-              evmTrigger.setTrigger(HOLD_TOKEN_EVENT);
-              evmTrigger.setType(CONNECTOR_NAME);
-              evmTrigger.setWalletAddress(event.getTo());
-              evmTrigger.setTransactionHash(event.getTransactionHash());
-              evmTriggerService.handleTriggerAsync(evmTrigger);
-            } catch (Exception e) {
-              LOG.warn("Error broadcasting event '" + event, e);
-            }
-          });
-        }
-        saveLastCheckedBlock(lastBlock, blockchainProperties.getMeedAddress());
-        LOG.info("End listening erc20 token transfers");
+      List<RuleDTO> filteredRules = rules.stream()
+              .filter(r -> !r.getEvent().getProperties().isEmpty()
+                      && StringUtils.isNotBlank(r.getEvent().getProperties().get(CONTRACT_ADDRESS)))
+              .toList();
+      if (CollectionUtils.isNotEmpty(filteredRules)) {
+        filteredRules.forEach(rule -> {
+          String contractAddress = rule.getEvent().getProperties().get(CONTRACT_ADDRESS);
+          long lastBlock = blockchainService.getLastBlock();
+          long lastCheckedBlock = getLastCheckedBlock(contractAddress);
+          if (lastCheckedBlock == 0) {
+            // If this is the first time that it's started, save the last block as
+            // last checked one
+            saveLastCheckedBlock(lastBlock, contractAddress);
+            return;
+          }
+          Set<TokenTransferEvent> events = blockchainService.getTransferredTokensTransactions(lastCheckedBlock + 1,
+                                                                                              lastBlock,
+                                                                                              contractAddress);
+          if (!CollectionUtils.isEmpty(events)) {
+            events.forEach(event -> {
+              try {
+                EvmTrigger evmTrigger = new EvmTrigger();
+                evmTrigger.setTrigger(HOLD_TOKEN_EVENT);
+                evmTrigger.setType(CONNECTOR_NAME);
+                evmTrigger.setWalletAddress(event.getTo());
+                evmTrigger.setTransactionHash(event.getTransactionHash());
+                evmTrigger.setContractAddress(contractAddress);
+                evmTriggerService.handleTriggerAsync(evmTrigger);
+              } catch (Exception e) {
+                LOG.warn("Error broadcasting event '" + event, e);
+              }
+            });
+          }
+          saveLastCheckedBlock(lastBlock, contractAddress);
+          LOG.info("End listening erc20 token transfers");
+        });
       }
     } catch (Exception e) {
       LOG.error("An error occurred while listening erc20 token transfers", e);
