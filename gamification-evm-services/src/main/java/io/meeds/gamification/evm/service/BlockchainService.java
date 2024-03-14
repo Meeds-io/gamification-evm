@@ -105,7 +105,6 @@ public class BlockchainService {
       return erc20Token;
     }
     return null;
-
   }
 
   /**
@@ -169,9 +168,9 @@ public class BlockchainService {
 
   public ERC20 loadPolygonERC20Token(String contractAddress) {
     return ERC20.load(contractAddress,
-            polygonWeb3j,
-            new ReadonlyTransactionManager(polygonWeb3j, Address.DEFAULT.toString()),
-            new StaticGasProvider(BigInteger.valueOf(20000000000l), BigInteger.valueOf(300000l)));
+                      polygonWeb3j,
+                      new ReadonlyTransactionManager(polygonWeb3j, Address.DEFAULT.toString()),
+                      new StaticGasProvider(BigInteger.valueOf(20000000000l), BigInteger.valueOf(300000l)));
   }
 
   private Stream<TokenTransferEvent> getTransferEvents(TransactionReceipt transactionReceipt, String contractAddress) {
