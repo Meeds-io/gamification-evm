@@ -1,4 +1,5 @@
 /*
+ *
  * This file is part of the Meeds project (https://meeds.io/).
  *
  * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
@@ -16,16 +17,11 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-import '../connectorEventExtensions/initComponents';
-import '../connectorEventExtensions/services';
 
-export function init() {
-  extensionRegistry.registerComponent('engagementCenterEvent', 'connector-event-extensions', {
-    id: 'evm-event',
-    name: 'evm',
-    vueComponent: Vue.options.components['evm-connector-event'],
-    isEnabled: (params) => [
-      'holdToken',
-    ].includes(params?.trigger),
+import * as evmConnectorService from '../js/EvmConnectorService.js';
+
+if (!Vue.prototype.$evmConnectorService) {
+  window.Object.defineProperty(Vue.prototype, '$evmConnectorService', {
+    value: evmConnectorService,
   });
 }
