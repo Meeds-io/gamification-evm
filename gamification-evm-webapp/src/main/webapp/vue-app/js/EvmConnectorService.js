@@ -23,7 +23,6 @@ export function getTokenDetailsByAddress(contractAddress) {
     if (resp?.ok) {
       return resp.json();
     } else {
-      console.warn('resp', resp);
       throw new Error('Error when getting erc20 token details');
     }
   });
