@@ -19,6 +19,18 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 <template>
   <div>
     <v-card-text class="px-0 dark-grey-color font-weight-bold">
+      {{ $t('gamification.event.form.networks') }}
+    </v-card-text>
+    <v-chip-group
+      v-model="selectedNetwork"
+      :show-arrows="false"
+      active-class="primary white--text">
+      <evm-connector-network-item
+        v-for="network in networks"
+        :key="network.id"
+        :network="network" />
+    </v-chip-group>
+    <v-card-text class="px-0 dark-grey-color font-weight-bold">
       {{ $t('gamification.event.form.contractAddress') }}
     </v-card-text>
     <v-text-field
@@ -97,7 +109,17 @@ export default {
       typing: false,
       erc20Token: null,
       isValidERC20Address: true,
-      loading: false
+      loading: false,
+      networks: [
+        { id: 0,
+          name: 'Ethereum',
+          providerUrl: 'https://eth-goerli.g.alchemy.com/v2/GVaqet2eNnf12YJSTp9hKxkHLZSzzrjW',
+          imageUrl: '/gamification-evm/images/EVM.png' },
+        {  id: 1,
+          name: 'Polygon',
+          providerUrl: 'https://polygon-mumbai.g.alchemy.com/v2/5grQcqG3YrkpuxDbfhXE8HgPv04_iwSK',
+          imageUrl: '/gamification-evm/images/polygon.png' }
+      ]
     };
   },
   computed: {
