@@ -39,7 +39,7 @@
     <component-plugin>
       <name>evm</name>
       <set-method>addPlugin</set-method>
-      <type>io.meeds.gamification.evm.plugin.EvmConnectorPlugin</type>
+      <type>io.meeds.evm.gamification.plugin.EvmConnectorPlugin</type>
     </component-plugin>
   </external-component-plugins>
 
@@ -48,10 +48,10 @@
     <component-plugin>
       <name>evm</name>
       <set-method>addPlugin</set-method>
-      <type>io.meeds.gamification.evm.plugin.EvmEventPlugin</type>
+      <type>io.meeds.evm.gamification.plugin.EvmEventPlugin</type>
     </component-plugin>
   </external-component-plugins>
 
-  <import>jar:/conf/portal/gamification-evm-connector-configuration.xml</import>
+  <import>jar:/conf/portal/evm-gamification-connector-configuration.xml</import>
 
 </configuration>

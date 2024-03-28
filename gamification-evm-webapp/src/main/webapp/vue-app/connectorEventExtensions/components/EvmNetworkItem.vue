@@ -42,7 +42,11 @@ export default {
       return this.network?.name;
     },
     networkImageUrl() {
-      return this.network?.imageUrl;
+      if (this.networkName === 'Polygon') {
+        return '/gamification-evm/images/polygon.png';
+      } else {
+        return '/gamification-evm/images/EVM.png';
+      }
     }
   }
 };

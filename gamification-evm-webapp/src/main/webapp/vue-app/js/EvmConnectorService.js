@@ -15,8 +15,20 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-export function getTokenDetailsByAddress(contractAddress) {
-  return fetch(`/gamification-evm/rest/gamification/connectors/evm/tokens/${contractAddress}`, {
+export function getTokenDetailsByAddress(paramsObj) {
+  const formData = new FormData();
+  if (paramsObj) {
+    Object.keys(paramsObj).forEach(key => {
+      const value = paramsObj[key];
+      if (window.Array && Array.isArray && Array.isArray(value)) {
+        value.forEach(val => formData.append(key, val));
+      } else {
+        formData.append(key, value);
+      }
+    });
+  }
+  const params = new URLSearchParams(formData).toString();
+  return fetch(`/gamification-evm/rest/gamification/connectors/evm/tokens?${params}`, {
     method: 'GET',
     credentials: 'include',
   }).then((resp) => {
@@ -24,6 +36,19 @@ export function getTokenDetailsByAddress(contractAddress) {
       return resp.json();
     } else {
       throw new Error('Error when getting erc20 token details');
+    }
+  });
+}
+
+export function getNetworks() {
+  return fetch('/gamification-evm/rest/gamification/connectors/evm/networks', {
+    method: 'GET',
+    credentials: 'include',
+  }).then((resp) => {
+    if (resp?.ok) {
+      return resp.json();
+    } else {
+      throw new Error('Error when getting blockchain networks');
     }
   });
 }

@@ -1,4 +1,4 @@
-package io.meeds.gamification.evm.model;
+package io.meeds.evm.gamification.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
