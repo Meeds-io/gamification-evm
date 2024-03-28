@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package io.meeds.gamification.evm.utils;
+package io.meeds.evm.gamification.utils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +27,8 @@ public class Utils {
   public static final String WALLET_ADDRESS   = "walletAddress";
 
   public static final String CONTRACT_ADDRESS = "contractAddress";
+
+  public static final String BLOCKCHAIN_NETWORK = "blockchainNetwork";
 
   public static final String TRANSACTION_HASH = "transactionHash";
 
