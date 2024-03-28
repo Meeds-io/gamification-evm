@@ -21,7 +21,7 @@ export function init() {
     id: 'evm',
     name: 'evm',
     image: '/gamification-evm/images/EVM.png',
-    title: 'EVM Blockhain',
+    title: 'EVM Blockchain',
     description: 'gamification.admin.evm.label.description',
     rank: 40,
   });
