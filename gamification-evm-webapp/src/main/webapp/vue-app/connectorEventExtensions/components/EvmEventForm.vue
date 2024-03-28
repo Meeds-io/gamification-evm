@@ -164,6 +164,7 @@ export default {
           } else {
             document.dispatchEvent(new CustomEvent('event-form-unfilled'));
           }
+          this.isValidERC20Address = true;
         } else {
           this.waitForEndTyping();
         }
