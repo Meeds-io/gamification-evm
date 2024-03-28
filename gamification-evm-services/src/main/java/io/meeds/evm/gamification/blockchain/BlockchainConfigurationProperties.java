@@ -13,28 +13,23 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package io.meeds.gamification.evm.model;
+package io.meeds.evm.gamification.blockchain;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 
+@Configuration
+@ConfigurationProperties(prefix = "meeds.gamification.evm.blockchain")
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class EvmTrigger {
+@AllArgsConstructor
+public class BlockchainConfigurationProperties {
 
-  private String trigger;
+  private String polygonNetworkUrl;
 
-  private String walletAddress;
+  private String networkUrl;
 
-  private String contractAddress;
-
-  private String type;
-
-  private String transactionHash;
-
-  public EvmTrigger clone() {
-      return new EvmTrigger(trigger, walletAddress, contractAddress, type, transactionHash);
-  }
 }

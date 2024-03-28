@@ -13,14 +13,18 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package io.meeds.gamification.evm.scheduling;
+package io.meeds.evm.gamification.blockchain;
 
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
+
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.http.HttpService;
 
 @Configuration
-@EnableScheduling
-@ComponentScan
-public class SchedulingConfig {
+public class BlockchainConfiguration {
+
+    public Web3j getNetworkWeb3j(String networkUrl) {
+      return Web3j.build(new HttpService(networkUrl));
+    }
+
 }
