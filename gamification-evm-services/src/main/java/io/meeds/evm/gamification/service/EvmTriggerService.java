@@ -13,19 +13,21 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package io.meeds.gamification.evm.service;
+package io.meeds.evm.gamification.service;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import io.meeds.evm.gamification.model.EvmTrigger;
+import io.meeds.evm.gamification.utils.Utils;
 import jakarta.annotation.PostConstruct;
 
 import jakarta.annotation.PreDestroy;
 import org.exoplatform.wallet.service.WalletAccountService;
 import org.exoplatform.wallet.model.Wallet;
-import io.meeds.gamification.evm.model.EvmTrigger;
 import io.meeds.gamification.model.EventDTO;
 import io.meeds.gamification.service.ConnectorService;
 import io.meeds.gamification.service.EventService;
@@ -40,8 +42,6 @@ import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import static io.meeds.gamification.evm.utils.Utils.*;
 
 @Component
 public class EvmTriggerService {
@@ -111,8 +111,10 @@ public class EvmTriggerService {
     if (StringUtils.isNotBlank(receiverId)) {
       Identity socialIdentity = identityManager.getOrCreateUserIdentity(receiverId);
       if (socialIdentity != null) {
-        String eventDetails = "{" + WALLET_ADDRESS + ": " + evmTrigger.getWalletAddress() + ", " + TRANSACTION_HASH + ": "
-                              + evmTrigger.getTransactionHash() +  ", " + CONTRACT_ADDRESS + ": " + evmTrigger.getContractAddress() + "}";
+        String eventDetails = "{" + Utils.WALLET_ADDRESS + ": " + evmTrigger.getWalletAddress() + ", "
+                              + Utils.TRANSACTION_HASH + ": " + evmTrigger.getTransactionHash() +  ", "
+                              + Utils.CONTRACT_ADDRESS + ": " + evmTrigger.getContractAddress() + ", "
+                              + Utils.BLOCKCHAIN_NETWORK + ": " + evmTrigger.getBlockchainNetwork() +  "}";
         broadcastEvmEvent(evmTrigger.getTrigger(),
                           receiverId,
                           evmTrigger.getTransactionHash(),
