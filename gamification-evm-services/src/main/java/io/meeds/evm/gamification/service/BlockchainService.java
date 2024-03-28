@@ -13,16 +13,15 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package io.meeds.gamification.evm.service;
+package io.meeds.evm.gamification.service;
 
-import io.meeds.gamification.evm.blockchain.BlockchainConfigurationProperties;
-import io.meeds.gamification.evm.model.ERC20Token;
-import io.meeds.gamification.evm.model.TokenTransferEvent;
+import io.meeds.evm.gamification.blockchain.BlockchainConfiguration;
+import io.meeds.evm.gamification.model.ERC20Token;
+import io.meeds.evm.gamification.model.TokenTransferEvent;
 import io.micrometer.common.util.StringUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.exoplatform.wallet.contract.ERC20;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.web3j.abi.EventEncoder;
 import org.web3j.abi.TypeReference;
@@ -47,8 +46,7 @@ import java.util.stream.Stream;
 public class BlockchainService {
 
   @Autowired
-  @Qualifier("polygonNetwork")
-  private Web3j polygonWeb3j;
+  BlockchainConfiguration blockchainConfiguration;
 
   public static final Event TRANSFER_EVENT = new Event("Transfer",
           Arrays.<TypeReference<?>>asList(new TypeReference<Address>(true) {}, new TypeReference<Address>(true) {}, new TypeReference<Uint256>(false) {}));
@@ -61,13 +59,14 @@ public class BlockchainService {
    * @param toBlock End Block to filter
    * @return {@link Set} of NFT ID of type {@link TokenTransferEvent}
    */
-  public Set<TokenTransferEvent> getTransferredTokensTransactions(long fromBlock, long toBlock, String contractAddress) {
+  public Set<TokenTransferEvent> getTransferredTokensTransactions(long fromBlock, long toBlock, String contractAddress, String blockchainNetwork) {
+    Web3j networkWeb3j = blockchainConfiguration.getNetworkWeb3j(blockchainNetwork);
     EthFilter ethFilter = new EthFilter(new DefaultBlockParameterNumber(fromBlock),
                                         new DefaultBlockParameterNumber(toBlock),
                                         contractAddress);
     ethFilter.addSingleTopic(EventEncoder.encode(TRANSFER_EVENT));
     try {
-      EthLog ethLog = polygonWeb3j.ethGetLogs(ethFilter).send();
+      EthLog ethLog = networkWeb3j.ethGetLogs(ethFilter).send();
       @SuppressWarnings("rawtypes")
       List<EthLog.LogResult> ethLogs = ethLog.getLogs();
       if (CollectionUtils.isEmpty(ethLogs)) {
@@ -77,9 +76,9 @@ public class BlockchainService {
                 .map(logResult -> (EthLog.LogObject) logResult.get())
                 .filter(logObject -> !logObject.isRemoved())
                 .map(EthLog.LogObject::getTransactionHash)
-                .map(this::getTransactionReceipt)
+                .map(transactionHash -> getTransactionReceipt(transactionHash, networkWeb3j))
                 .filter(TransactionReceipt::isStatusOK)
-                .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt, contractAddress))
+                .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt, contractAddress, networkWeb3j))
                 .filter(Objects::nonNull)
                 .toList();
       return new LinkedHashSet<>(transferEvents);
@@ -88,11 +87,19 @@ public class BlockchainService {
     }
   }
 
-  public ERC20Token getERC20TokenDetails(String contractAddress) throws IOException {
-    String name = erc20Name(contractAddress);
-    String symbol = erc20Symbol(contractAddress);
-    BigInteger totalSupply = erc20TotalSupply(contractAddress);
-    BigInteger decimals = erc20Decimals(contractAddress);
+  /**
+   * Retrieves the details of ERC20 Token
+   * from its contract address
+   *
+   * @param contractAddress the ERC20 token contract address
+   * @return erc20 token details
+   */
+  public ERC20Token getERC20TokenDetails(String contractAddress, String blockchainNetwork) throws IOException {
+    Web3j networkWeb3j = blockchainConfiguration.getNetworkWeb3j(blockchainNetwork);
+    String name = erc20Name(contractAddress, networkWeb3j);
+    String symbol = erc20Symbol(contractAddress, networkWeb3j);
+    BigInteger totalSupply = erc20TotalSupply(contractAddress, networkWeb3j);
+    BigInteger decimals = erc20Decimals(contractAddress, networkWeb3j);
     ERC20Token erc20Token = new ERC20Token();
     if (StringUtils.isNotBlank(name)
         && StringUtils.isNotBlank(symbol)
@@ -110,9 +117,10 @@ public class BlockchainService {
   /**
    * @return last block number
    */
-  public long getLastBlock() {
+  public long getLastBlock(String blockchainNetwork) {
     try {
-      return polygonWeb3j.ethBlockNumber().send().getBlockNumber().longValue();
+      Web3j networkWeb3j = blockchainConfiguration.getNetworkWeb3j(blockchainNetwork);
+      return networkWeb3j.ethBlockNumber().send().getBlockNumber().longValue();
     } catch (IOException e) {
       throw new IllegalStateException("Error getting last block number", e);
     }
@@ -121,21 +129,21 @@ public class BlockchainService {
   /**
    * @return ERC20 token name
    */
-  public String erc20Name(String contractAddress) {
+  public String erc20Name(String contractAddress, Web3j networkWeb3j) {
     try {
-      ERC20 erc20Token = loadPolygonERC20Token(contractAddress);
+      ERC20 erc20Token = loadERC20Token(contractAddress, networkWeb3j);
       return erc20Token.name().send();
     } catch (Exception e) {
-      throw new IllegalStateException("Error calling symbol name", e);
+      throw new IllegalStateException("Error calling name method", e);
     }
   }
 
   /**
    * @return ERC20 token symbol
    */
-  public String erc20Symbol(String contractAddress) {
+  public String erc20Symbol(String contractAddress, Web3j networkWeb3j) {
     try {
-      ERC20 erc20Token = loadPolygonERC20Token(contractAddress);
+      ERC20 erc20Token = loadERC20Token(contractAddress, networkWeb3j);
       return erc20Token.symbol().send();
     } catch (Exception e) {
       throw new IllegalStateException("Error calling symbol method", e);
@@ -145,9 +153,9 @@ public class BlockchainService {
   /**
    * @return ERC20 token decimals
    */
-  public BigInteger erc20Decimals(String contractAddress) {
+  public BigInteger erc20Decimals(String contractAddress, Web3j networkWeb3j) {
     try {
-      ERC20 erc20Token = loadPolygonERC20Token(contractAddress);
+      ERC20 erc20Token = loadERC20Token(contractAddress, networkWeb3j);
       return erc20Token.decimals().send();
     } catch (Exception e) {
       throw new IllegalStateException("Error calling decimals method", e);
@@ -157,27 +165,24 @@ public class BlockchainService {
   /**
    * @return ERC20 token totalSupply
    */
-  public BigInteger erc20TotalSupply(String contractAddress) {
+  public BigInteger erc20TotalSupply(String contractAddress, Web3j networkWeb3j) {
     try {
-      ERC20 erc20Token = loadPolygonERC20Token(contractAddress);
+      ERC20 erc20Token = loadERC20Token(contractAddress, networkWeb3j);
       return erc20Token.totalSupply().send();
     } catch (Exception e) {
       throw new IllegalStateException("Error calling totalSupply method", e);
     }
   }
 
-  public ERC20 loadPolygonERC20Token(String contractAddress) {
+  public ERC20 loadERC20Token(String contractAddress, Web3j networkWeb3j) {
     return ERC20.load(contractAddress,
-                      polygonWeb3j,
-                      new ReadonlyTransactionManager(polygonWeb3j, Address.DEFAULT.toString()),
+                      networkWeb3j,
+                      new ReadonlyTransactionManager(networkWeb3j, Address.DEFAULT.toString()),
                       new StaticGasProvider(BigInteger.valueOf(20000000000l), BigInteger.valueOf(300000l)));
   }
 
-  private Stream<TokenTransferEvent> getTransferEvents(TransactionReceipt transactionReceipt, String contractAddress) {
-    ERC20 erc20Token = ERC20.load(contractAddress,
-                                  polygonWeb3j,
-                                  new ReadonlyTransactionManager(polygonWeb3j, Address.DEFAULT.toString()),
-                                  new StaticGasProvider(BigInteger.valueOf(20000000000l), BigInteger.valueOf(300000l)));
+  private Stream<TokenTransferEvent> getTransferEvents(TransactionReceipt transactionReceipt, String contractAddress, Web3j networkWeb3j) {
+    ERC20 erc20Token = loadERC20Token(contractAddress, networkWeb3j);
     List<ERC20.TransferEventResponse> transferEvents = erc20Token.getTransferEvents(transactionReceipt);
     if (transferEvents != null && !transferEvents.isEmpty()) {
       return transferEvents.stream()
@@ -187,10 +192,6 @@ public class BlockchainService {
                       transferEventResponse.log.getTransactionHash()));
     }
     return Stream.empty();
-  }
-
-  private TransactionReceipt getTransactionReceipt(String transactionHash) {
-    return getTransactionReceipt(transactionHash, polygonWeb3j);
   }
 
   private TransactionReceipt getTransactionReceipt(String transactionHash, Web3j customWeb3j) {

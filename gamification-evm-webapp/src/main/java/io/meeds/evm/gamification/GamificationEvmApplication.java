@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package io.meeds.gamification.evm;
+package io.meeds.evm.gamification;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -30,7 +30,7 @@ import io.meeds.spring.AvailableIntegration;
 import io.meeds.spring.kernel.PortalApplicationContextInitializer;
 
 @SpringBootApplication(scanBasePackages = {
-    "io.meeds.gamification.evm",
+    "io.meeds.evm.gamification",
     AvailableIntegration.KERNEL_MODULE,
     AvailableIntegration.WEB_SECURITY_MODULE,
     AvailableIntegration.WEB_TRANSACTION_MODULE,
