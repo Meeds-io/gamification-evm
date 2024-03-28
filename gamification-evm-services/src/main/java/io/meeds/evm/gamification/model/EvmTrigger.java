@@ -1,8 +1,6 @@
 /*
  * This file is part of the Meeds project (https://meeds.io/).
- *
  * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -11,29 +9,34 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
- *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package io.meeds.gamification.evm.plugin;
+package io.meeds.evm.gamification.model;
 
-import io.meeds.gamification.plugin.ConnectorPlugin;
-import io.meeds.gamification.service.ConnectorSettingService;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import static io.meeds.gamification.evm.utils.Utils.*;
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class EvmTrigger {
 
-public class EvmConnectorPlugin extends ConnectorPlugin {
+  private String trigger;
 
-  private final ConnectorSettingService connectorSettingService;
+  private String walletAddress;
 
-  public EvmConnectorPlugin(ConnectorSettingService connectorSettingsService) {
-    this.connectorSettingService = connectorSettingsService;
+  private String contractAddress;
+
+  private String type;
+
+  private String transactionHash;
+
+  private String blockchainNetwork;
+
+  public EvmTrigger clone() {
+      return new EvmTrigger(trigger, walletAddress, contractAddress, type, transactionHash, blockchainNetwork);
   }
-
-  @Override
-  public String getConnectorName() {
-    return CONNECTOR_NAME;
-  }
-    
 }
