@@ -16,14 +16,13 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
-package io.meeds.gamification.evm.plugin;
+package io.meeds.evm.gamification.plugin;
 
+import io.meeds.evm.gamification.utils.Utils;
 import io.meeds.gamification.plugin.EventPlugin;
 
 import java.util.List;
 import java.util.Map;
-
-import static io.meeds.gamification.evm.utils.Utils.*;
 
 public class EvmEventPlugin extends EventPlugin{
   public static final String EVENT_TYPE = "evm";
@@ -34,14 +33,16 @@ public class EvmEventPlugin extends EventPlugin{
   }
 
   public List<String> getTriggers() {
-    return List.of(HOLD_TOKEN_EVENT);
+    return List.of(Utils.HOLD_TOKEN_EVENT);
   }
 
   @Override
   public boolean isValidEvent(Map<String, String> eventProperties, String triggerDetails) {
-    String desiredContractAddress = eventProperties.get(CONTRACT_ADDRESS);
-    Map<String, String> triggerDetailsMop = stringToMap(triggerDetails);
-    return desiredContractAddress != null && desiredContractAddress.equals(triggerDetailsMop.get(CONTRACT_ADDRESS));
+    String desiredContractAddress = eventProperties.get(Utils.CONTRACT_ADDRESS);
+    String desiredNetwork = eventProperties.get(Utils.BLOCKCHAIN_NETWORK);
+    Map<String, String> triggerDetailsMop = Utils.stringToMap(triggerDetails);
+    return (desiredContractAddress != null && desiredContractAddress.equals(triggerDetailsMop.get(Utils.CONTRACT_ADDRESS)))
+        && (desiredNetwork != null && desiredNetwork.equals(triggerDetailsMop.get((Utils.BLOCKCHAIN_NETWORK))));
   }
 
 }
