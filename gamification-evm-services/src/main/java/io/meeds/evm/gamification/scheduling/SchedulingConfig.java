@@ -13,26 +13,14 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package io.meeds.gamification.evm.blockchain;
+package io.meeds.evm.gamification.scheduling;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-
-import org.exoplatform.wallet.contract.ERC20;
-import org.web3j.protocol.Web3j;
-import org.web3j.protocol.http.HttpService;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Configuration
-public class BlockchainConfiguration {
-
-    @Autowired
-    private BlockchainConfigurationProperties blockchainProperties;
-
-    @Bean("polygonNetwork")
-    public Web3j getPolygonNetworkWeb3j() {
-      return Web3j.build(new HttpService(blockchainProperties.getPolygonNetworkUrl()));
-    }
-
+@EnableScheduling
+@ComponentScan
+public class SchedulingConfig {
 }
