@@ -73,7 +73,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 </v-icon>
               </v-btn>
             </template>
-            <span>{{ $t('gamification.event.form.contractAddress.tooltip') }}</span>
+            <span>{{ networkVerificationMessage }}</span>
           </v-tooltip>
         </template>
       </v-text-field>
@@ -131,6 +131,9 @@ export default {
     },
     tokenSymbol() {
       return this.erc20Token?.symbol;
+    },
+    networkVerificationMessage() {
+      return this.$t('gamification.event.form.contractAddress.tooltip', { 0: this.selected?.name });
     }
   },
   created() {
