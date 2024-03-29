@@ -139,6 +139,8 @@ export default {
   watch: {
     selectedNetwork() {
       this.selected = this.networks[this.selectedNetwork];
+      this.handleAddress();
+      this.erc20Token = null;
     }
   },
   methods: {
@@ -155,7 +157,7 @@ export default {
       window.setTimeout(() => {
         if (Date.now() > this.startTypingKeywordTimeout) {
           this.typing = false;
-          if (this.checkContractAddress(this.contractAddress) && this.contractAddress !== this.properties?.contractAddress) {
+          if (this.checkContractAddress(this.contractAddress)) {
             this.eventProperties = {
               contractAddress: this.contractAddress,
               blockchainNetwork: this.selected?.providerUrl
@@ -199,6 +201,7 @@ export default {
             this.selectedNetwork = this.networks.indexOf(this.selected);
             this.isValidAddress = true;
           }
+          document.dispatchEvent(new CustomEvent('event-form-unfilled'));
           this.loadingNetworks = false;
         });
     }
