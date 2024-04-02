@@ -147,6 +147,13 @@ export default {
     }
   },
   methods: {
+    submitEventProperties() {
+      if (this.checkContractAddress(this.eventProperties.contractAddress) && this.erc20Token) {
+        document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
+      } else {
+        document.dispatchEvent(new CustomEvent('event-form-unfilled'));
+      }
+    },
     handleAddress() {
       if (this.contractAddress) {
         this.startTypingKeywordTimeout = Date.now() + this.startSearchAfterInMilliseconds;
@@ -160,15 +167,11 @@ export default {
       window.setTimeout(() => {
         if (Date.now() > this.startTypingKeywordTimeout) {
           this.typing = false;
-          if (this.checkContractAddress(this.contractAddress)) {
-            this.eventProperties = {
-              contractAddress: this.contractAddress,
-              blockchainNetwork: this.selected?.providerUrl
-            };
-            document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
-          } else {
-            document.dispatchEvent(new CustomEvent('event-form-unfilled'));
-          }
+          this.eventProperties = {
+            contractAddress: this.contractAddress,
+            blockchainNetwork: this.selected?.providerUrl
+          };
+          this.checkContractAddress(this.contractAddress);
           this.isValidERC20Address = true;
         } else {
           this.waitForEndTyping();
@@ -189,7 +192,11 @@ export default {
         .then(() => this.loading = false )
         .catch(() => {
           this.isValidERC20Address = false;
+          this.erc20Token = null;
           this.loading = false;
+        })
+        .finally(() => {
+          this.submitEventProperties();
         });
     },
     retrieveNetworks() {
