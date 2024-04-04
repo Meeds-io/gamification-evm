@@ -94,8 +94,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <span class="font-weight-bold"> {{ tokenName }} ({{ tokenSymbol }}) </span>
         </v-chip>
       </div>
-      <span v-if="!isValidAddress && contractAddress && !typing" class="error--text">{{ $t('gamification.event.detail.invalidContractAddress.error') }}</span>
-      <span v-else-if="!isValidERC20Address && contractAddress && !typing" class="error--text">{{ $t('gamification.event.detail.invalidERC20ContractAddress.error') }}</span>
+      <span v-if="isInValidAddressFormat" class="error--text">{{ $t('gamification.event.detail.invalidContractAddress.error') }}</span>
+      <span v-else-if="isInvalidERC20Address" class="error--text">{{ $t('gamification.event.detail.invalidERC20ContractAddress.error') }}</span>
+      <span v-else-if="emptyERC20Token">{{ $t('gamification.event.detail.verifyToken.message') }}</span>
     </template>
   </div>
 </template>
@@ -134,6 +135,15 @@ export default {
     },
     networkVerificationMessage() {
       return this.$t('gamification.event.form.contractAddress.tooltip', { 0: this.selected?.name });
+    },
+    isInValidAddressFormat() {
+      return !this.typing && this.contractAddress && !this.isValidAddress;
+    },
+    isInvalidERC20Address() {
+      return !this.typing && this.contractAddress && !this.isValidERC20Address;
+    },
+    emptyERC20Token() {
+      return !this.typing && this.contractAddress && !this.erc20Token;
     }
   },
   created() {
