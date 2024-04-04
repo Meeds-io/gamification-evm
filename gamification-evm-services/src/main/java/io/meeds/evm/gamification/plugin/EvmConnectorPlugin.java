@@ -18,21 +18,26 @@
  */
 package io.meeds.evm.gamification.plugin;
 
-import io.meeds.evm.gamification.utils.Utils;
 import io.meeds.gamification.plugin.ConnectorPlugin;
-import io.meeds.gamification.service.ConnectorSettingService;
+import org.exoplatform.commons.api.settings.ExoFeatureService;
+
+import static io.meeds.evm.gamification.utils.Utils.CONNECTOR_NAME;
 
 public class EvmConnectorPlugin extends ConnectorPlugin {
 
-  private final ConnectorSettingService connectorSettingService;
+  private final ExoFeatureService featureService;
 
-  public EvmConnectorPlugin(ConnectorSettingService connectorSettingsService) {
-    this.connectorSettingService = connectorSettingsService;
+  public EvmConnectorPlugin(ExoFeatureService featureService) {
+    this.featureService = featureService;
   }
 
   @Override
   public String getConnectorName() {
-    return Utils.CONNECTOR_NAME;
+    return CONNECTOR_NAME;
   }
-    
+
+  @Override
+  public boolean enabled(String username) {
+    return featureService.isFeatureActiveForUser("EVMConnector", username);
+  }
 }
