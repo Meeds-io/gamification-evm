@@ -39,10 +39,14 @@ public class EvmEventPlugin extends EventPlugin{
   @Override
   public boolean isValidEvent(Map<String, String> eventProperties, String triggerDetails) {
     String desiredContractAddress = eventProperties.get(Utils.CONTRACT_ADDRESS);
+    String desiredTokenName = eventProperties.get(Utils.NAME);
+    String desiredTokenSymbol = eventProperties.get(Utils.SYMBOL);
     String desiredNetwork = eventProperties.get(Utils.BLOCKCHAIN_NETWORK);
     Map<String, String> triggerDetailsMop = Utils.stringToMap(triggerDetails);
     return (desiredContractAddress != null && desiredContractAddress.equals(triggerDetailsMop.get(Utils.CONTRACT_ADDRESS)))
-        && (desiredNetwork != null && desiredNetwork.equals(triggerDetailsMop.get((Utils.BLOCKCHAIN_NETWORK))));
+        && (desiredNetwork != null && desiredNetwork.equals(triggerDetailsMop.get((Utils.BLOCKCHAIN_NETWORK))))
+        && (desiredTokenName != null && desiredTokenName.equals(triggerDetailsMop.get((Utils.NAME))))
+        && (desiredTokenSymbol != null && desiredTokenSymbol.equals(triggerDetailsMop.get((Utils.SYMBOL))));
   }
 
 }

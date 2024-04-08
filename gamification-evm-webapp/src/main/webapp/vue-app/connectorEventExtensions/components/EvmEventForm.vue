@@ -77,21 +77,28 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           </v-tooltip>
         </template>
       </v-text-field>
-      <div v-else class="d-flex">
-        <v-text-field
-          ref="contractAddress"
-          v-model="contractAddress"
-          class="pa-0"
-          type="text"
-          outlined
-          required
-          dense
-          readonly />
+      <div v-else>
+        <div class="d-flex">
+          <v-text-field
+            ref="contractAddress"
+            v-model="contractAddress"
+            class="pa-0"
+            type="text"
+            outlined
+            required
+            dense
+            readonly />
+          <v-btn
+            icon
+            @click="resetERC20Token()">
+            <v-icon size="18" class="icon-default-color ms-auto">fa-edit</v-icon>
+          </v-btn>
+        </div>
         <v-chip
-          class="mx-2 mt-1"
+          class="mt-3"
           color="indigo darken-3"
           outlined>
-          <span class="font-weight-bold"> {{ tokenName }} ({{ tokenSymbol }}) </span>
+          <span class="font-weight-bold text-truncate"> {{ tokenName }} ({{ tokenSymbol }}) </span>
         </v-chip>
       </div>
       <span v-if="isInValidAddressFormat" class="error--text">{{ $t('gamification.event.detail.invalidContractAddress.error') }}</span>
@@ -150,10 +157,12 @@ export default {
     this.retrieveNetworks();
   },
   watch: {
-    selectedNetwork() {
+    selectedNetwork(newVal, oldVal) {
       this.selected = this.networks[this.selectedNetwork];
       this.handleAddress();
-      this.erc20Token = null;
+      if ( oldVal !== null && newVal !== oldVal) {
+        this.erc20Token = null;
+      }
     }
   },
   methods: {
@@ -177,10 +186,6 @@ export default {
       window.setTimeout(() => {
         if (Date.now() > this.startTypingKeywordTimeout) {
           this.typing = false;
-          this.eventProperties = {
-            contractAddress: this.contractAddress,
-            blockchainNetwork: this.selected?.providerUrl
-          };
           this.checkContractAddress(this.contractAddress);
           this.isValidERC20Address = true;
         } else {
@@ -195,9 +200,15 @@ export default {
     },
     retrieveERC20Token() {
       this.loading = true;
-      return this.$evmConnectorService.getTokenDetailsByAddress(this.eventProperties)
+      return this.$evmConnectorService.getTokenDetailsByAddress({contractAddress: this.contractAddress, blockchainNetwork: this.selected?.providerUrl})
         .then(token => {
           this.erc20Token = token;
+          this.eventProperties = {
+            contractAddress: this.contractAddress,
+            blockchainNetwork: this.selected?.providerUrl,
+            tokenName: token.name,
+            tokenSymbol: token.symbol
+          };
         })
         .then(() => this.loading = false )
         .catch(() => {
@@ -209,6 +220,9 @@ export default {
           this.submitEventProperties();
         });
     },
+    resetERC20Token() {
+      this.erc20Token = null;
+    },
     retrieveNetworks() {
       this.loadingNetworks = true;
       return this.$evmConnectorService.getNetworks()
@@ -219,6 +233,11 @@ export default {
             this.contractAddress = this.properties?.contractAddress;
             this.selected = this.networks.find(network => network.providerUrl === this.properties.blockchainNetwork);
             this.selectedNetwork = this.networks.indexOf(this.selected);
+            this.erc20Token = {
+              name: this.properties?.tokenName,
+              symbol: this.properties?.tokenSymbol
+            };
+            this.readOnly = true;
             this.isValidAddress = true;
           }
           document.dispatchEvent(new CustomEvent('event-form-unfilled'));
