@@ -114,7 +114,9 @@ public class EvmTriggerService {
         String eventDetails = "{" + Utils.WALLET_ADDRESS + ": " + evmTrigger.getWalletAddress() + ", "
                               + Utils.TRANSACTION_HASH + ": " + evmTrigger.getTransactionHash() +  ", "
                               + Utils.CONTRACT_ADDRESS + ": " + evmTrigger.getContractAddress() + ", "
-                              + Utils.BLOCKCHAIN_NETWORK + ": " + evmTrigger.getBlockchainNetwork() +  "}";
+                              + Utils.BLOCKCHAIN_NETWORK + ": " + evmTrigger.getBlockchainNetwork() + ", "
+                              + Utils.NAME + ": " + evmTrigger.getTokenName() + ", "
+                              + Utils.SYMBOL + ": " + evmTrigger.getTokenSymbol() + "}";
         broadcastEvmEvent(evmTrigger.getTrigger(),
                           receiverId,
                           evmTrigger.getTransactionHash(),
