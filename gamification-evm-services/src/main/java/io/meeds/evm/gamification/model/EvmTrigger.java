@@ -36,7 +36,11 @@ public class EvmTrigger {
 
   private String blockchainNetwork;
 
+  private String tokenName;
+
+  private String tokenSymbol;
+
   public EvmTrigger clone() {
-      return new EvmTrigger(trigger, walletAddress, contractAddress, type, transactionHash, blockchainNetwork);
+      return new EvmTrigger(trigger, walletAddress, contractAddress, type, transactionHash, blockchainNetwork, tokenName, tokenSymbol);
   }
 }
