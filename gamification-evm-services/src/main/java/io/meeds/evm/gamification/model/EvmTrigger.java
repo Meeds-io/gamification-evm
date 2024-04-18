@@ -19,6 +19,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigInteger;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -36,11 +38,11 @@ public class EvmTrigger {
 
   private String blockchainNetwork;
 
-  private String tokenName;
+  private String recipientAddress;
 
-  private String tokenSymbol;
+  private BigInteger amount;
 
   public EvmTrigger clone() {
-      return new EvmTrigger(trigger, walletAddress, contractAddress, type, transactionHash, blockchainNetwork, tokenName, tokenSymbol);
+      return new EvmTrigger(trigger, walletAddress, contractAddress, type, transactionHash, blockchainNetwork, recipientAddress, amount);
   }
 }

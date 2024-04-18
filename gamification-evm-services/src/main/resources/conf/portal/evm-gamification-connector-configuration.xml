@@ -25,7 +25,7 @@
   <external-component-plugins>
     <target-component>io.meeds.gamification.service.EventRegistry</target-component>
     <component-plugin>
-      <name>HoldToken</name>
+      <name>TransferToken</name>
       <set-method>addPlugin</set-method>
       <type>io.meeds.gamification.plugin.EventConfigPlugin</type>
       <init-params>
@@ -33,13 +33,13 @@
           <name>event</name>
           <object type="io.meeds.gamification.model.EventDTO">
             <field name="title">
-              <string>holdToken</string>
+              <string>transferToken</string>
             </field>
             <field name="type">
               <string>evm</string>
             </field>
             <field name="trigger">
-              <string>holdToken</string>
+              <string>transferToken</string>
             </field>
           </object>
         </object-param>
