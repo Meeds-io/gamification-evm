@@ -104,6 +104,32 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <span v-if="isInValidAddressFormat" class="error--text">{{ $t('gamification.event.detail.invalidContractAddress.error') }}</span>
       <span v-else-if="isInvalidERC20Address" class="error--text">{{ $t('gamification.event.detail.invalidERC20ContractAddress.error') }}</span>
       <span v-else-if="emptyERC20Token">{{ $t('gamification.event.detail.verifyToken.message') }}</span>
+      <div v-if="erc20Token">
+        <v-card-text class="px-0 dark-grey-color font-weight-bold">
+          {{ $t('gamification.event.form.recipientAddress') }}
+        </v-card-text>
+        <v-text-field
+          ref="recipientAddress"
+          v-model="recipientAddress"
+          :placeholder="$t('gamification.event.form.recipientAddress.placeholder')"
+          class="pa-0"
+          type="text"
+          outlined
+          dense
+          @change="selectedRecipient" />
+        <v-card-text class="px-0 dark-grey-color font-weight-bold">
+          {{ $t('gamification.event.form.minAmount') }}
+        </v-card-text>
+        <v-text-field
+          ref="minAmount"
+          v-model="minAmount"
+          :placeholder="$t('gamification.event.form.minAmount.placeholder')"
+          class="pa-0"
+          type="text"
+          outlined
+          dense
+          @change="selectedAmount" />
+      </div>
     </template>
   </div>
 </template>
@@ -203,21 +229,12 @@ export default {
       return this.$evmConnectorService.getTokenDetailsByAddress({contractAddress: this.contractAddress, blockchainNetwork: this.selected?.providerUrl})
         .then(token => {
           this.erc20Token = token;
-          this.eventProperties = {
-            contractAddress: this.contractAddress,
-            blockchainNetwork: this.selected?.providerUrl,
-            tokenName: token.name,
-            tokenSymbol: token.symbol
-          };
         })
         .then(() => this.loading = false )
         .catch(() => {
           this.isValidERC20Address = false;
           this.erc20Token = null;
           this.loading = false;
-        })
-        .finally(() => {
-          this.submitEventProperties();
         });
     },
     resetERC20Token() {
@@ -237,13 +254,61 @@ export default {
               name: this.properties?.tokenName,
               symbol: this.properties?.tokenSymbol
             };
+            this.minAmount = this.properties?.minAmount;
+            this.recipientAddress = this.properties?.recipientAddress;
             this.readOnly = true;
             this.isValidAddress = true;
           }
           document.dispatchEvent(new CustomEvent('event-form-unfilled'));
           this.loadingNetworks = false;
         });
+    },
+    selectedAmount(minAmount) {
+      if (this.recipientAddress) {
+        this.eventProperties = {
+          contractAddress: this.contractAddress,
+          blockchainNetwork: this.selected?.providerUrl,
+          tokenName: this.erc20Token.name,
+          tokenSymbol: this.erc20Token.symbol,
+          tokenDecimals: this.erc20Token.decimals,
+          recipientAddress: this.recipientAddress,
+          minAmount: minAmount
+        };
+      } else {
+        this.eventProperties = {
+          contractAddress: this.contractAddress,
+          blockchainNetwork: this.selected?.providerUrl,
+          tokenName: this.erc20Token.name,
+          tokenSymbol: this.erc20Token.symbol,
+          tokenDecimals: this.erc20Token.decimals,
+          minAmount: minAmount
+        };
+      }
+      document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
+    },
+    selectedRecipient(recipientAddress) {
+      if (this.minAmount) {
+        this.eventProperties = {
+          contractAddress: this.contractAddress,
+          blockchainNetwork: this.selected?.providerUrl,
+          tokenName: this.erc20Token.name,
+          tokenSymbol: this.erc20Token.symbol,
+          tokenDecimals: this.erc20Token.decimals,
+          recipientAddress: recipientAddress,
+          minAmount: this.minAmount
+        };
+      } else {
+        this.eventProperties = {
+          contractAddress: this.contractAddress,
+          blockchainNetwork: this.selected?.providerUrl,
+          tokenName: this.erc20Token.name,
+          tokenSymbol: this.erc20Token.symbol,
+          tokenDecimals: this.erc20Token.decimals,
+          recipientAddress: recipientAddress
+        };
+      }
+      document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
     }
-  },
+  }
 };
 </script>

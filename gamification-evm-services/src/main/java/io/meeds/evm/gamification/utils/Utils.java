@@ -22,7 +22,7 @@ public class Utils {
 
   public static final String CONNECTOR_NAME   = "evm";
 
-  public static final String HOLD_TOKEN_EVENT = "holdToken";
+  public static final String TRANSFER_TOKEN_EVENT = "transferToken";
 
   public static final String WALLET_ADDRESS   = "walletAddress";
 
@@ -33,6 +33,12 @@ public class Utils {
   public static final String NAME = "tokenName";
 
   public static final String SYMBOL = "tokenSymbol";
+
+  public static final String DECIMALS = "tokenDecimals";
+
+  public static final String MIN_AMOUNT = "minAmount";
+
+  public static final String RECIPIENT_ADDRESS = "recipientAddress";
 
   public static final String TRANSACTION_HASH = "transactionHash";
 
