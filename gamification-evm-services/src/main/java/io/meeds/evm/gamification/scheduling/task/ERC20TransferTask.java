@@ -15,8 +15,10 @@
  */
 package io.meeds.evm.gamification.scheduling.task;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.meeds.common.ContainerTransactional;
 import io.meeds.evm.gamification.model.TokenTransferEvent;
@@ -81,10 +83,14 @@ public class ERC20TransferTask {
                 .toList();
         if (CollectionUtils.isNotEmpty(filteredRules)) {
           filteredRules.forEach(rule -> {
+            BigInteger minAmount;
+            String recipientAddress;
+            BigInteger base = new BigInteger("10");
             String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
             String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
             String tokenName = rule.getEvent().getProperties().get(Utils.NAME);
             String tokenSymbol = rule.getEvent().getProperties().get(Utils.SYMBOL);
+            Integer tokenDecimals = Integer.parseInt(rule.getEvent().getProperties().get(Utils.DECIMALS));
             long lastBlock = blockchainService.getLastBlock(blockchainNetwork);
             long lastCheckedBlock = getLastCheckedBlock(contractAddress);
             if (lastCheckedBlock == 0) {
@@ -97,24 +103,36 @@ public class ERC20TransferTask {
                                                                                                 lastBlock,
                                                                                                 contractAddress,
                                                                                                 blockchainNetwork);
-          if (!CollectionUtils.isEmpty(events)) {
-            events.forEach(event -> {
-              try {
-                EvmTrigger evmTrigger = new EvmTrigger();
-                evmTrigger.setTrigger(Utils.HOLD_TOKEN_EVENT);
-                evmTrigger.setType(Utils.CONNECTOR_NAME);
-                evmTrigger.setWalletAddress(event.getTo());
-                evmTrigger.setTransactionHash(event.getTransactionHash());
-                evmTrigger.setContractAddress(contractAddress);
-                evmTrigger.setBlockchainNetwork(blockchainNetwork);
-                evmTrigger.setTokenName(tokenName);
-                evmTrigger.setTokenSymbol(tokenSymbol);
-                evmTriggerService.handleTriggerAsync(evmTrigger);
-              } catch (Exception e) {
-                LOG.warn("Error broadcasting event '" + event, e);
-              }
-            });
-          }
+            if(!CollectionUtils.isEmpty(events) && StringUtils.isNotBlank(rule.getEvent().getProperties().get(Utils.MIN_AMOUNT))) {
+              minAmount = base.pow(tokenDecimals).multiply(new BigInteger(rule.getEvent().getProperties().get(Utils.MIN_AMOUNT)));
+              events = events.stream()
+                             .filter(event -> event.getAmount().compareTo(minAmount) > 0)
+                             .collect(Collectors.toSet());
+            }
+            if(!CollectionUtils.isEmpty(events) && StringUtils.isNotBlank(rule.getEvent().getProperties().get(Utils.RECIPIENT_ADDRESS))) {
+              recipientAddress = rule.getEvent().getProperties().get(Utils.RECIPIENT_ADDRESS);
+              events = events.stream()
+                             .filter(event -> recipientAddress.toUpperCase().equals(event.getTo().toUpperCase()))
+                             .collect(Collectors.toSet());
+            }
+            if (!CollectionUtils.isEmpty(events)) {
+              events.forEach(event -> {
+                try {
+                  EvmTrigger evmTrigger = new EvmTrigger();
+                  evmTrigger.setTrigger(Utils.TRANSFER_TOKEN_EVENT);
+                  evmTrigger.setType(Utils.CONNECTOR_NAME);
+                  evmTrigger.setWalletAddress(event.getTo());
+                  evmTrigger.setTransactionHash(event.getTransactionHash());
+                  evmTrigger.setContractAddress(contractAddress);
+                  evmTrigger.setBlockchainNetwork(blockchainNetwork);
+                  evmTrigger.setTokenName(tokenName);
+                  evmTrigger.setTokenSymbol(tokenSymbol);
+                  evmTriggerService.handleTriggerAsync(evmTrigger);
+                } catch (Exception e) {
+                  LOG.warn("Error broadcasting event '" + event, e);
+                }
+              });
+            }
             saveLastCheckedBlock(lastBlock, contractAddress);
             LOG.info("End listening erc20 token transfers");
           });
