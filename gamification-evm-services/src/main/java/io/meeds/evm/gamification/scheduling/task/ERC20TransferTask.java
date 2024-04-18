@@ -15,8 +15,10 @@
  */
 package io.meeds.evm.gamification.scheduling.task;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.meeds.common.ContainerTransactional;
 import io.meeds.evm.gamification.model.TokenTransferEvent;
@@ -44,7 +46,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ERC20TransferTask {
-  private static final Logger LOG = LoggerFactory.getLogger(ERC20TransferTask.class);
+  private static final Logger  LOG                         = LoggerFactory.getLogger(ERC20TransferTask.class);
 
   private static final Scope   SETTING_SCOPE               = Scope.APPLICATION.id("GAMIFICATION_EVM");
 
@@ -53,81 +55,73 @@ public class ERC20TransferTask {
   private static final String  SETTING_LAST_TIME_CHECK_KEY = "transferredTokenTransactionsCheck";
 
   @Autowired
-  private SettingService    settingService;
+  private SettingService       settingService;
 
   @Autowired
-  private BlockchainService blockchainService;
+  private BlockchainService    blockchainService;
 
   @Autowired
-  private EvmTriggerService evmTriggerService;
+  private EvmTriggerService    evmTriggerService;
 
   @Autowired
-  private RuleService       ruleService;
+  private RuleService          ruleService;
 
   @ContainerTransactional
   @Scheduled(cron = "0 * * * * *")
   public synchronized void listenTokenTransfer() {
     LOG.info("Start listening erc20 token transfers");
     try {
-        RuleFilter ruleFilter = new RuleFilter(true);
-        ruleFilter.setEventType(Utils.CONNECTOR_NAME);
-        ruleFilter.setStatus(EntityStatusType.ENABLED);
-        ruleFilter.setProgramStatus(EntityStatusType.ENABLED);
-        ruleFilter.setDateFilterType(DateFilterType.STARTED);
-        List<RuleDTO> rules = ruleService.getRules(ruleFilter, 0, -1);
-        List<RuleDTO> filteredRules = rules.stream()
-                .filter(r -> !r.getEvent().getProperties().isEmpty()
-                        && StringUtils.isNotBlank(r.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS)))
-                .toList();
-        if (CollectionUtils.isNotEmpty(filteredRules)) {
-          filteredRules.forEach(rule -> {
-            String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
-            String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
-            String tokenName = rule.getEvent().getProperties().get(Utils.NAME);
-            String tokenSymbol = rule.getEvent().getProperties().get(Utils.SYMBOL);
-            long lastBlock = blockchainService.getLastBlock(blockchainNetwork);
-            long lastCheckedBlock = getLastCheckedBlock(contractAddress);
-            if (lastCheckedBlock == 0) {
-              // If this is the first time that it's started, save the last block as
-              // last checked one
-              saveLastCheckedBlock(lastBlock, contractAddress);
-              return;
-            }
-            Set<TokenTransferEvent> events = blockchainService.getTransferredTokensTransactions(lastCheckedBlock + 1,
-                                                                                                lastBlock,
-                                                                                                contractAddress,
-                                                                                                blockchainNetwork);
+
+      List<RuleDTO> filteredRules = getFilteredEVMRules();
+      if (CollectionUtils.isNotEmpty(filteredRules)) {
+        filteredRules.forEach(rule -> {
+          String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
+          String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
+          long lastBlock = blockchainService.getLastBlock(blockchainNetwork);
+          long lastCheckedBlock = getLastCheckedBlock(contractAddress, networkId);
+          if (lastCheckedBlock == 0) {
+            // If this is the first time that it's started, save the last block as
+            // last checked one
+            saveLastCheckedBlock(lastBlock, contractAddress, networkId);
+            return;
+          }
+          Set<TokenTransferEvent> events = blockchainService.getTransferredTokensTransactions(lastCheckedBlock + 1,
+                                                                                              lastBlock,
+                                                                                              contractAddress,
+                                                                                              blockchainNetwork);
           if (!CollectionUtils.isEmpty(events)) {
             events.forEach(event -> {
               try {
                 EvmTrigger evmTrigger = new EvmTrigger();
-                evmTrigger.setTrigger(Utils.HOLD_TOKEN_EVENT);
+                evmTrigger.setTrigger(Utils.TRANSFER_TOKEN_EVENT);
                 evmTrigger.setType(Utils.CONNECTOR_NAME);
-                evmTrigger.setWalletAddress(event.getTo());
+                evmTrigger.setWalletAddress(event.getFrom());
                 evmTrigger.setTransactionHash(event.getTransactionHash());
                 evmTrigger.setContractAddress(contractAddress);
                 evmTrigger.setBlockchainNetwork(blockchainNetwork);
-                evmTrigger.setTokenName(tokenName);
-                evmTrigger.setTokenSymbol(tokenSymbol);
+                evmTrigger.setRecipientAddress(event.getTo());
+                evmTrigger.setAmount(event.getAmount());
                 evmTriggerService.handleTriggerAsync(evmTrigger);
               } catch (Exception e) {
                 LOG.warn("Error broadcasting event '" + event, e);
               }
             });
           }
-            saveLastCheckedBlock(lastBlock, contractAddress);
-            LOG.info("End listening erc20 token transfers");
-          });
-        }
+          saveLastCheckedBlock(lastBlock, contractAddress, networkId);
+        });
+      }
+      LOG.info("End listening erc20 token transfers");
     } catch (Exception e) {
       LOG.error("An error occurred while listening erc20 token transfers", e);
     }
   }
 
   @ContainerTransactional
-  public long getLastCheckedBlock(String contractAddress) {
+  public long getLastCheckedBlock(String contractAddress, String networkId) {
     long lastCheckedBlock = 0;
-    SettingValue<?> settingValue = settingService.get(SETTING_CONTEXT, SETTING_SCOPE, SETTING_LAST_TIME_CHECK_KEY + contractAddress);
+    SettingValue<?> settingValue = settingService.get(SETTING_CONTEXT,
+                                                      SETTING_SCOPE,
+                                                      SETTING_LAST_TIME_CHECK_KEY + networkId + contractAddress);
     if (settingValue != null && settingValue.getValue() != null) {
       lastCheckedBlock = Long.parseLong(settingValue.getValue().toString());
     }
@@ -135,7 +129,23 @@ public class ERC20TransferTask {
   }
 
   @ContainerTransactional
-  public void saveLastCheckedBlock(long lastBlock, String contractAddress) {
-    settingService.set(SETTING_CONTEXT, SETTING_SCOPE, SETTING_LAST_TIME_CHECK_KEY + contractAddress, SettingValue.create(lastBlock));
+  public void saveLastCheckedBlock(long lastBlock, String contractAddress, String networkId) {
+    settingService.set(SETTING_CONTEXT,
+                       SETTING_SCOPE,
+                       SETTING_LAST_TIME_CHECK_KEY + networkId + contractAddress,
+                       SettingValue.create(lastBlock));
+  }
+
+  private List<RuleDTO> getFilteredEVMRules() {
+    RuleFilter ruleFilter = new RuleFilter(true);
+    ruleFilter.setEventType(Utils.CONNECTOR_NAME);
+    ruleFilter.setStatus(EntityStatusType.ENABLED);
+    ruleFilter.setProgramStatus(EntityStatusType.ENABLED);
+    ruleFilter.setDateFilterType(DateFilterType.STARTED);
+    List<RuleDTO> rules = ruleService.getRules(ruleFilter, 0, -1);
+    return rules.stream()
+                .filter(r -> !r.getEvent().getProperties().isEmpty()
+                    && StringUtils.isNotBlank(r.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS)))
+                .toList();
   }
 }
