@@ -20,11 +20,13 @@ package io.meeds.evm.gamification.plugin;
 
 import io.meeds.evm.gamification.utils.Utils;
 import io.meeds.gamification.plugin.EventPlugin;
+import org.apache.commons.lang3.StringUtils;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-public class EvmEventPlugin extends EventPlugin{
+public class EvmEventPlugin extends EventPlugin {
   public static final String EVENT_TYPE = "evm";
 
   @Override
@@ -33,20 +35,41 @@ public class EvmEventPlugin extends EventPlugin{
   }
 
   public List<String> getTriggers() {
-    return List.of(Utils.HOLD_TOKEN_EVENT);
+    return List.of(Utils.TRANSFER_TOKEN_EVENT);
   }
 
   @Override
   public boolean isValidEvent(Map<String, String> eventProperties, String triggerDetails) {
     String desiredContractAddress = eventProperties.get(Utils.CONTRACT_ADDRESS);
-    String desiredTokenName = eventProperties.get(Utils.NAME);
-    String desiredTokenSymbol = eventProperties.get(Utils.SYMBOL);
+    String desiredRecipientAddress = eventProperties.get(Utils.RECIPIENT_ADDRESS);
+    String minAmount = eventProperties.get(Utils.MIN_AMOUNT);
     String desiredNetwork = eventProperties.get(Utils.BLOCKCHAIN_NETWORK);
+    String tokenDecimals = eventProperties.get(Utils.DECIMALS);
     Map<String, String> triggerDetailsMop = Utils.stringToMap(triggerDetails);
-    return (desiredContractAddress != null && desiredContractAddress.equals(triggerDetailsMop.get(Utils.CONTRACT_ADDRESS)))
-        && (desiredNetwork != null && desiredNetwork.equals(triggerDetailsMop.get((Utils.BLOCKCHAIN_NETWORK))))
-        && (desiredTokenName != null && desiredTokenName.equals(triggerDetailsMop.get((Utils.NAME))))
-        && (desiredTokenSymbol != null && desiredTokenSymbol.equals(triggerDetailsMop.get((Utils.SYMBOL))));
+    if (!desiredNetwork.equals(triggerDetailsMop.get(Utils.BLOCKCHAIN_NETWORK))
+        || !desiredContractAddress.equals(triggerDetailsMop.get(Utils.CONTRACT_ADDRESS))) {
+      return false;
+    }
+    boolean isValidFilters = true;
+    if (StringUtils.isNotBlank(minAmount) && StringUtils.isNotBlank(tokenDecimals)) {
+      isValidFilters = isValidMinAmount(minAmount,
+                                        new BigInteger(triggerDetailsMop.get(Utils.MIN_AMOUNT)),
+                                        Integer.parseInt(tokenDecimals));
+    }
+    if (StringUtils.isNotBlank(desiredRecipientAddress)) {
+      isValidFilters = isValidFilters
+          && isValidRecipientAddress(desiredRecipientAddress, triggerDetailsMop.get(Utils.RECIPIENT_ADDRESS));
+    }
+    return isValidFilters;
   }
 
+  private boolean isValidMinAmount(String minAmount, BigInteger amountTransferred, Integer tokenDecimals) {
+    BigInteger base = new BigInteger("10");
+    BigInteger desiredMinAmount = base.pow(tokenDecimals).multiply(new BigInteger(minAmount));
+    return amountTransferred.compareTo(desiredMinAmount) >= 0;
+  }
+
+  private boolean isValidRecipientAddress(String desiredRecipientAddress, String recipientAddress) {
+    return desiredRecipientAddress.toUpperCase().equals(recipientAddress.toUpperCase());
+  }
 }

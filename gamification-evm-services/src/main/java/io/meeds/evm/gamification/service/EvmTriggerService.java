@@ -111,12 +111,10 @@ public class EvmTriggerService {
     if (StringUtils.isNotBlank(receiverId)) {
       Identity socialIdentity = identityManager.getOrCreateUserIdentity(receiverId);
       if (socialIdentity != null) {
-        String eventDetails = "{" + Utils.WALLET_ADDRESS + ": " + evmTrigger.getWalletAddress() + ", "
-                              + Utils.TRANSACTION_HASH + ": " + evmTrigger.getTransactionHash() +  ", "
-                              + Utils.CONTRACT_ADDRESS + ": " + evmTrigger.getContractAddress() + ", "
+        String eventDetails = "{" + Utils.CONTRACT_ADDRESS + ": " + evmTrigger.getContractAddress() + ", "
                               + Utils.BLOCKCHAIN_NETWORK + ": " + evmTrigger.getBlockchainNetwork() + ", "
-                              + Utils.NAME + ": " + evmTrigger.getTokenName() + ", "
-                              + Utils.SYMBOL + ": " + evmTrigger.getTokenSymbol() + "}";
+                              + Utils.RECIPIENT_ADDRESS + ": " + evmTrigger.getRecipientAddress() + ", "
+                              + Utils.MIN_AMOUNT + ": " + evmTrigger.getAmount() + "}";
         broadcastEvmEvent(evmTrigger.getTrigger(),
                           receiverId,
                           evmTrigger.getTransactionHash(),
