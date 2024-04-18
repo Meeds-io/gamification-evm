@@ -90,16 +90,29 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             readonly />
           <v-btn
             icon
+            class="ms-2"
             @click="resetERC20Token()">
-            <v-icon size="18" class="icon-default-color ms-auto">fa-edit</v-icon>
+            <v-icon size="18" class="icon-default-color mx-auto">fa-edit</v-icon>
           </v-btn>
         </div>
-        <v-chip
-          class="mt-3"
-          color="indigo darken-3"
-          outlined>
-          <span class="font-weight-bold text-truncate"> {{ tokenName }} ({{ tokenSymbol }}) </span>
-        </v-chip>
+        <v-tooltip
+          bottom>
+          <template #activator="{ on, attrs }">
+            <a
+              :href="explorerLink"
+              target="_blank"
+              class="text-color">
+              <v-chip
+                class="mt-3"
+                color="primary"
+                v-bind="attrs"
+                v-on="on">
+                <span class="mx-2 text-truncate"> {{ tokenName }} ({{ tokenSymbol }}) </span>
+              </v-chip>
+            </a>
+          </template>
+          <span>{{ $t('gamification.event.form.openExplorer') }}</span>
+        </v-tooltip>
       </div>
       <span v-if="isInValidAddressFormat" class="error--text">{{ $t('gamification.event.detail.invalidContractAddress.error') }}</span>
       <span v-else-if="isInvalidERC20Address" class="error--text">{{ $t('gamification.event.detail.invalidERC20ContractAddress.error') }}</span>
@@ -177,7 +190,17 @@ export default {
     },
     emptyERC20Token() {
       return !this.typing && this.contractAddress && !this.erc20Token;
-    }
+    },
+    explorerLink() {
+      const url = this.selected?.providerUrl.substring(this.selected.providerUrl.indexOf('//') + 2, this.selected.providerUrl.indexOf('.g.alchemy.com'));
+      switch (url) {
+      case 'polygon-mainnet': return `https://polygonscan.com/address/${this.contractAddress}`;
+      case 'polygon-mumbai': return `https://mumbai.polygonscan.com/address/${this.contractAddress}`;
+      case 'eth-mainnet': return `https://etherscan.io/address/${this.contractAddress}`;
+      case 'eth-sepolia': return `https://sepolia.etherscan.io/address/${this.contractAddress}`;
+      }
+      return '';
+    },
   },
   created() {
     this.retrieveNetworks();
