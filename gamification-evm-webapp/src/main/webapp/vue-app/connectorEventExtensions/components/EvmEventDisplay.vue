@@ -66,12 +66,17 @@ export default {
       return this.properties?.blockchainNetwork;
     },
     explorerLink() {
-      const url = this.blockchainNetwork?.substring(this.blockchainNetwork.indexOf('//') + 2, this.blockchainNetwork.indexOf('.g.alchemy.com'));
-      switch (url) {
-      case 'polygon-mainnet': return `https://polygonscan.com/address/${this.contractAddress}`;
-      case 'polygon-mumbai': return `https://mumbai.polygonscan.com/address/${this.contractAddress}`;
-      case 'eth-mainnet': return `https://etherscan.io/address/${this.contractAddress}`;
-      case 'eth-sepolia': return `https://sepolia.etherscan.io/address/${this.contractAddress}`;
+      const network = this.blockchainNetwork?.substring(this.blockchainNetwork.indexOf('//') + 2, this.blockchainNetwork.indexOf('.'));
+      if (network.includes('polygon')) {
+        if (network.includes('mainnet')) {
+          return `https://polygonscan.com/address/${this.contractAddress}`;
+        } else if (network.includes('mumbai')) {
+          return `https://mumbai.polygonscan.com/address/${this.contractAddress}`;
+        }
+      } else if (network.includes('mainnet')) {
+        return `https://etherscan.io/address/${this.contractAddress}`;
+      } else if (network.includes('sepolia')) {
+        return `https://sepolia.etherscan.io/address/${this.contractAddress}`;
       }
       return '';
     },

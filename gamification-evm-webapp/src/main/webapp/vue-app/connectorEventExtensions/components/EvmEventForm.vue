@@ -192,12 +192,17 @@ export default {
       return !this.typing && this.contractAddress && !this.erc20Token;
     },
     explorerLink() {
-      const url = this.selected?.providerUrl.substring(this.selected.providerUrl.indexOf('//') + 2, this.selected.providerUrl.indexOf('.g.alchemy.com'));
-      switch (url) {
-      case 'polygon-mainnet': return `https://polygonscan.com/address/${this.contractAddress}`;
-      case 'polygon-mumbai': return `https://mumbai.polygonscan.com/address/${this.contractAddress}`;
-      case 'eth-mainnet': return `https://etherscan.io/address/${this.contractAddress}`;
-      case 'eth-sepolia': return `https://sepolia.etherscan.io/address/${this.contractAddress}`;
+      const network = this.selected?.providerUrl.substring(this.selected.providerUrl.indexOf('//') + 2, this.selected.providerUrl.indexOf('.'));
+      if (network.includes('polygon')) {
+        if (network.includes('mainnet')) {
+          return `https://polygonscan.com/address/${this.contractAddress}`;
+        } else if (network.includes('mumbai')) {
+          return `https://mumbai.polygonscan.com/address/${this.contractAddress}`;
+        }
+      } else if (network.includes('mainnet')) {
+        return `https://etherscan.io/address/${this.contractAddress}`;
+      } else if (network.includes('sepolia')) {
+        return `https://sepolia.etherscan.io/address/${this.contractAddress}`;
       }
       return '';
     },
