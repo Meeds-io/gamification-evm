@@ -29,6 +29,18 @@
         {{ contractAddress }}
       </div>
     </a>
+    <div class="subtitle-1 font-weight-bold mb-2 mt-4">
+      {{ $t('gamification.event.form.recipientAddress') }}
+    </div>
+    <div class="text-font-size align-self-start">
+      {{ recipientAddress }}
+    </div>
+    <div class="subtitle-1 font-weight-bold mb-2 mt-4">
+      {{ $t('gamification.event.form.minAmount') }}
+    </div>
+    <div class="text-font-size align-self-start">
+      {{ minAmount }}
+    </div>
   </div>
 </template>
 <script>
@@ -50,8 +62,24 @@ export default {
     titleTriggerProps() {
       return this.$t(`gamification.event.detail.display.${this.trigger}`);
     },
+    blockchainNetwork() {
+      return this.properties?.blockchainNetwork;
+    },
     explorerLink() {
-      return `https://polygonscan.com/address/${this.contractAddress}`;
+      const url = this.blockchainNetwork?.substring(this.blockchainNetwork.indexOf('//') + 2, this.blockchainNetwork.indexOf('.g.alchemy.com'));
+      switch (url) {
+      case 'polygon-mainnet': return `https://polygonscan.com/address/${this.contractAddress}`;
+      case 'polygon-mumbai': return `https://mumbai.polygonscan.com/address/${this.contractAddress}`;
+      case 'eth-mainnet': return `https://etherscan.io/address/${this.contractAddress}`;
+      case 'eth-sepolia': return `https://sepolia.etherscan.io/address/${this.contractAddress}`;
+      }
+      return '';
+    },
+    minAmount() {
+      return this.properties?.minAmount;
+    },
+    recipientAddress() {
+      return this.properties?.recipientAddress;
     }
   },
 };

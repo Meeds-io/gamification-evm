@@ -33,7 +33,7 @@ public class EvmEventPlugin extends EventPlugin{
   }
 
   public List<String> getTriggers() {
-    return List.of(Utils.HOLD_TOKEN_EVENT);
+    return List.of(Utils.TRANSFER_TOKEN_EVENT);
   }
 
   @Override
