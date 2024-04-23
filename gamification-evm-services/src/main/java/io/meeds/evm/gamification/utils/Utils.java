@@ -30,17 +30,11 @@ public class Utils {
 
   public static final String BLOCKCHAIN_NETWORK = "blockchainNetwork";
 
-  public static final String NAME = "tokenName";
-
-  public static final String SYMBOL = "tokenSymbol";
-
   public static final String DECIMALS = "tokenDecimals";
 
   public static final String MIN_AMOUNT = "minAmount";
 
   public static final String RECIPIENT_ADDRESS = "recipientAddress";
-
-  public static final String TRANSACTION_HASH = "transactionHash";
 
   private Utils() {
 
