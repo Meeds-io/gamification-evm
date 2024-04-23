@@ -77,8 +77,6 @@ public class ERC20TransferTask {
         filteredRules.forEach(rule -> {
           String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
           String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
-          String tokenName = rule.getEvent().getProperties().get(Utils.NAME);
-          String tokenSymbol = rule.getEvent().getProperties().get(Utils.SYMBOL);
           long lastBlock = blockchainService.getLastBlock(blockchainNetwork);
           long lastCheckedBlock = getLastCheckedBlock(contractAddress);
           if (lastCheckedBlock == 0) {
@@ -91,7 +89,6 @@ public class ERC20TransferTask {
                                                                                               lastBlock,
                                                                                               contractAddress,
                                                                                               blockchainNetwork);
-          events = getFilteredTransferEvents(rule, events);
           if (!CollectionUtils.isEmpty(events)) {
             events.forEach(event -> {
               try {
@@ -102,8 +99,8 @@ public class ERC20TransferTask {
                 evmTrigger.setTransactionHash(event.getTransactionHash());
                 evmTrigger.setContractAddress(contractAddress);
                 evmTrigger.setBlockchainNetwork(blockchainNetwork);
-                evmTrigger.setTokenName(tokenName);
-                evmTrigger.setTokenSymbol(tokenSymbol);
+                evmTrigger.setRecipientAddress(event.getTo());
+                evmTrigger.setAmount(event.getAmount());
                 evmTriggerService.handleTriggerAsync(evmTrigger);
               } catch (Exception e) {
                 LOG.warn("Error broadcasting event '" + event, e);
@@ -150,27 +147,5 @@ public class ERC20TransferTask {
                 .filter(r -> !r.getEvent().getProperties().isEmpty()
                     && StringUtils.isNotBlank(r.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS)))
                 .toList();
-  }
-
-  private Set<TokenTransferEvent> getFilteredTransferEvents(RuleDTO rule, Set<TokenTransferEvent> events) {
-    BigInteger minAmount;
-    String recipientAddress;
-    Integer tokenDecimals;
-    BigInteger base = new BigInteger("10");
-    if (!CollectionUtils.isEmpty(events)
-        && StringUtils.isNotBlank(rule.getEvent().getProperties().get(Utils.MIN_AMOUNT))
-        && StringUtils.isNotBlank(rule.getEvent().getProperties().get(Utils.DECIMALS))) {
-      tokenDecimals = Integer.parseInt(rule.getEvent().getProperties().get(Utils.DECIMALS));
-      minAmount = base.pow(tokenDecimals).multiply(new BigInteger(rule.getEvent().getProperties().get(Utils.MIN_AMOUNT)));
-      events = events.stream().filter(event -> event.getAmount().compareTo(minAmount) > 0).collect(Collectors.toSet());
-    }
-    if (!CollectionUtils.isEmpty(events)
-        && StringUtils.isNotBlank(rule.getEvent().getProperties().get(Utils.RECIPIENT_ADDRESS))) {
-      recipientAddress = rule.getEvent().getProperties().get(Utils.RECIPIENT_ADDRESS);
-      events = events.stream()
-                     .filter(event -> recipientAddress.toUpperCase().equals(event.getTo().toUpperCase()))
-                     .collect(Collectors.toSet());
-    }
-    return events;
   }
 }

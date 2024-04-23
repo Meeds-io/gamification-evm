@@ -252,7 +252,8 @@ export default {
             this.selectedNetwork = this.networks.indexOf(this.selected);
             this.erc20Token = {
               name: this.properties?.tokenName,
-              symbol: this.properties?.tokenSymbol
+              symbol: this.properties?.tokenSymbol,
+              decimals: this.properties?.tokenDecimals
             };
             this.minAmount = this.properties?.minAmount;
             this.recipientAddress = this.properties?.recipientAddress;
