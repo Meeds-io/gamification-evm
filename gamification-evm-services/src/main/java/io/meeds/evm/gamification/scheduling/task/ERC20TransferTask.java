@@ -96,7 +96,7 @@ public class ERC20TransferTask {
                 EvmTrigger evmTrigger = new EvmTrigger();
                 evmTrigger.setTrigger(Utils.TRANSFER_TOKEN_EVENT);
                 evmTrigger.setType(Utils.CONNECTOR_NAME);
-                evmTrigger.setWalletAddress(event.getTo());
+                evmTrigger.setWalletAddress(event.getFrom());
                 evmTrigger.setTransactionHash(event.getTransactionHash());
                 evmTrigger.setContractAddress(contractAddress);
                 evmTrigger.setBlockchainNetwork(blockchainNetwork);
