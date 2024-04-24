@@ -27,7 +27,25 @@ export function init() {
       ].includes(actionLabel),
       getLink: realization => {
         if (realization.objectType === 'evm' && realization.objectId !== '') {
-          realization.link = `https://polygonscan.com/tx/${realization.objectId}`;
+          const transactionDetails = realization.objectId.split('#');
+          const networkId = parseInt(transactionDetails[0]);
+          const transactionHash = transactionDetails[1];
+          switch (networkId) {
+          case 1:
+            realization.link = `https://etherscan.io/tx/${transactionHash}`;
+            break;
+          case 137:
+            realization.link = `https://polygonscan.com/tx/${transactionHash}`;
+            break;
+          case 80002:
+            realization.link = `https://amoy.polygonscan.com/tx/${transactionHash}`;
+            break;
+          case 11155111:
+            realization.link = `https://sepolia.etherscan.io/tx/${transactionHash}`;
+            break;
+          default:
+            realization.link = '';
+          }
           return realization.link;
         }
       },

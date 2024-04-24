@@ -9,6 +9,11 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+import java.math.BigInteger;
+
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.http.HttpService;
+
 @Component
 public class NetworksService {
 
@@ -22,8 +27,10 @@ public class NetworksService {
   */
   public Set<BlockchainNetwork> getNetworks() throws IOException {
     Set<BlockchainNetwork> networks = new HashSet<>();
-    networks.add(new BlockchainNetwork("Polygon", blockchainProperties.getPolygonNetworkUrl()));
-    networks.add(new BlockchainNetwork("Mainnet", blockchainProperties.getNetworkUrl()));
+    networks.add(new BlockchainNetwork("Polygon", blockchainProperties.getPolygonNetworkUrl(),
+            new BigInteger(Web3j.build(new HttpService(blockchainProperties.getPolygonNetworkUrl())).netVersion().send().getNetVersion()).longValue()));
+    networks.add(new BlockchainNetwork("Mainnet", blockchainProperties.getNetworkUrl(),
+            new BigInteger(Web3j.build(new HttpService(blockchainProperties.getNetworkUrl())).netVersion().send().getNetVersion()).longValue()));
     return networks;
   }
 
