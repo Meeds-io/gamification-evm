@@ -77,6 +77,7 @@ public class ERC20TransferTask {
         filteredRules.forEach(rule -> {
           String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
           String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
+          String networkId = rule.getEvent().getProperties().get(Utils.NETWORK_ID);
           long lastBlock = blockchainService.getLastBlock(blockchainNetwork);
           long lastCheckedBlock = getLastCheckedBlock(contractAddress, networkId);
           if (lastCheckedBlock == 0) {
@@ -101,6 +102,7 @@ public class ERC20TransferTask {
                 evmTrigger.setBlockchainNetwork(blockchainNetwork);
                 evmTrigger.setRecipientAddress(event.getTo());
                 evmTrigger.setAmount(event.getAmount());
+                evmTrigger.setNetworkId(networkId);
                 evmTriggerService.handleTriggerAsync(evmTrigger);
               } catch (Exception e) {
                 LOG.warn("Error broadcasting event '" + event, e);
