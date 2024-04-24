@@ -38,11 +38,13 @@ public class EvmTrigger {
 
   private String blockchainNetwork;
 
+  private String networkId;
+
   private String recipientAddress;
 
   private BigInteger amount;
 
   public EvmTrigger clone() {
-      return new EvmTrigger(trigger, walletAddress, contractAddress, type, transactionHash, blockchainNetwork, recipientAddress, amount);
+      return new EvmTrigger(trigger, walletAddress, contractAddress, type, transactionHash, blockchainNetwork, networkId, recipientAddress, amount);
   }
 }

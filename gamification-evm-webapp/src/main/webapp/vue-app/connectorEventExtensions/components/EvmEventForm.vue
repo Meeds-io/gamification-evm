@@ -169,7 +169,8 @@ export default {
       networks: [],
       selectedNetwork: null,
       selected: null,
-      eventProperties: null
+      eventProperties: null,
+      networkId: null
     };
   },
   computed: {
@@ -192,19 +193,19 @@ export default {
       return !this.typing && this.contractAddress && !this.erc20Token;
     },
     explorerLink() {
-      const network = this.selected?.providerUrl.substring(this.selected.providerUrl.indexOf('//') + 2, this.selected.providerUrl.indexOf('.'));
-      if (network.includes('polygon')) {
-        if (network.includes('mainnet')) {
-          return `https://polygonscan.com/address/${this.contractAddress}`;
-        } else if (network.includes('mumbai')) {
-          return `https://mumbai.polygonscan.com/address/${this.contractAddress}`;
-        }
-      } else if (network.includes('mainnet')) {
+      const networkId = this.selected.networkId;
+      switch (networkId) {
+      case 1:
         return `https://etherscan.io/address/${this.contractAddress}`;
-      } else if (network.includes('sepolia')) {
+      case 137:
+        return `https://polygonscan.com/address/${this.contractAddress}`;
+      case 80002:
+        return `https://amoy.polygonscan.com/address/${this.contractAddress}`;
+      case 11155111:
         return `https://sepolia.etherscan.io/address/${this.contractAddress}`;
+      default:
+        return '';
       }
-      return '';
     },
   },
   created() {
@@ -213,6 +214,7 @@ export default {
   watch: {
     selectedNetwork(newVal, oldVal) {
       this.selected = this.networks[this.selectedNetwork];
+      this.networkId = this.selected.networkId;
       this.handleAddress();
       if ( oldVal !== null && newVal !== oldVal) {
         this.erc20Token = null;
@@ -277,6 +279,7 @@ export default {
           if (this.properties) {
             this.contractAddress = this.properties?.contractAddress;
             this.selected = this.networks.find(network => network.providerUrl === this.properties.blockchainNetwork);
+            this.networkId = this.selected.networkId;
             this.selectedNetwork = this.networks.indexOf(this.selected);
             this.erc20Token = {
               name: this.properties?.tokenName,
@@ -297,6 +300,7 @@ export default {
         this.eventProperties = {
           contractAddress: this.contractAddress,
           blockchainNetwork: this.selected?.providerUrl,
+          networkId: this.selected?.networkId,
           tokenName: this.erc20Token.name,
           tokenSymbol: this.erc20Token.symbol,
           tokenDecimals: this.erc20Token.decimals,
@@ -307,6 +311,7 @@ export default {
         this.eventProperties = {
           contractAddress: this.contractAddress,
           blockchainNetwork: this.selected?.providerUrl,
+          networkId: this.selected?.networkId,
           tokenName: this.erc20Token.name,
           tokenSymbol: this.erc20Token.symbol,
           tokenDecimals: this.erc20Token.decimals,
@@ -320,6 +325,7 @@ export default {
         this.eventProperties = {
           contractAddress: this.contractAddress,
           blockchainNetwork: this.selected?.providerUrl,
+          networkId: this.selected?.networkId,
           tokenName: this.erc20Token.name,
           tokenSymbol: this.erc20Token.symbol,
           tokenDecimals: this.erc20Token.decimals,
@@ -330,6 +336,7 @@ export default {
         this.eventProperties = {
           contractAddress: this.contractAddress,
           blockchainNetwork: this.selected?.providerUrl,
+          networkId: this.selected?.networkId,
           tokenName: this.erc20Token.name,
           tokenSymbol: this.erc20Token.symbol,
           tokenDecimals: this.erc20Token.decimals,

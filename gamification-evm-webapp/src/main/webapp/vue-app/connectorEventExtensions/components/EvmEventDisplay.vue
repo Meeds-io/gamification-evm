@@ -29,13 +29,13 @@
         {{ contractAddress }}
       </div>
     </a>
-    <div class="subtitle-1 font-weight-bold mb-2 mt-4">
+    <div v-if="recipientAddress" class="subtitle-1 font-weight-bold mb-2 mt-4">
       {{ $t('gamification.event.form.recipientAddress') }}
     </div>
     <div class="text-font-size align-self-start">
       {{ recipientAddress }}
     </div>
-    <div class="subtitle-1 font-weight-bold mb-2 mt-4">
+    <div v-if="minAmount" class="subtitle-1 font-weight-bold mb-2 mt-4">
       {{ $t('gamification.event.form.minAmount') }}
     </div>
     <div class="text-font-size align-self-start">
@@ -66,19 +66,19 @@ export default {
       return this.properties?.blockchainNetwork;
     },
     explorerLink() {
-      const network = this.blockchainNetwork?.substring(this.blockchainNetwork.indexOf('//') + 2, this.blockchainNetwork.indexOf('.'));
-      if (network.includes('polygon')) {
-        if (network.includes('mainnet')) {
-          return `https://polygonscan.com/address/${this.contractAddress}`;
-        } else if (network.includes('mumbai')) {
-          return `https://mumbai.polygonscan.com/address/${this.contractAddress}`;
-        }
-      } else if (network.includes('mainnet')) {
+      const networkId = parseInt(this.properties.networkId);
+      switch (networkId) {
+      case 1:
         return `https://etherscan.io/address/${this.contractAddress}`;
-      } else if (network.includes('sepolia')) {
+      case 137:
+        return `https://polygonscan.com/address/${this.contractAddress}`;
+      case 80002:
+        return `https://amoy.polygonscan.com/address/${this.contractAddress}`;
+      case 11155111:
         return `https://sepolia.etherscan.io/address/${this.contractAddress}`;
+      default:
+        return '';
       }
-      return '';
     },
     minAmount() {
       return this.properties?.minAmount;
