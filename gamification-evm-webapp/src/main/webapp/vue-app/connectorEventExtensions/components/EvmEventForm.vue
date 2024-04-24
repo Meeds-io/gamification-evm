@@ -90,16 +90,29 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             readonly />
           <v-btn
             icon
+            class="ms-2"
             @click="resetERC20Token()">
-            <v-icon size="18" class="icon-default-color ms-auto">fa-edit</v-icon>
+            <v-icon size="18" class="icon-default-color mx-auto">fa-edit</v-icon>
           </v-btn>
         </div>
-        <v-chip
-          class="mt-3"
-          color="indigo darken-3"
-          outlined>
-          <span class="font-weight-bold text-truncate"> {{ tokenName }} ({{ tokenSymbol }}) </span>
-        </v-chip>
+        <v-tooltip
+          bottom>
+          <template #activator="{ on, attrs }">
+            <a
+              :href="explorerLink"
+              target="_blank"
+              class="text-color">
+              <v-chip
+                class="mt-3"
+                color="primary"
+                v-bind="attrs"
+                v-on="on">
+                <span class="mx-2 text-truncate"> {{ tokenName }} ({{ tokenSymbol }}) </span>
+              </v-chip>
+            </a>
+          </template>
+          <span>{{ $t('gamification.event.form.openExplorer') }}</span>
+        </v-tooltip>
       </div>
       <span v-if="isInValidAddressFormat" class="error--text">{{ $t('gamification.event.detail.invalidContractAddress.error') }}</span>
       <span v-else-if="isInvalidERC20Address" class="error--text">{{ $t('gamification.event.detail.invalidERC20ContractAddress.error') }}</span>
@@ -156,7 +169,8 @@ export default {
       networks: [],
       selectedNetwork: null,
       selected: null,
-      eventProperties: null
+      eventProperties: null,
+      networkId: null
     };
   },
   computed: {
@@ -177,7 +191,22 @@ export default {
     },
     emptyERC20Token() {
       return !this.typing && this.contractAddress && !this.erc20Token;
-    }
+    },
+    explorerLink() {
+      const networkId = this.selected.networkId;
+      switch (networkId) {
+      case 1:
+        return `https://etherscan.io/address/${this.contractAddress}`;
+      case 137:
+        return `https://polygonscan.com/address/${this.contractAddress}`;
+      case 80002:
+        return `https://amoy.polygonscan.com/address/${this.contractAddress}`;
+      case 11155111:
+        return `https://sepolia.etherscan.io/address/${this.contractAddress}`;
+      default:
+        return '';
+      }
+    },
   },
   created() {
     this.retrieveNetworks();
@@ -185,6 +214,7 @@ export default {
   watch: {
     selectedNetwork(newVal, oldVal) {
       this.selected = this.networks[this.selectedNetwork];
+      this.networkId = this.selected.networkId;
       this.handleAddress();
       if ( oldVal !== null && newVal !== oldVal) {
         this.erc20Token = null;
@@ -249,6 +279,7 @@ export default {
           if (this.properties) {
             this.contractAddress = this.properties?.contractAddress;
             this.selected = this.networks.find(network => network.providerUrl === this.properties.blockchainNetwork);
+            this.networkId = this.selected.networkId;
             this.selectedNetwork = this.networks.indexOf(this.selected);
             this.erc20Token = {
               name: this.properties?.tokenName,
@@ -269,6 +300,7 @@ export default {
         this.eventProperties = {
           contractAddress: this.contractAddress,
           blockchainNetwork: this.selected?.providerUrl,
+          networkId: this.selected?.networkId,
           tokenName: this.erc20Token.name,
           tokenSymbol: this.erc20Token.symbol,
           tokenDecimals: this.erc20Token.decimals,
@@ -279,6 +311,7 @@ export default {
         this.eventProperties = {
           contractAddress: this.contractAddress,
           blockchainNetwork: this.selected?.providerUrl,
+          networkId: this.selected?.networkId,
           tokenName: this.erc20Token.name,
           tokenSymbol: this.erc20Token.symbol,
           tokenDecimals: this.erc20Token.decimals,
@@ -292,6 +325,7 @@ export default {
         this.eventProperties = {
           contractAddress: this.contractAddress,
           blockchainNetwork: this.selected?.providerUrl,
+          networkId: this.selected?.networkId,
           tokenName: this.erc20Token.name,
           tokenSymbol: this.erc20Token.symbol,
           tokenDecimals: this.erc20Token.decimals,
@@ -302,6 +336,7 @@ export default {
         this.eventProperties = {
           contractAddress: this.contractAddress,
           blockchainNetwork: this.selected?.providerUrl,
+          networkId: this.selected?.networkId,
           tokenName: this.erc20Token.name,
           tokenSymbol: this.erc20Token.symbol,
           tokenDecimals: this.erc20Token.decimals,
