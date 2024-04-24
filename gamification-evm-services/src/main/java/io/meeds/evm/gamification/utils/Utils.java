@@ -30,6 +30,8 @@ public class Utils {
 
   public static final String BLOCKCHAIN_NETWORK = "blockchainNetwork";
 
+  public static final String NETWORK_ID = "networkId";
+
   public static final String DECIMALS = "tokenDecimals";
 
   public static final String MIN_AMOUNT = "minAmount";
