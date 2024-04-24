@@ -24,8 +24,11 @@
     <a
       :href="explorerLink"
       target="_blank"
-      class="text-color">
-      <div class="text-font-size align-self-start">
+      class="text-color d-flex flex-row">
+      <v-avatar size="24" class="border-color">
+        <v-img :src="networkImageUrl" />
+      </v-avatar>
+      <div class="text-font-size my-auto ms-2 text-truncate">
         {{ contractAddress }}
       </div>
     </a>
@@ -65,9 +68,11 @@ export default {
     blockchainNetwork() {
       return this.properties?.blockchainNetwork;
     },
+    networkId() {
+      return parseInt(this.properties?.networkId);
+    },
     explorerLink() {
-      const networkId = parseInt(this.properties.networkId);
-      switch (networkId) {
+      switch (this.networkId) {
       case 1:
         return `https://etherscan.io/address/${this.contractAddress}`;
       case 137:
@@ -85,6 +90,13 @@ export default {
     },
     recipientAddress() {
       return this.properties?.recipientAddress;
+    },
+    networkImageUrl() {
+      if (this.networkId === 137 || this.networkId === 80002) {
+        return '/gamification-evm/images/polygon.png';
+      } else {
+        return '/gamification-evm/images/EVM.png';
+      }
     }
   },
 };
