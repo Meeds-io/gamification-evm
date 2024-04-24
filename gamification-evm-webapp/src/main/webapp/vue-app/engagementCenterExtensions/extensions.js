@@ -27,8 +27,9 @@ export function init() {
       ].includes(actionLabel),
       getLink: realization => {
         if (realization.objectType === 'evm' && realization.objectId !== '') {
-          const networkId = parseInt(realization.objectId.substring(0, realization.objectId.indexOf('0x')));
-          const transactionHash = realization.objectId.substring(realization.objectId.indexOf('0x'));
+          const transactionDetails = realization.objectId.split('#');
+          const networkId = parseInt(transactionDetails[0]);
+          const transactionHash = transactionDetails[1];
           switch (networkId) {
           case 1:
             realization.link = `https://etherscan.io/tx/${transactionHash}`;

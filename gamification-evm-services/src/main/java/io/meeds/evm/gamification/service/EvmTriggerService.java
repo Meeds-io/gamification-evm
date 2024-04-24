@@ -117,7 +117,7 @@ public class EvmTriggerService {
                               + Utils.MIN_AMOUNT + ": " + evmTrigger.getAmount() + "}";
         broadcastEvmEvent(evmTrigger.getTrigger(),
                           receiverId,
-                          evmTrigger.getNetworkId() + evmTrigger.getTransactionHash(),
+                          evmTrigger.getNetworkId() + "#" + evmTrigger.getTransactionHash(),
                           evmTrigger.getType(),
                           eventDetails);
       }
