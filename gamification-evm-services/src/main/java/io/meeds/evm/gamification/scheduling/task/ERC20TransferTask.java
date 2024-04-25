@@ -79,11 +79,11 @@ public class ERC20TransferTask {
           String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
           String networkId = rule.getEvent().getProperties().get(Utils.NETWORK_ID);
           long lastBlock = blockchainService.getLastBlock(blockchainNetwork);
-          long lastCheckedBlock = getLastCheckedBlock(contractAddress);
+          long lastCheckedBlock = getLastCheckedBlock(contractAddress, networkId);
           if (lastCheckedBlock == 0) {
             // If this is the first time that it's started, save the last block as
             // last checked one
-            saveLastCheckedBlock(lastBlock, contractAddress);
+            saveLastCheckedBlock(lastBlock, contractAddress, networkId);
             return;
           }
           Set<TokenTransferEvent> events = blockchainService.getTransferredTokensTransactions(lastCheckedBlock + 1,
@@ -109,21 +109,21 @@ public class ERC20TransferTask {
               }
             });
           }
-          saveLastCheckedBlock(lastBlock, contractAddress);
-          LOG.info("End listening erc20 token transfers");
+          saveLastCheckedBlock(lastBlock, contractAddress, networkId);
         });
       }
+      LOG.info("End listening erc20 token transfers");
     } catch (Exception e) {
       LOG.error("An error occurred while listening erc20 token transfers", e);
     }
   }
 
   @ContainerTransactional
-  public long getLastCheckedBlock(String contractAddress) {
+  public long getLastCheckedBlock(String contractAddress, String networkId) {
     long lastCheckedBlock = 0;
     SettingValue<?> settingValue = settingService.get(SETTING_CONTEXT,
                                                       SETTING_SCOPE,
-                                                      SETTING_LAST_TIME_CHECK_KEY + contractAddress);
+                                                      SETTING_LAST_TIME_CHECK_KEY + networkId + contractAddress);
     if (settingValue != null && settingValue.getValue() != null) {
       lastCheckedBlock = Long.parseLong(settingValue.getValue().toString());
     }
@@ -131,10 +131,10 @@ public class ERC20TransferTask {
   }
 
   @ContainerTransactional
-  public void saveLastCheckedBlock(long lastBlock, String contractAddress) {
+  public void saveLastCheckedBlock(long lastBlock, String contractAddress, String networkId) {
     settingService.set(SETTING_CONTEXT,
                        SETTING_SCOPE,
-                       SETTING_LAST_TIME_CHECK_KEY + contractAddress,
+                       SETTING_LAST_TIME_CHECK_KEY + networkId + contractAddress,
                        SettingValue.create(lastBlock));
   }
 

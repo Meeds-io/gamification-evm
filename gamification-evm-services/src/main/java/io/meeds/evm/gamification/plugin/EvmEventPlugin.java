@@ -46,21 +46,21 @@ public class EvmEventPlugin extends EventPlugin {
     String desiredNetwork = eventProperties.get(Utils.BLOCKCHAIN_NETWORK);
     String tokenDecimals = eventProperties.get(Utils.DECIMALS);
     Map<String, String> triggerDetailsMop = Utils.stringToMap(triggerDetails);
-    if (desiredContractAddress != null && desiredNetwork != null && minAmount != null && StringUtils.isNotBlank(tokenDecimals)
-        && desiredRecipientAddress != null) {
-      return isValidMinAmount(minAmount, new BigInteger(triggerDetailsMop.get(Utils.MIN_AMOUNT)), Integer.parseInt(tokenDecimals))
-          && isValidRecipientAddress(desiredRecipientAddress, triggerDetailsMop.get(Utils.RECIPIENT_ADDRESS));
-    } else if (desiredContractAddress != null && desiredNetwork != null && minAmount != null
-        && StringUtils.isNotBlank(tokenDecimals)) {
-      return isValidMinAmount(minAmount,
-                              new BigInteger(triggerDetailsMop.get(Utils.MIN_AMOUNT)),
-                              Integer.parseInt(tokenDecimals));
-    } else if (desiredContractAddress != null && desiredNetwork != null && desiredRecipientAddress != null) {
-      return isValidRecipientAddress(desiredRecipientAddress, triggerDetailsMop.get(Utils.RECIPIENT_ADDRESS));
-    } else {
-      return desiredContractAddress.equals(triggerDetailsMop.get(Utils.CONTRACT_ADDRESS))
-          && desiredNetwork.equals(triggerDetailsMop.get(Utils.BLOCKCHAIN_NETWORK));
+    if (!desiredNetwork.equals(triggerDetailsMop.get(Utils.BLOCKCHAIN_NETWORK))
+        || !desiredContractAddress.equals(triggerDetailsMop.get(Utils.CONTRACT_ADDRESS))) {
+      return false;
     }
+    boolean isValidFilters = true;
+    if (StringUtils.isNotBlank(minAmount) && StringUtils.isNotBlank(tokenDecimals)) {
+      isValidFilters = isValidMinAmount(minAmount,
+                                        new BigInteger(triggerDetailsMop.get(Utils.MIN_AMOUNT)),
+                                        Integer.parseInt(tokenDecimals));
+    }
+    if (StringUtils.isNotBlank(desiredRecipientAddress)) {
+      isValidFilters = isValidFilters
+          && isValidRecipientAddress(desiredRecipientAddress, triggerDetailsMop.get(Utils.RECIPIENT_ADDRESS));
+    }
+    return isValidFilters;
   }
 
   private boolean isValidMinAmount(String minAmount, BigInteger amountTransferred, Integer tokenDecimals) {
