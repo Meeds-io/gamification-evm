@@ -196,13 +196,13 @@ export default {
       const networkId = this.selected.networkId;
       switch (networkId) {
       case 1:
-        return `https://etherscan.io/address/${this.contractAddress}`;
+        return `https://etherscan.io/token/${this.contractAddress}`;
       case 137:
-        return `https://polygonscan.com/address/${this.contractAddress}`;
+        return `https://polygonscan.com/token/${this.contractAddress}`;
       case 80002:
-        return `https://amoy.polygonscan.com/address/${this.contractAddress}`;
+        return `https://amoy.polygonscan.com/token/${this.contractAddress}`;
       case 11155111:
-        return `https://sepolia.etherscan.io/address/${this.contractAddress}`;
+        return `https://sepolia.etherscan.io/token/${this.contractAddress}`;
       default:
         return '';
       }
