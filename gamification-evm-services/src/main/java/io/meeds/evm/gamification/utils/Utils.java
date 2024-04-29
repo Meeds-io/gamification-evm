@@ -22,7 +22,7 @@ public class Utils {
 
   public static final String CONNECTOR_NAME   = "evm";
 
-  public static final String TRANSFER_TOKEN_EVENT = "transferToken";
+  public static final String SEND_TOKEN_EVENT = "sendToken";
 
   public static final String WALLET_ADDRESS   = "walletAddress";
 
