@@ -94,7 +94,7 @@ public class ERC20TransferTask {
             events.forEach(event -> {
               try {
                 EvmTrigger evmTrigger = new EvmTrigger();
-                evmTrigger.setTrigger(Utils.TRANSFER_TOKEN_EVENT);
+                evmTrigger.setTrigger(Utils.SEND_TOKEN_EVENT);
                 evmTrigger.setType(Utils.CONNECTOR_NAME);
                 evmTrigger.setWalletAddress(event.getFrom());
                 evmTrigger.setTransactionHash(event.getTransactionHash());
