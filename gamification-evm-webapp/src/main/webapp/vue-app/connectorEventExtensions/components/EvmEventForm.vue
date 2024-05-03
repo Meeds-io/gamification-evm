@@ -119,17 +119,17 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <span v-else-if="emptyERC20Token">{{ $t('gamification.event.detail.verifyToken.message') }}</span>
       <div v-if="erc20Token">
         <v-card-text class="px-0 dark-grey-color font-weight-bold">
-          {{ $t('gamification.event.form.recipientAddress') }}
+          {{ addressLabel }}
         </v-card-text>
         <v-text-field
-          ref="recipientAddress"
-          v-model="recipientAddress"
-          :placeholder="$t('gamification.event.form.recipientAddress.placeholder')"
+          ref="targetAddress"
+          v-model="targetAddress"
+          :placeholder="addressPlaceholder"
           class="pa-0"
           type="text"
           outlined
           dense
-          @change="selectedRecipient" />
+          @change="selectedTargetAddress" />
         <v-card-text class="px-0 dark-grey-color font-weight-bold">
           {{ $t('gamification.event.form.minAmount') }}
         </v-card-text>
@@ -151,6 +151,10 @@ export default {
   props: {
     properties: {
       type: Object,
+      default: null
+    },
+    trigger: {
+      type: String,
       default: null
     }
   },
@@ -207,6 +211,12 @@ export default {
         return '';
       }
     },
+    addressLabel() {
+      return this.trigger === 'sendToken' ? this.$t('gamification.event.form.recipientAddress') : this.$t('gamification.event.form.senderAddress');
+    },
+    addressPlaceholder() {
+      return this.trigger === 'sendToken' ? this.$t('gamification.event.form.recipientAddress.placeholder') : this.$t('gamification.event.form.senderAddress.placeholder');
+    }
   },
   created() {
     this.retrieveNetworks();
@@ -287,7 +297,7 @@ export default {
               decimals: this.properties?.tokenDecimals
             };
             this.minAmount = this.properties?.minAmount;
-            this.recipientAddress = this.properties?.recipientAddress;
+            this.targetAddress = this.properties?.targetAddress;
             this.readOnly = true;
             this.isValidAddress = true;
           }
@@ -296,7 +306,7 @@ export default {
         });
     },
     selectedAmount(minAmount) {
-      if (this.recipientAddress) {
+      if (this.targetAddress) {
         this.eventProperties = {
           contractAddress: this.contractAddress,
           blockchainNetwork: this.selected?.providerUrl,
@@ -304,7 +314,7 @@ export default {
           tokenName: this.erc20Token.name,
           tokenSymbol: this.erc20Token.symbol,
           tokenDecimals: this.erc20Token.decimals,
-          recipientAddress: this.recipientAddress,
+          targetAddress: this.targetAddress,
           minAmount: minAmount
         };
       } else {
@@ -320,7 +330,7 @@ export default {
       }
       document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
     },
-    selectedRecipient(recipientAddress) {
+    selectedTargetAddress(targetAddress) {
       if (this.minAmount) {
         this.eventProperties = {
           contractAddress: this.contractAddress,
@@ -329,7 +339,7 @@ export default {
           tokenName: this.erc20Token.name,
           tokenSymbol: this.erc20Token.symbol,
           tokenDecimals: this.erc20Token.decimals,
-          recipientAddress: recipientAddress,
+          targetAddress: targetAddress,
           minAmount: this.minAmount
         };
       } else {
@@ -340,7 +350,7 @@ export default {
           tokenName: this.erc20Token.name,
           tokenSymbol: this.erc20Token.symbol,
           tokenDecimals: this.erc20Token.decimals,
-          recipientAddress: recipientAddress
+          targetAddress: targetAddress
         };
       }
       document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
