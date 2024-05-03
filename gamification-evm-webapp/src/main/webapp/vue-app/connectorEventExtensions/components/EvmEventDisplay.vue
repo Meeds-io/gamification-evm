@@ -19,7 +19,7 @@
 <template>
   <div>
     <div class="subtitle-1 font-weight-bold mb-2">
-      {{ titleTriggerProps }}
+      {{ $t('gamification.event.detail.display.contractAddress') }}
     </div>
     <a
       :href="explorerLink"
@@ -32,11 +32,11 @@
         {{ contractAddress }}
       </div>
     </a>
-    <div v-if="recipientAddress" class="subtitle-1 font-weight-bold mb-2 mt-4">
-      {{ $t('gamification.event.form.recipientAddress') }}
+    <div v-if="targetAddress" class="subtitle-1 font-weight-bold mb-2 mt-4">
+      {{ addressLabel }}
     </div>
     <div class="text-font-size align-self-start">
-      {{ recipientAddress }}
+      {{ targetAddress }}
     </div>
     <div v-if="minAmount" class="subtitle-1 font-weight-bold mb-2 mt-4">
       {{ $t('gamification.event.form.minAmount') }}
@@ -62,9 +62,6 @@ export default {
     contractAddress() {
       return this.properties?.contractAddress;
     },
-    titleTriggerProps() {
-      return this.$t(`gamification.event.detail.display.${this.trigger}`);
-    },
     blockchainNetwork() {
       return this.properties?.blockchainNetwork;
     },
@@ -88,8 +85,8 @@ export default {
     minAmount() {
       return this.properties?.minAmount;
     },
-    recipientAddress() {
-      return this.properties?.recipientAddress;
+    targetAddress() {
+      return this.properties?.targetAddress;
     },
     networkImageUrl() {
       if (this.networkId === 137 || this.networkId === 80002) {
@@ -97,7 +94,10 @@ export default {
       } else {
         return '/gamification-evm/images/EVM.png';
       }
-    }
+    },
+    addressLabel() {
+      return this.trigger === 'sendToken' ? this.$t('gamification.event.form.recipientAddress') : this.$t('gamification.event.form.senderAddress');
+    },
   },
 };
 </script>
