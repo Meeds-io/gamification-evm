@@ -113,7 +113,7 @@ public class EvmTriggerService {
       if (socialIdentity != null) {
         String eventDetails = "{" + Utils.CONTRACT_ADDRESS + ": " + evmTrigger.getContractAddress() + ", "
                               + Utils.BLOCKCHAIN_NETWORK + ": " + evmTrigger.getBlockchainNetwork() + ", "
-                              + Utils.RECIPIENT_ADDRESS + ": " + evmTrigger.getRecipientAddress() + ", "
+                              + Utils.TARGET_ADDRESS + ": " + evmTrigger.getTargetAddress() + ", "
                               + Utils.MIN_AMOUNT + ": " + evmTrigger.getAmount() + "}";
         broadcastEvmEvent(evmTrigger.getTrigger(),
                           receiverId,
