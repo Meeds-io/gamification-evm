@@ -35,13 +35,13 @@ public class EvmEventPlugin extends EventPlugin {
   }
 
   public List<String> getTriggers() {
-    return List.of(Utils.SEND_TOKEN_EVENT);
+    return List.of(Utils.SEND_TOKEN_EVENT, Utils.RECEIVE_TOKEN_EVENT);
   }
 
   @Override
   public boolean isValidEvent(Map<String, String> eventProperties, String triggerDetails) {
     String desiredContractAddress = eventProperties.get(Utils.CONTRACT_ADDRESS);
-    String desiredRecipientAddress = eventProperties.get(Utils.RECIPIENT_ADDRESS);
+    String desiredTargetAddress = eventProperties.get(Utils.TARGET_ADDRESS);
     String minAmount = eventProperties.get(Utils.MIN_AMOUNT);
     String desiredNetwork = eventProperties.get(Utils.BLOCKCHAIN_NETWORK);
     String tokenDecimals = eventProperties.get(Utils.DECIMALS);
@@ -56,9 +56,9 @@ public class EvmEventPlugin extends EventPlugin {
                                         new BigInteger(triggerDetailsMop.get(Utils.MIN_AMOUNT)),
                                         Integer.parseInt(tokenDecimals));
     }
-    if (StringUtils.isNotBlank(desiredRecipientAddress)) {
+    if (StringUtils.isNotBlank(desiredTargetAddress)) {
       isValidFilters = isValidFilters
-          && isValidRecipientAddress(desiredRecipientAddress, triggerDetailsMop.get(Utils.RECIPIENT_ADDRESS));
+          && isValidTargetAddress(desiredTargetAddress, triggerDetailsMop.get(Utils.TARGET_ADDRESS));
     }
     return isValidFilters;
   }
@@ -69,7 +69,7 @@ public class EvmEventPlugin extends EventPlugin {
     return amountTransferred.compareTo(desiredMinAmount) >= 0;
   }
 
-  private boolean isValidRecipientAddress(String desiredRecipientAddress, String recipientAddress) {
-    return desiredRecipientAddress.toUpperCase().equals(recipientAddress.toUpperCase());
+  private boolean isValidTargetAddress(String desiredTargetAddress, String targetAddress) {
+    return desiredTargetAddress.toUpperCase().equals(targetAddress.toUpperCase());
   }
 }

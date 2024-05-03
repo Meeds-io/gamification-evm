@@ -75,15 +75,16 @@ public class ERC20TransferTask {
       List<RuleDTO> filteredRules = getFilteredEVMRules();
       if (CollectionUtils.isNotEmpty(filteredRules)) {
         filteredRules.forEach(rule -> {
+          String trigger = rule.getEvent().getTrigger();
           String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
           String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
           String networkId = rule.getEvent().getProperties().get(Utils.NETWORK_ID);
           long lastBlock = blockchainService.getLastBlock(blockchainNetwork);
-          long lastCheckedBlock = getLastCheckedBlock(contractAddress, networkId);
+          long lastCheckedBlock = getLastCheckedBlock(contractAddress, networkId, trigger);
           if (lastCheckedBlock == 0) {
             // If this is the first time that it's started, save the last block as
             // last checked one
-            saveLastCheckedBlock(lastBlock, contractAddress, networkId);
+            saveLastCheckedBlock(lastBlock, contractAddress, networkId, trigger);
             return;
           }
           Set<TokenTransferEvent> events = blockchainService.getTransferredTokensTransactions(lastCheckedBlock + 1,
@@ -94,22 +95,27 @@ public class ERC20TransferTask {
             events.forEach(event -> {
               try {
                 EvmTrigger evmTrigger = new EvmTrigger();
-                evmTrigger.setTrigger(Utils.SEND_TOKEN_EVENT);
+                evmTrigger.setTrigger(trigger);
                 evmTrigger.setType(Utils.CONNECTOR_NAME);
-                evmTrigger.setWalletAddress(event.getFrom());
                 evmTrigger.setTransactionHash(event.getTransactionHash());
                 evmTrigger.setContractAddress(contractAddress);
                 evmTrigger.setBlockchainNetwork(blockchainNetwork);
-                evmTrigger.setRecipientAddress(event.getTo());
                 evmTrigger.setAmount(event.getAmount());
                 evmTrigger.setNetworkId(networkId);
+                if (trigger.equals(Utils.SEND_TOKEN_EVENT)) {
+                  evmTrigger.setWalletAddress(event.getFrom());
+                  evmTrigger.setTargetAddress(event.getTo());
+                } else {
+                  evmTrigger.setWalletAddress(event.getTo());
+                  evmTrigger.setTargetAddress(event.getFrom());
+                }
                 evmTriggerService.handleTriggerAsync(evmTrigger);
               } catch (Exception e) {
                 LOG.warn("Error broadcasting event '" + event, e);
               }
             });
           }
-          saveLastCheckedBlock(lastBlock, contractAddress, networkId);
+          saveLastCheckedBlock(lastBlock, contractAddress, networkId, trigger);
         });
       }
       LOG.info("End listening erc20 token transfers");
@@ -119,11 +125,11 @@ public class ERC20TransferTask {
   }
 
   @ContainerTransactional
-  public long getLastCheckedBlock(String contractAddress, String networkId) {
+  public long getLastCheckedBlock(String contractAddress, String networkId, String trigger) {
     long lastCheckedBlock = 0;
     SettingValue<?> settingValue = settingService.get(SETTING_CONTEXT,
                                                       SETTING_SCOPE,
-                                                      SETTING_LAST_TIME_CHECK_KEY + networkId + contractAddress);
+                                                      SETTING_LAST_TIME_CHECK_KEY + trigger + "#" + networkId + "#" + contractAddress);
     if (settingValue != null && settingValue.getValue() != null) {
       lastCheckedBlock = Long.parseLong(settingValue.getValue().toString());
     }
@@ -131,10 +137,10 @@ public class ERC20TransferTask {
   }
 
   @ContainerTransactional
-  public void saveLastCheckedBlock(long lastBlock, String contractAddress, String networkId) {
+  public void saveLastCheckedBlock(long lastBlock, String contractAddress, String networkId, String trigger) {
     settingService.set(SETTING_CONTEXT,
                        SETTING_SCOPE,
-                       SETTING_LAST_TIME_CHECK_KEY + networkId + contractAddress,
+                       SETTING_LAST_TIME_CHECK_KEY + trigger + "#" + networkId + "#" + contractAddress,
                        SettingValue.create(lastBlock));
   }
 

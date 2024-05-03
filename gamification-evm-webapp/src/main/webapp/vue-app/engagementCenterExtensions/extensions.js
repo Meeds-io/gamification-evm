@@ -24,6 +24,7 @@ export function init() {
       image: '/gamification-evm/images/EVM.png',
       match: (actionLabel) => [
         'sendToken',
+        'receiveToken'
       ].includes(actionLabel),
       getLink: realization => {
         if (realization.objectType === 'evm' && realization.objectId !== '') {
