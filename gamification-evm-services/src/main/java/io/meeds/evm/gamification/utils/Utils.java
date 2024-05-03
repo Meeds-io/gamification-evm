@@ -24,6 +24,8 @@ public class Utils {
 
   public static final String SEND_TOKEN_EVENT = "sendToken";
 
+  public static final String RECEIVE_TOKEN_EVENT = "receiveToken";
+
   public static final String WALLET_ADDRESS   = "walletAddress";
 
   public static final String CONTRACT_ADDRESS = "contractAddress";
@@ -36,7 +38,7 @@ public class Utils {
 
   public static final String MIN_AMOUNT = "minAmount";
 
-  public static final String RECIPIENT_ADDRESS = "recipientAddress";
+  public static final String TARGET_ADDRESS = "targetAddress";
 
   private Utils() {
 

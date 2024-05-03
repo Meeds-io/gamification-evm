@@ -25,6 +25,27 @@
   <external-component-plugins>
     <target-component>io.meeds.gamification.service.EventRegistry</target-component>
     <component-plugin>
+      <name>ReceiveToken</name>
+      <set-method>addPlugin</set-method>
+      <type>io.meeds.gamification.plugin.EventConfigPlugin</type>
+      <init-params>
+        <object-param>
+          <name>event</name>
+          <object type="io.meeds.gamification.model.EventDTO">
+            <field name="title">
+              <string>receiveToken</string>
+            </field>
+            <field name="type">
+              <string>evm</string>
+            </field>
+            <field name="trigger">
+              <string>receiveToken</string>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
+    <component-plugin>
       <name>SendToken</name>
       <set-method>addPlugin</set-method>
       <type>io.meeds.gamification.plugin.EventConfigPlugin</type>
