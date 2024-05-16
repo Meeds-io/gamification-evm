@@ -25,7 +25,7 @@
   <parent>
     <groupId>io.meeds.gamification-evm</groupId>
     <artifactId>gamification-evm-parent</artifactId>
-    <version>7.0.x-SNAPSHOT</version>
+    <version>7.0.x-exo-SNAPSHOT</version>
   </parent>
   <artifactId>gamification-evm-webapp</artifactId>
   <packaging>war</packaging>
