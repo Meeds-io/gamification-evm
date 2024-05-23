@@ -9,8 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.IOException;
-
 @RestController
 @RequestMapping("/gamification/connectors/evm/tokens")
 public class TokensController {
@@ -23,7 +21,8 @@ public class TokensController {
   @ApiResponse(responseCode = "200", description = "Request fulfilled")
   @ApiResponse(responseCode = "404", description = "Not found")
   @ApiResponse(responseCode = "503", description = "Service unavailable")
-  public ERC20Token getERC20Token(@RequestParam(name = "contractAddress")
+  public ERC20Token getERC20Token(
+                                  @RequestParam(name = "contractAddress")
                                   String contractAddress,
                                   @RequestParam(name = "blockchainNetwork")
                                   String blockchainNetwork) {
@@ -32,11 +31,7 @@ public class TokensController {
     } else if (blockchainNetwork == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Network url is missing");
     }
-    try {
-      return blockchainService.getERC20TokenDetails(contractAddress, blockchainNetwork);
-    } catch (IOException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ERC20 doesn't exist");
-    }
+    return blockchainService.getERC20TokenDetails(contractAddress, blockchainNetwork);
   }
 
 }
