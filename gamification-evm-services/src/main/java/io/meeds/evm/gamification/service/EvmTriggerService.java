@@ -29,7 +29,6 @@ import jakarta.annotation.PreDestroy;
 import org.exoplatform.wallet.service.WalletAccountService;
 import org.exoplatform.wallet.model.Wallet;
 import io.meeds.gamification.model.EventDTO;
-import io.meeds.gamification.service.ConnectorService;
 import io.meeds.gamification.service.EventService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -51,9 +50,6 @@ public class EvmTriggerService {
   public static final String GAMIFICATION_GENERIC_EVENT = "exo.gamification.generic.action";
 
   @Autowired
-  private ConnectorService connectorService;
-
-  @Autowired
   private IdentityManager identityManager;
 
   @Autowired
@@ -67,18 +63,8 @@ public class EvmTriggerService {
 
   private ExecutorService executorService;
 
-  public EvmTriggerService(ConnectorService connectorService,
-                               IdentityManager identityManager,
-                               ListenerService listenerService,
-                               EventService eventService) {
-    this.connectorService = connectorService;
-    this.identityManager = identityManager;
-    this.listenerService = listenerService;
-    this.eventService = eventService;
-  }
-
   @PostConstruct
-  public void initialize() {
+  public void init() {
     QueuedThreadPool threadFactory = new QueuedThreadPool(5, 1, 1);
     threadFactory.setName("Gamification - Evm connector");
     executorService = Executors.newCachedThreadPool(threadFactory);

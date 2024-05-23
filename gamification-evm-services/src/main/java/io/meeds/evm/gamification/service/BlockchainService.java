@@ -18,15 +18,23 @@ package io.meeds.evm.gamification.service;
 import io.meeds.evm.gamification.blockchain.BlockchainConfiguration;
 import io.meeds.evm.gamification.model.ERC20Token;
 import io.meeds.evm.gamification.model.TokenTransferEvent;
-import io.micrometer.common.util.StringUtils;
-import org.apache.commons.collections.CollectionUtils;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.exoplatform.wallet.contract.ERC20;
+import org.exoplatform.wallet.contract.ERC20.TransferEventResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.web3j.abi.EventEncoder;
+import org.web3j.abi.EventValues;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Event;
+import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterNumber;
@@ -34,6 +42,7 @@ import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
 import org.web3j.protocol.core.methods.response.EthLog;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.tx.Contract;
 import org.web3j.tx.ReadonlyTransactionManager;
 import org.web3j.tx.gas.StaticGasProvider;
 
@@ -45,21 +54,31 @@ import java.util.stream.Stream;
 @Component
 public class BlockchainService {
 
+  private static final Log  LOG            = ExoLogger.getLogger(BlockchainService.class);
+
   @Autowired
-  BlockchainConfiguration blockchainConfiguration;
+  BlockchainConfiguration   blockchainConfiguration;
 
   public static final Event TRANSFER_EVENT = new Event("Transfer",
-          Arrays.<TypeReference<?>>asList(new TypeReference<Address>(true) {}, new TypeReference<Address>(true) {}, new TypeReference<Uint256>(false) {}));
+                                                       Arrays.<TypeReference<?>> asList(new TypeReference<Address>(true) {
+                                                                                                },
+                                                                                        new TypeReference<Address>(true) {
+                                                                                        },
+                                                                                        new TypeReference<Uint256>(false) {
+                                                                                        }));
 
   /**
-   * Retrieves the list of ERC20 Token transfer transactions
-   * starting from a block to another
+   * Retrieves the list of ERC20 Token transfer transactions starting from a
+   * block to another
    *
    * @param fromBlock Start block
    * @param toBlock End Block to filter
    * @return {@link Set} of NFT ID of type {@link TokenTransferEvent}
    */
-  public Set<TokenTransferEvent> getTransferredTokensTransactions(long fromBlock, long toBlock, String contractAddress, String blockchainNetwork) {
+  public Set<TokenTransferEvent> getTransferredTokensTransactions(long fromBlock,
+                                                                  long toBlock,
+                                                                  String contractAddress,
+                                                                  String blockchainNetwork) {
     Web3j networkWeb3j = blockchainConfiguration.getNetworkWeb3j(blockchainNetwork);
     EthFilter ethFilter = new EthFilter(new DefaultBlockParameterNumber(fromBlock),
                                         new DefaultBlockParameterNumber(toBlock),
@@ -73,14 +92,14 @@ public class BlockchainService {
         return Collections.emptySet();
       }
       List<TokenTransferEvent> transferEvents = ethLogs.stream()
-                .map(logResult -> (EthLog.LogObject) logResult.get())
-                .filter(logObject -> !logObject.isRemoved())
-                .map(EthLog.LogObject::getTransactionHash)
-                .map(transactionHash -> getTransactionReceipt(transactionHash, networkWeb3j))
-                .filter(TransactionReceipt::isStatusOK)
-                .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt, contractAddress, networkWeb3j))
-                .filter(Objects::nonNull)
-                .toList();
+                                                       .map(logResult -> (EthLog.LogObject) logResult.get())
+                                                       .filter(logObject -> !logObject.isRemoved())
+                                                       .map(EthLog.LogObject::getTransactionHash)
+                                                       .map(transactionHash -> getTransactionReceipt(transactionHash, networkWeb3j))
+                                                       .filter(TransactionReceipt::isStatusOK)
+                                                       .flatMap(this::getTransferEvents)
+                                                       .filter(Objects::nonNull)
+                                                       .toList();
       return new LinkedHashSet<>(transferEvents);
     } catch (IOException e) {
       throw new IllegalStateException("Error retrieving event logs", e);
@@ -88,13 +107,12 @@ public class BlockchainService {
   }
 
   /**
-   * Retrieves the details of ERC20 Token
-   * from its contract address
+   * Retrieves the details of ERC20 Token from its contract address
    *
    * @param contractAddress the ERC20 token contract address
    * @return erc20 token details
    */
-  public ERC20Token getERC20TokenDetails(String contractAddress, String blockchainNetwork) throws IOException {
+  public ERC20Token getERC20TokenDetails(String contractAddress, String blockchainNetwork) {
     Web3j networkWeb3j = blockchainConfiguration.getNetworkWeb3j(blockchainNetwork);
     String name = erc20Name(contractAddress, networkWeb3j);
     String symbol = erc20Symbol(contractAddress, networkWeb3j);
@@ -181,15 +199,20 @@ public class BlockchainService {
                       new StaticGasProvider(BigInteger.valueOf(20000000000l), BigInteger.valueOf(300000l)));
   }
 
-  private Stream<TokenTransferEvent> getTransferEvents(TransactionReceipt transactionReceipt, String contractAddress, Web3j networkWeb3j) {
-    ERC20 erc20Token = loadERC20Token(contractAddress, networkWeb3j);
-    List<ERC20.TransferEventResponse> transferEvents = erc20Token.getTransferEvents(transactionReceipt);
-    if (transferEvents != null && !transferEvents.isEmpty()) {
-      return transferEvents.stream()
-              .map(transferEventResponse -> new TokenTransferEvent(transferEventResponse.from,
-                      transferEventResponse.to,
-                      transferEventResponse.value,
-                      transferEventResponse.log.getTransactionHash()));
+  private Stream<TokenTransferEvent> getTransferEvents(TransactionReceipt transactionReceipt) {
+    try {
+      List<TransferEventResponse> transferEvents = getTransactionTransferEvents(transactionReceipt);
+      if (transferEvents != null && !transferEvents.isEmpty()) {
+        return transferEvents.stream()
+                             .map(transferEventResponse -> new TokenTransferEvent(transferEventResponse.from,
+                                                                                  transferEventResponse.to,
+                                                                                  transferEventResponse.value,
+                                                                                  transferEventResponse.log.getTransactionHash()));
+      }
+    } catch (Exception e) {
+      LOG.warn("Error while getting Transfer events on transaction with hash {}. This might happen when an incompatible 'Transfer' event is detected",
+               transactionReceipt.getTransactionHash(),
+               e);
     }
     return Stream.empty();
   }
@@ -205,4 +228,83 @@ public class BlockchainService {
     }
     return null;
   }
+
+  public List<TransferEventResponse> getTransactionTransferEvents(TransactionReceipt transactionReceipt) {
+    List<EventValuesWithLog> valueList = extractEventParametersWithLog(TRANSFER_EVENT, transactionReceipt);
+    ArrayList<TransferEventResponse> responses = new ArrayList<>(valueList.size());
+    for (EventValuesWithLog eventValues : valueList) { // NOSONAR
+      if (CollectionUtils.isEmpty(eventValues.getIndexedValues())) {
+        LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The indexed values size is 0",
+                 transactionReceipt.getTransactionHash());
+        continue;
+      }
+      if (eventValues.getIndexedValues().size() != 2) {
+        LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The indexed values size is {} while it's expected to be '2'",
+                 transactionReceipt.getTransactionHash(),
+                 eventValues.getIndexedValues().size());
+        continue;
+      }
+      if (CollectionUtils.isEmpty(eventValues.getNonIndexedValues())) {
+        LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The non-indexed values size is 0",
+                 transactionReceipt.getTransactionHash());
+        continue;
+      }
+      if (eventValues.getNonIndexedValues().size() != 1) {
+        LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The non-indexed values size is {} while it's expected to be '1'",
+                 transactionReceipt.getTransactionHash(),
+                 eventValues.getNonIndexedValues().size());
+        continue;
+      }
+      TransferEventResponse typedResponse = new TransferEventResponse();
+      typedResponse.log = eventValues.getLog();
+      typedResponse.from = (String) eventValues.getIndexedValues().get(0).getValue();
+      typedResponse.to = (String) eventValues.getIndexedValues().get(1).getValue();
+      typedResponse.value = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
+      responses.add(typedResponse);
+    }
+    return responses;
+  }
+
+  protected List<EventValuesWithLog> extractEventParametersWithLog(Event event,
+                                                                   TransactionReceipt transactionReceipt) {
+    return transactionReceipt.getLogs()
+                             .stream()
+                             .map(log -> extractEventParametersWithLog(event, log))
+                             .filter(Objects::nonNull)
+                             .toList();
+  }
+
+  protected EventValuesWithLog extractEventParametersWithLog(Event event, org.web3j.protocol.core.methods.response.Log log) {
+    return staticExtractEventParametersWithLog(event, log);
+  }
+
+  protected static EventValuesWithLog staticExtractEventParametersWithLog(Event event,
+                                                                          org.web3j.protocol.core.methods.response.Log log) {
+    final EventValues eventValues = Contract.staticExtractEventParameters(event, log);
+    return (eventValues == null) ? null : new EventValuesWithLog(eventValues, log);
+  }
+
+  public static class EventValuesWithLog {
+    private final EventValues                                  eventValues;
+
+    private final org.web3j.protocol.core.methods.response.Log log;
+
+    public EventValuesWithLog(EventValues eventValues, org.web3j.protocol.core.methods.response.Log log) {
+      this.eventValues = eventValues;
+      this.log = log;
+    }
+
+    public List<Type> getIndexedValues() {
+      return eventValues.getIndexedValues();
+    }
+
+    public List<Type> getNonIndexedValues() {
+      return eventValues.getNonIndexedValues();
+    }
+
+    public org.web3j.protocol.core.methods.response.Log getLog() {
+      return log;
+    }
+  }
+
 }
