@@ -15,10 +15,8 @@
  */
 package io.meeds.evm.gamification.scheduling.task;
 
-import java.math.BigInteger;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import io.meeds.common.ContainerTransactional;
 import io.meeds.evm.gamification.model.TokenTransferEvent;
@@ -31,7 +29,8 @@ import io.meeds.evm.gamification.service.EvmTriggerService;
 import io.meeds.gamification.model.RuleDTO;
 import io.meeds.gamification.model.filter.RuleFilter;
 import io.meeds.gamification.service.RuleService;
-import org.apache.commons.collections.CollectionUtils;
+
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.data.Context;
@@ -69,11 +68,10 @@ public class ERC20TransferTask {
   @ContainerTransactional
   @Scheduled(cron = "0 * * * * *")
   public synchronized void listenTokenTransfer() {
-    LOG.info("Start listening erc20 token transfers");
     try {
-
       List<RuleDTO> filteredRules = getFilteredEVMRules();
       if (CollectionUtils.isNotEmpty(filteredRules)) {
+        LOG.info("Start listening erc20 token transfers for {} configured rules", filteredRules.size());
         filteredRules.forEach(rule -> {
           String trigger = rule.getEvent().getTrigger();
           String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
@@ -91,7 +89,7 @@ public class ERC20TransferTask {
                                                                                               lastBlock,
                                                                                               contractAddress,
                                                                                               blockchainNetwork);
-          if (!CollectionUtils.isEmpty(events)) {
+          if (CollectionUtils.isNotEmpty(events)) {
             events.forEach(event -> {
               try {
                 EvmTrigger evmTrigger = new EvmTrigger();
@@ -117,8 +115,8 @@ public class ERC20TransferTask {
           }
           saveLastCheckedBlock(lastBlock, contractAddress, networkId, trigger);
         });
+        LOG.info("End listening erc20 token transfers");
       }
-      LOG.info("End listening erc20 token transfers");
     } catch (Exception e) {
       LOG.error("An error occurred while listening erc20 token transfers", e);
     }
