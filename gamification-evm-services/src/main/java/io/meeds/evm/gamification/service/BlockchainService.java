@@ -97,8 +97,7 @@ public class BlockchainService {
                                                        .map(EthLog.LogObject::getTransactionHash)
                                                        .map(transactionHash -> getTransactionReceipt(transactionHash, networkWeb3j))
                                                        .filter(TransactionReceipt::isStatusOK)
-                                                       .flatMap(this::getTransferEvents)
-                                                       .filter(Objects::nonNull)
+                                                       .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt, contractAddress))
                                                        .toList();
       return new LinkedHashSet<>(transferEvents);
     } catch (IOException e) {
@@ -199,9 +198,9 @@ public class BlockchainService {
                       new StaticGasProvider(BigInteger.valueOf(20000000000l), BigInteger.valueOf(300000l)));
   }
 
-  private Stream<TokenTransferEvent> getTransferEvents(TransactionReceipt transactionReceipt) {
+  private Stream<TokenTransferEvent> getTransferEvents(TransactionReceipt transactionReceipt, String contractAddress) {
     try {
-      List<TransferEventResponse> transferEvents = getTransactionTransferEvents(transactionReceipt);
+      List<TransferEventResponse> transferEvents = getTransactionTransferEvents(transactionReceipt, contractAddress);
       if (transferEvents != null && !transferEvents.isEmpty()) {
         return transferEvents.stream()
                              .map(transferEventResponse -> new TokenTransferEvent(transferEventResponse.from,
@@ -229,10 +228,13 @@ public class BlockchainService {
     return null;
   }
 
-  public List<TransferEventResponse> getTransactionTransferEvents(TransactionReceipt transactionReceipt) {
+  public List<TransferEventResponse> getTransactionTransferEvents(TransactionReceipt transactionReceipt, String contractAddress) {
     List<EventValuesWithLog> valueList = extractEventParametersWithLog(TRANSFER_EVENT, transactionReceipt);
     ArrayList<TransferEventResponse> responses = new ArrayList<>(valueList.size());
     for (EventValuesWithLog eventValues : valueList) { // NOSONAR
+      if (!StringUtils.equalsIgnoreCase(contractAddress, eventValues.getLog().getAddress())) {
+        continue;
+      }
       if (CollectionUtils.isEmpty(eventValues.getIndexedValues())) {
         LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The indexed values size is 0",
                  transactionReceipt.getTransactionHash());
@@ -294,10 +296,12 @@ public class BlockchainService {
       this.log = log;
     }
 
+    @SuppressWarnings("rawtypes")
     public List<Type> getIndexedValues() {
       return eventValues.getIndexedValues();
     }
 
+    @SuppressWarnings("rawtypes")
     public List<Type> getNonIndexedValues() {
       return eventValues.getNonIndexedValues();
     }
