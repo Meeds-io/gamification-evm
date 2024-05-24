@@ -11,9 +11,9 @@ import java.math.BigInteger;
 @AllArgsConstructor
 public class ERC20Token {
 
-  private String name;
+  private String     name;
 
-  private String symbol;
+  private String     symbol;
 
   private BigInteger totalSupply;
 

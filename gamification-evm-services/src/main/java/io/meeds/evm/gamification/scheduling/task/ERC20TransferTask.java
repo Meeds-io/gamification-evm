@@ -16,11 +16,13 @@
 package io.meeds.evm.gamification.scheduling.task;
 
 import java.util.List;
-import java.util.Set;
+import java.math.BigInteger;
 
 import io.meeds.common.ContainerTransactional;
-import io.meeds.evm.gamification.model.TokenTransferEvent;
+import io.meeds.evm.gamification.model.TransactionDetails;
 import io.meeds.evm.gamification.service.BlockchainService;
+import io.meeds.evm.gamification.service.TransactionDetailsService;
+import io.meeds.evm.gamification.utils.TreatedTransactionStatus;
 import io.meeds.evm.gamification.utils.Utils;
 import io.meeds.gamification.constant.DateFilterType;
 import io.meeds.gamification.constant.EntityStatusType;
@@ -45,25 +47,28 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ERC20TransferTask {
-  private static final Logger  LOG                         = LoggerFactory.getLogger(ERC20TransferTask.class);
+  private static final Logger       LOG                         = LoggerFactory.getLogger(ERC20TransferTask.class);
 
-  private static final Scope   SETTING_SCOPE               = Scope.APPLICATION.id("GAMIFICATION_EVM");
+  private static final Scope        SETTING_SCOPE               = Scope.APPLICATION.id("GAMIFICATION_EVM");
 
-  private static final Context SETTING_CONTEXT             = Context.GLOBAL.id("GAMIFICATION_EVM");
+  private static final Context      SETTING_CONTEXT             = Context.GLOBAL.id("GAMIFICATION_EVM");
 
-  private static final String  SETTING_LAST_TIME_CHECK_KEY = "transferredTokenTransactionsCheck";
-
-  @Autowired
-  private SettingService       settingService;
+  private static final String       SETTING_LAST_TIME_CHECK_KEY = "transferredTokenTransactionsCheck";
 
   @Autowired
-  private BlockchainService    blockchainService;
+  private SettingService            settingService;
 
   @Autowired
-  private EvmTriggerService    evmTriggerService;
+  private BlockchainService         blockchainService;
 
   @Autowired
-  private RuleService          ruleService;
+  private EvmTriggerService         evmTriggerService;
+
+  @Autowired
+  private RuleService               ruleService;
+
+  @Autowired
+  private TransactionDetailsService transactionDetailsService;
 
   @ContainerTransactional
   @Scheduled(cron = "0 * * * * *")
@@ -71,63 +76,99 @@ public class ERC20TransferTask {
     try {
       List<RuleDTO> filteredRules = getFilteredEVMRules();
       if (CollectionUtils.isNotEmpty(filteredRules)) {
-        LOG.info("Start listening erc20 token transfers for {} configured rules", filteredRules.size());
         filteredRules.forEach(rule -> {
           String trigger = rule.getEvent().getTrigger();
           String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
           String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
-          String networkId = rule.getEvent().getProperties().get(Utils.NETWORK_ID);
-          long lastBlock = blockchainService.getLastBlock(blockchainNetwork);
-          long lastCheckedBlock = getLastCheckedBlock(contractAddress, networkId, trigger);
-          if (lastCheckedBlock == 0) {
-            // If this is the first time that it's started, save the last block as
-            // last checked one
-            saveLastCheckedBlock(lastBlock, contractAddress, networkId, trigger);
-            return;
-          }
-          Set<TokenTransferEvent> events = blockchainService.getTransferredTokensTransactions(lastCheckedBlock + 1,
-                                                                                              lastBlock,
-                                                                                              contractAddress,
-                                                                                              blockchainNetwork);
-          if (CollectionUtils.isNotEmpty(events)) {
-            events.forEach(event -> {
+          Long networkId = Long.parseLong(rule.getEvent().getProperties().get(Utils.NETWORK_ID));
+          List<TransactionDetails> transactions = transactionDetailsService.getTransferredTokensTransactions(contractAddress,
+                                                                                                             networkId);
+          transactions = transactions.stream()
+                                     .filter(transaction -> transaction.getTreatedTransactionStatus()
+                                                                       .get(trigger)
+                                                                       .equals(TreatedTransactionStatus.NONE))
+                                     .toList();
+          if (CollectionUtils.isNotEmpty(transactions)) {
+            transactions.forEach(transaction -> {
               try {
-                EvmTrigger evmTrigger = new EvmTrigger();
-                evmTrigger.setTrigger(trigger);
-                evmTrigger.setType(Utils.CONNECTOR_NAME);
-                evmTrigger.setTransactionHash(event.getTransactionHash());
-                evmTrigger.setContractAddress(contractAddress);
-                evmTrigger.setBlockchainNetwork(blockchainNetwork);
-                evmTrigger.setAmount(event.getAmount());
-                evmTrigger.setNetworkId(networkId);
-                if (trigger.equals(Utils.SEND_TOKEN_EVENT)) {
-                  evmTrigger.setWalletAddress(event.getFrom());
-                  evmTrigger.setTargetAddress(event.getTo());
-                } else {
-                  evmTrigger.setWalletAddress(event.getTo());
-                  evmTrigger.setTargetAddress(event.getFrom());
+
+                if (trigger.equals(Utils.SEND_TOKEN_EVENT) || trigger.equals(Utils.RECEIVE_TOKEN_EVENT)
+                    || (trigger.equals(Utils.HOLD_TOKEN_EVENT)
+                        && isValidHoldingToken(transaction,
+                                               Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION)),
+                                               contractAddress,
+                                               blockchainNetwork))) {
+                  EvmTrigger evmTrigger = new EvmTrigger();
+                  evmTrigger.setTrigger(trigger);
+                  evmTrigger.setType(Utils.CONNECTOR_NAME);
+                  evmTrigger.setTransactionHash(transaction.getTransactionHash());
+                  evmTrigger.setContractAddress(contractAddress);
+                  evmTrigger.setBlockchainNetwork(blockchainNetwork);
+                  evmTrigger.setAmount(transaction.getAmount());
+                  evmTrigger.setNetworkId(networkId.toString());
+                  evmTrigger.setSentDate(transaction.getSentDate());
+                  if (trigger.equals(Utils.SEND_TOKEN_EVENT)) {
+                    evmTrigger.setWalletAddress(transaction.getFromAddress());
+                    evmTrigger.setTargetAddress(transaction.getToAddress());
+                  } else {
+                    if (trigger.equals(Utils.RECEIVE_TOKEN_EVENT)) {
+                      evmTrigger.setTargetAddress(transaction.getFromAddress());
+                    }
+                    evmTrigger.setWalletAddress(transaction.getToAddress());
+                  }
+                  evmTriggerService.handleTriggerAsync(evmTrigger);
                 }
-                evmTriggerService.handleTriggerAsync(evmTrigger);
               } catch (Exception e) {
-                LOG.warn("Error broadcasting event '" + event, e);
+                LOG.warn("Error broadcasting event", e);
               }
             });
           }
-          saveLastCheckedBlock(lastBlock, contractAddress, networkId, trigger);
         });
-        LOG.info("End listening erc20 token transfers");
       }
     } catch (Exception e) {
-      LOG.error("An error occurred while listening erc20 token transfers", e);
+      LOG.error("An error occurred while rewarding for EVM events", e);
     }
   }
 
   @ContainerTransactional
-  public long getLastCheckedBlock(String contractAddress, String networkId, String trigger) {
+  @Scheduled(cron = "0 * * * * *")
+  public synchronized void saveTokenTransactions() {
+    try {
+      List<RuleDTO> filteredRules = getFilteredEVMRules();
+      if (CollectionUtils.isNotEmpty(filteredRules)) {
+        LOG.info("Start listening erc20 token transfers for {} configured rules", filteredRules.size());
+        filteredRules.forEach(rule -> {
+          String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
+          String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
+          String networkId = rule.getEvent().getProperties().get(Utils.NETWORK_ID);
+          long lastBlock = blockchainService.getLastBlock(blockchainNetwork);
+          long lastCheckedBlock = getLastCheckedBlock(contractAddress, networkId);
+          if (lastCheckedBlock == 0) {
+            // If this is the first time that it's started, save the last block as
+            // last checked one
+            saveLastCheckedBlock(lastBlock, contractAddress, networkId);
+            return;
+          }
+          blockchainService.saveTokenTransactions(lastCheckedBlock + 1,
+                                                  lastBlock,
+                                                  contractAddress,
+                                                  blockchainNetwork,
+                                                  Long.parseLong(networkId));
+          saveLastCheckedBlock(lastBlock, contractAddress, networkId);
+        });
+        LOG.info("End listening erc20 token transfers");
+      }
+    } catch (Exception e) {
+      LOG.error("An error occurred while listening blockchain transactions", e);
+    }
+  }
+
+  @ContainerTransactional
+  public long getLastCheckedBlock(String contractAddress, String networkId) {
     long lastCheckedBlock = 0;
     SettingValue<?> settingValue = settingService.get(SETTING_CONTEXT,
                                                       SETTING_SCOPE,
-                                                      SETTING_LAST_TIME_CHECK_KEY + trigger + "#" + networkId + "#" + contractAddress);
+                                                      SETTING_LAST_TIME_CHECK_KEY + networkId + "#" + contractAddress);
     if (settingValue != null && settingValue.getValue() != null) {
       lastCheckedBlock = Long.parseLong(settingValue.getValue().toString());
     }
@@ -135,10 +176,10 @@ public class ERC20TransferTask {
   }
 
   @ContainerTransactional
-  public void saveLastCheckedBlock(long lastBlock, String contractAddress, String networkId, String trigger) {
+  public void saveLastCheckedBlock(long lastBlock, String contractAddress, String networkId) {
     settingService.set(SETTING_CONTEXT,
                        SETTING_SCOPE,
-                       SETTING_LAST_TIME_CHECK_KEY + trigger + "#" + networkId + "#" + contractAddress,
+                       SETTING_LAST_TIME_CHECK_KEY + networkId + "#" + contractAddress,
                        SettingValue.create(lastBlock));
   }
 
@@ -153,5 +194,26 @@ public class ERC20TransferTask {
                 .filter(r -> !r.getEvent().getProperties().isEmpty()
                     && StringUtils.isNotBlank(r.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS)))
                 .toList();
+  }
+
+  private Boolean isValidHoldingToken(TransactionDetails transaction,
+                                      Long desiredDuration,
+                                      String contractAddress,
+                                      String blockchainNetwork) {
+    Long holdingDuration = System.currentTimeMillis() - transaction.getSentDate();
+    Boolean validDuration = holdingDuration.compareTo(desiredDuration) >= 0;
+    String tokenHolder = transaction.getToAddress();
+    Boolean amountHeld = true;
+    if (!validDuration) {
+      return false;
+    }
+    List<TransactionDetails> transferTransactions = transactionDetailsService.getTransactionsByFromAddress(tokenHolder);
+    if (CollectionUtils.isNotEmpty(transferTransactions)) {
+      BigInteger balanceOf = blockchainService.erc20BalanceOf(tokenHolder, contractAddress, blockchainNetwork);
+      if (balanceOf.compareTo(transaction.getAmount()) < 0) {
+        amountHeld = false;
+      }
+    }
+    return validDuration && amountHeld;
   }
 }

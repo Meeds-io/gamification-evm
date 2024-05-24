@@ -18,24 +18,44 @@
  */
 package io.meeds.evm.gamification.plugin;
 
+import io.meeds.evm.gamification.service.TransactionDetailsService;
+import io.meeds.gamification.service.EventService;
+import io.meeds.evm.gamification.utils.TreatedTransactionStatus;
 import io.meeds.evm.gamification.utils.Utils;
 import io.meeds.gamification.plugin.EventPlugin;
+import jakarta.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+@Component
 public class EvmEventPlugin extends EventPlugin {
-  public static final String EVENT_TYPE = "evm";
+
+  public static final String        EVENT_TYPE = "evm";
+
+  @Autowired
+  private TransactionDetailsService transactionDetailsService;
+
+  @Autowired
+  private EventService              eventService;
+
+  @PostConstruct
+  public void init() {
+    eventService.addPlugin(this);
+  }
 
   @Override
   public String getEventType() {
     return EVENT_TYPE;
   }
 
+  @Override
   public List<String> getTriggers() {
-    return List.of(Utils.SEND_TOKEN_EVENT, Utils.RECEIVE_TOKEN_EVENT);
+    return List.of(Utils.SEND_TOKEN_EVENT, Utils.RECEIVE_TOKEN_EVENT, Utils.HOLD_TOKEN_EVENT);
   }
 
   @Override
@@ -57,8 +77,16 @@ public class EvmEventPlugin extends EventPlugin {
                                         Integer.parseInt(tokenDecimals));
     }
     if (StringUtils.isNotBlank(desiredTargetAddress)) {
-      isValidFilters = isValidFilters
-          && isValidTargetAddress(desiredTargetAddress, triggerDetailsMop.get(Utils.TARGET_ADDRESS));
+      isValidFilters = isValidFilters && isValidTargetAddress(desiredTargetAddress, triggerDetailsMop.get(Utils.TARGET_ADDRESS));
+    }
+    if (!isValidFilters) {
+      transactionDetailsService.updateTransactionStatus(triggerDetailsMop.get(Utils.TRANSACTION_HASH),
+                                                        triggerDetailsMop.get(Utils.TRIGGER),
+                                                        TreatedTransactionStatus.REJECTED);
+    } else {
+      transactionDetailsService.updateTransactionStatus(triggerDetailsMop.get(Utils.TRANSACTION_HASH),
+                                                        triggerDetailsMop.get(Utils.TRIGGER),
+                                                        TreatedTransactionStatus.ACCEPTED);
     }
     return isValidFilters;
   }
