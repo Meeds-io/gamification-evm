@@ -105,7 +105,8 @@ public class EvmTriggerService {
                           receiverId,
                           evmTrigger.getNetworkId() + "#" + evmTrigger.getTransactionHash(),
                           evmTrigger.getType(),
-                          eventDetails);
+                          eventDetails,
+                          evmTrigger.getTransactionHash());
       }
     }
   }
@@ -114,7 +115,8 @@ public class EvmTriggerService {
                                  String receiverId,
                                  String objectId,
                                  String objectType,
-                                 String eventDetails) {
+                                 String eventDetails,
+                                 String txHash) {
     try {
       List<EventDTO> events = eventService.getEventsByTitle(ruleTitle, 0, -1);
       if (CollectionUtils.isNotEmpty(events)) {
@@ -126,7 +128,7 @@ public class EvmTriggerService {
         gam.put("ruleTitle", ruleTitle);
         gam.put("eventDetails", eventDetails);
         listenerService.broadcast(GAMIFICATION_GENERIC_EVENT, gam, "");
-        LOG.info("Evm action {} broadcasted for user {}", ruleTitle, receiverId);
+        LOG.info("Evm action {} broadcasted for user {} on transaction with hash {}", ruleTitle, receiverId, txHash);
       }
     } catch (Exception e) {
       LOG.error("Cannot broadcast evm gamification event", e);
