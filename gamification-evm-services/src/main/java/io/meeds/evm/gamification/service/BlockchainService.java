@@ -101,16 +101,14 @@ public class BlockchainService {
       if (CollectionUtils.isEmpty(ethLogs)) {
         return;
       }
-      List<TransactionDetails> transferEvents =
-                                              ethLogs.stream()
-                                                     .map(logResult -> (EthLog.LogObject) logResult.get())
-                                                     .filter(logObject -> !logObject.isRemoved())
-                                                     .map(EthLog.LogObject::getTransactionHash)
-                                                     .map(transactionHash -> getTransactionReceipt(transactionHash, networkWeb3j))
-                                                     .filter(TransactionReceipt::isStatusOK)
-                                                     .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt,
-                                                                                                      contractAddress))
-                                                     .toList();
+      List<TransactionDetails> transferEvents = ethLogs.stream()
+                                                       .map(logResult -> (EthLog.LogObject) logResult.get())
+                                                       .filter(logObject -> !logObject.isRemoved())
+                                                       .map(EthLog.LogObject::getTransactionHash)
+                                                       .map(transactionHash -> getTransactionReceipt(transactionHash, networkWeb3j))
+                                                       .filter(TransactionReceipt::isStatusOK)
+                                                       .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt, contractAddress))
+                                                       .toList();
       if (transferEvents != null && !transferEvents.isEmpty()) {
         transferEvents.forEach(transferEvent -> {
           Map<String, TreatedTransactionStatus> status = new HashMap<>();
@@ -312,7 +310,8 @@ public class BlockchainService {
     return responses;
   }
 
-  protected List<EventValuesWithLog> extractEventParametersWithLog(Event event, TransactionReceipt transactionReceipt) {
+  protected List<EventValuesWithLog> extractEventParametersWithLog(Event event,
+                                                                   TransactionReceipt transactionReceipt) {
     return transactionReceipt.getLogs()
                              .stream()
                              .map(log -> extractEventParametersWithLog(event, log))

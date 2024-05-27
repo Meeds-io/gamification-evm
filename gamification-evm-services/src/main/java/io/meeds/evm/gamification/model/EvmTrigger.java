@@ -44,8 +44,6 @@ public class EvmTrigger {
 
   private BigInteger amount;
 
-  private BigInteger tokenBalance;
-
   private Long       sentDate;
 
   public EvmTrigger clone() {
@@ -58,7 +56,6 @@ public class EvmTrigger {
                           networkId,
                           targetAddress,
                           amount,
-                          tokenBalance,
                           sentDate);
   }
 }

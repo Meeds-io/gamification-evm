@@ -2,7 +2,7 @@
 <!--
 
   This file is part of the Meeds project (https://meeds.io/).
-  Copyright (C) 2022 Meeds Association contact@meeds.io
+  Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
@@ -80,16 +80,6 @@
     <modifySql dbms="mysql">
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci" />
     </modifySql>
-  </changeSet>
-  <changeSet id="1.0.0-4" author="evm-connector">
-    <dropColumn tableName="EVM_TRANSACTION_DETAILS" columnName="TREATED_TRANSACTION_STATUS"/>
-  </changeSet>
-  <!-- Changeset to delete old data -->
-  <changeSet id="1.0.0-5" author="evm-connector">
-    <delete tableName="EVM_TRANSACTION_DETAILS" />
-  </changeSet>
-  <changeSet id="1.0.0-6" author="evm-connector">
-    <delete tableName="EVM_EVENT_STATUS" />
   </changeSet>
 
 </databaseChangeLog>
