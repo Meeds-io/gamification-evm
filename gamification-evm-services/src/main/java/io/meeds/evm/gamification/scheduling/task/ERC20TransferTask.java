@@ -19,10 +19,9 @@ import java.util.List;
 import java.math.BigInteger;
 
 import io.meeds.common.ContainerTransactional;
-import io.meeds.evm.gamification.model.TransactionDetails;
+import io.meeds.evm.gamification.model.EvmTransaction;
 import io.meeds.evm.gamification.service.BlockchainService;
-import io.meeds.evm.gamification.service.TransactionDetailsService;
-import io.meeds.evm.gamification.utils.TreatedTransactionStatus;
+import io.meeds.evm.gamification.service.EvmTransactionService;
 import io.meeds.evm.gamification.utils.Utils;
 import io.meeds.gamification.constant.DateFilterType;
 import io.meeds.gamification.constant.EntityStatusType;
@@ -47,28 +46,28 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ERC20TransferTask {
-  private static final Logger       LOG                         = LoggerFactory.getLogger(ERC20TransferTask.class);
+  private static final Logger   LOG                         = LoggerFactory.getLogger(ERC20TransferTask.class);
 
-  private static final Scope        SETTING_SCOPE               = Scope.APPLICATION.id("GAMIFICATION_EVM");
+  private static final Scope    SETTING_SCOPE               = Scope.APPLICATION.id("GAMIFICATION_EVM");
 
-  private static final Context      SETTING_CONTEXT             = Context.GLOBAL.id("GAMIFICATION_EVM");
+  private static final Context  SETTING_CONTEXT             = Context.GLOBAL.id("GAMIFICATION_EVM");
 
-  private static final String       SETTING_LAST_TIME_CHECK_KEY = "transferredTokenTransactionsCheck";
-
-  @Autowired
-  private SettingService            settingService;
+  private static final String   SETTING_LAST_TIME_CHECK_KEY = "transferredTokenTransactionsCheck";
 
   @Autowired
-  private BlockchainService         blockchainService;
+  private SettingService        settingService;
 
   @Autowired
-  private EvmTriggerService         evmTriggerService;
+  private BlockchainService     blockchainService;
 
   @Autowired
-  private RuleService               ruleService;
+  private EvmTriggerService     evmTriggerService;
 
   @Autowired
-  private TransactionDetailsService transactionDetailsService;
+  private RuleService           ruleService;
+
+  @Autowired
+  private EvmTransactionService evmTransactionService;
 
   @ContainerTransactional
   @Scheduled(cron = "0 * * * * *")
@@ -81,13 +80,8 @@ public class ERC20TransferTask {
           String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
           String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
           Long networkId = Long.parseLong(rule.getEvent().getProperties().get(Utils.NETWORK_ID));
-          List<TransactionDetails> transactions = transactionDetailsService.getTransferredTokensTransactions(contractAddress,
-                                                                                                             networkId);
-          transactions = transactions.stream()
-                                     .filter(transaction -> transaction.getTreatedTransactionStatus()
-                                                                       .get(trigger)
-                                                                       .equals(TreatedTransactionStatus.NONE))
-                                     .toList();
+          Long lastIdProcced = Long.parseLong(rule.getEvent().getProperties().get(Utils.LAST_ID_PROCCED));
+          List<EvmTransaction> transactions = evmTransactionService.getTransactionsByFromAId(lastIdProcced + 1);
           if (CollectionUtils.isNotEmpty(transactions)) {
             transactions.forEach(transaction -> {
               try {
@@ -102,6 +96,8 @@ public class ERC20TransferTask {
                   evmTrigger.setTrigger(trigger);
                   evmTrigger.setType(Utils.CONNECTOR_NAME);
                   evmTrigger.setTransactionHash(transaction.getTransactionHash());
+                  evmTrigger.setTransactionId(transaction.getId());
+                  evmTrigger.setRuleId(rule.getId());
                   evmTrigger.setContractAddress(contractAddress);
                   evmTrigger.setBlockchainNetwork(blockchainNetwork);
                   evmTrigger.setAmount(transaction.getAmount());
@@ -196,7 +192,7 @@ public class ERC20TransferTask {
                 .toList();
   }
 
-  private Boolean isValidHoldingToken(TransactionDetails transaction,
+  private Boolean isValidHoldingToken(EvmTransaction transaction,
                                       Long desiredDuration,
                                       String contractAddress,
                                       String blockchainNetwork) {
@@ -207,7 +203,7 @@ public class ERC20TransferTask {
     if (!validDuration) {
       return false;
     }
-    List<TransactionDetails> transferTransactions = transactionDetailsService.getTransactionsByFromAddress(tokenHolder);
+    List<EvmTransaction> transferTransactions = evmTransactionService.getTransactionsByFromAddress(tokenHolder);
     if (CollectionUtils.isNotEmpty(transferTransactions)) {
       BigInteger balanceOf = blockchainService.erc20BalanceOf(tokenHolder, contractAddress, blockchainNetwork);
       if (balanceOf.compareTo(transaction.getAmount()) < 0) {

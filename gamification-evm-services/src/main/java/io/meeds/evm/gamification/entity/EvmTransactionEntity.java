@@ -16,37 +16,43 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package io.meeds.evm.gamification.model;
+package io.meeds.evm.gamification.entity;
 
-import java.math.BigInteger;
-import java.util.Map;
-
-import io.meeds.evm.gamification.utils.TreatedTransactionStatus;
-import lombok.AllArgsConstructor;
+import jakarta.persistence.*;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+import java.math.BigInteger;
+
+@Entity(name = "EvmTransaction")
+@Table(name = "EVM_TRANSACTION")
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class TransactionDetails {
+public class EvmTransactionEntity implements Serializable {
 
+  @Id
+  @SequenceGenerator(name = "SEQ_EVM_TRANSACTION_ID", sequenceName = "SEQ_EVM_TRANSACTION_ID", allocationSize = 1)
+  @GeneratedValue(strategy = GenerationType.AUTO, generator = "SEQ_EVM_TRANSACTION_ID")
+  @Column(name = "ID", nullable = false)
   private Long                                  id;
 
+  @Column(name = "TRANSACTION_HASH", nullable = false)
   private String                                transactionHash;
 
+  @Column(name = "NETWORK_ID", nullable = false)
   private Long                                  networkId;
 
+  @Column(name = "FROM_ADDRESS", nullable = false)
   private String                                fromAddress;
 
+  @Column(name = "TO_ADDRESS", nullable = false)
   private String                                toAddress;
 
+  @Column(name = "CONTRACT_ADDRESS", nullable = false)
   private String                                contractAddress;
 
+  @Column(name = "SENT_DATE", nullable = false)
   private Long                                  sentDate;
 
+  @Column(name = "AMOUNT", nullable = false)
   private BigInteger                            amount;
-
-  private Map<String, TreatedTransactionStatus> treatedTransactionStatus;
-
 }

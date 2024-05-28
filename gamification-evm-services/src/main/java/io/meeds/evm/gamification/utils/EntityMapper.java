@@ -18,8 +18,8 @@
  */
 package io.meeds.evm.gamification.utils;
 
-import io.meeds.evm.gamification.entity.TransactionDetailsEntity;
-import io.meeds.evm.gamification.model.TransactionDetails;
+import io.meeds.evm.gamification.entity.EvmTransactionEntity;
+import io.meeds.evm.gamification.model.EvmTransaction;
 
 public class EntityMapper {
 
@@ -27,35 +27,33 @@ public class EntityMapper {
     // Util class
   }
 
-  public static TransactionDetails fromEntity(TransactionDetailsEntity transactionDetails) {
-    if (transactionDetails == null) {
+  public static EvmTransaction fromEntity(EvmTransactionEntity evmTransactionEntity) {
+    if (evmTransactionEntity == null) {
       return null;
     }
-    return new TransactionDetails(transactionDetails.getId(),
-                                  transactionDetails.getTransactionHash(),
-                                  transactionDetails.getNetworkId(),
-                                  transactionDetails.getFromAddress(),
-                                  transactionDetails.getToAddress(),
-                                  transactionDetails.getContractAddress(),
-                                  transactionDetails.getSentDate(),
-                                  transactionDetails.getAmount(),
-                                  transactionDetails.getTreatedTransactionStatus());
+    return new EvmTransaction(evmTransactionEntity.getId(),
+                              evmTransactionEntity.getTransactionHash(),
+                              evmTransactionEntity.getNetworkId(),
+                              evmTransactionEntity.getFromAddress(),
+                              evmTransactionEntity.getToAddress(),
+                              evmTransactionEntity.getContractAddress(),
+                              evmTransactionEntity.getSentDate(),
+                              evmTransactionEntity.getAmount());
   }
 
-  public static TransactionDetailsEntity toEntity(TransactionDetails transactionDetails) {
-    if (transactionDetails == null) {
+  public static EvmTransactionEntity toEntity(EvmTransaction evmTransaction) {
+    if (evmTransaction == null) {
       return null;
     }
-    TransactionDetailsEntity transactionDetailsEntity = new TransactionDetailsEntity();
-    transactionDetailsEntity.setId(transactionDetails.getId());
-    transactionDetailsEntity.setTransactionHash(transactionDetails.getTransactionHash());
-    transactionDetailsEntity.setNetworkId(transactionDetails.getNetworkId());
-    transactionDetailsEntity.setFromAddress(transactionDetails.getFromAddress());
-    transactionDetailsEntity.setToAddress(transactionDetails.getToAddress());
-    transactionDetailsEntity.setContractAddress(transactionDetails.getContractAddress());
-    transactionDetailsEntity.setSentDate(transactionDetails.getSentDate());
-    transactionDetailsEntity.setAmount(transactionDetails.getAmount());
-    transactionDetailsEntity.setTreatedTransactionStatus(transactionDetails.getTreatedTransactionStatus());
-    return transactionDetailsEntity;
+    EvmTransactionEntity evmTransactionEntity = new EvmTransactionEntity();
+    evmTransactionEntity.setId(evmTransaction.getId());
+    evmTransactionEntity.setTransactionHash(evmTransaction.getTransactionHash());
+    evmTransactionEntity.setNetworkId(evmTransaction.getNetworkId());
+    evmTransactionEntity.setFromAddress(evmTransaction.getFromAddress());
+    evmTransactionEntity.setToAddress(evmTransaction.getToAddress());
+    evmTransactionEntity.setContractAddress(evmTransaction.getContractAddress());
+    evmTransactionEntity.setSentDate(evmTransaction.getSentDate());
+    evmTransactionEntity.setAmount(evmTransaction.getAmount());
+    return evmTransactionEntity;
   }
 }

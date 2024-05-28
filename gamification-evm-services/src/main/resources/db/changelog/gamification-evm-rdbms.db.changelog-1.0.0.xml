@@ -24,11 +24,11 @@
   <property name="autoIncrement" value="true" dbms="mysql,mssql,h2,sybase,db2,hsqldb"/>
   <property name="autoIncrement" value="false" dbms="oracle,postgresql"/>
 
-  <!-- Definition of EVM_TRANSACTION_DETAILS table -->
+  <!-- Definition of EVM_TRANSACTION table -->
   <changeSet author="evm-connector" id="1.0.0-1">
-    <createTable tableName="EVM_TRANSACTION_DETAILS">
+    <createTable tableName="EVM_TRANSACTION">
       <column name="ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
-        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_EVM_TRANSACTION_DETAILS"/>
+        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_EVM_TRANSACTION"/>
       </column>
       <column name="TRANSACTION_HASH" type="NVARCHAR(250)">
         <constraints nullable="false"/>
@@ -51,35 +51,16 @@
       <column name="AMOUNT" type="BIGINT">
         <constraints nullable="false"/>
       </column>
-      <column name="TREATED_TRANSACTION_STATUS" type="NVARCHAR(250)">
-        <constraints nullable="false"/>
-      </column>
     </createTable>
   </changeSet>
   <changeSet author="evm-connector" id="1.0.0-2" dbms="oracle,postgresql,hsqldb" onValidationFail="MARK_RAN" failOnError="false">
     <validCheckSum>ANY</validCheckSum>
     <preConditions>
       <not>
-        <sequenceExists sequenceName="SEQ_EVM_TRANSACTION_DETAILS_ID" />
+        <sequenceExists sequenceName="SEQ_EVM_TRANSACTION_ID" />
       </not>
     </preConditions>
-    <createSequence sequenceName="SEQ_EVM_TRANSACTION_DETAILS_ID" startValue="1"/>
-  </changeSet>
-  <changeSet author="evm-connector" id="1.0.0-3">
-    <createTable tableName="EVM_EVENT_STATUS">
-      <column name="ID" type="BIGINT">
-        <constraints foreignKeyName="FK_EVM_EVENT_STATUS" references="EVM_TRANSACTION_DETAILS(ID)" deferrable="false" initiallyDeferred="false" deleteCascade="true" />
-      </column>
-      <column name="TRIGGER" type="NVARCHAR(250)">
-        <constraints nullable="false" />
-      </column>
-      <column name="TREATED_TRANSACTION_STATUS" type="INT" defaultValueNumeric="0">
-        <constraints nullable="false" />
-      </column>
-    </createTable>
-    <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci" />
-    </modifySql>
+    <createSequence sequenceName="SEQ_EVM_TRANSACTION_ID" startValue="1"/>
   </changeSet>
 
 </databaseChangeLog>

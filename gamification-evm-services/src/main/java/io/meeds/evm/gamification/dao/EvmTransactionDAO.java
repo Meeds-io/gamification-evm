@@ -18,30 +18,24 @@
  */
 package io.meeds.evm.gamification.dao;
 
-import io.meeds.evm.gamification.entity.TransactionDetailsEntity;
+import io.meeds.evm.gamification.entity.EvmTransactionEntity;
+import io.meeds.evm.gamification.model.EvmTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import java.util.Set;
+import java.util.List;
 
-public interface TransactionDetailsDAO extends JpaRepository<TransactionDetailsEntity, Long> {
+public interface EvmTransactionDAO extends JpaRepository<EvmTransactionEntity, Long> {
 
-  @Query("""
-      SELECT td FROM TransactionDetails td
-      WHERE td.contractAddress = ?1
-      AND td.networkId = ?2
-      """)
-  Set<TransactionDetailsEntity> findTransactionsByContractAddressAndNetworkId(String contractAddress, Long networkId);
+  List<EvmTransactionEntity> findByContractAddressAndNetworkId(String contractAddress, Long networkId);
+
+  List<EvmTransactionEntity> findByFromAddress(String fromAddress);
 
   @Query("""
-      SELECT td FROM TransactionDetails td
-      WHERE td.fromAddress = ?1
-      """)
-  Set<TransactionDetailsEntity> findTransactionsByFromAddress(String fromAddress);
+          SELECT t FROM EvmTransaction t
+          WHERE t.id >= ?1
+          ORDER BY t.id
+          """)
+  List<EvmTransactionEntity> findAllFromId(Long id);
 
-  @Query("""
-      SELECT td FROM TransactionDetails td
-      WHERE td.transactionHash = ?1
-      """)
-  TransactionDetailsEntity findTransactionByTransactionHash(String transactionHash);
 }

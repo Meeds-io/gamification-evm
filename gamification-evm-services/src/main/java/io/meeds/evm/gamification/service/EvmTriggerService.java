@@ -101,7 +101,8 @@ public class EvmTriggerService {
                               + Utils.BLOCKCHAIN_NETWORK + ": " + evmTrigger.getBlockchainNetwork() + ", " + Utils.TARGET_ADDRESS + ": "
                               + evmTrigger.getTargetAddress() + ", " + Utils.MIN_AMOUNT + ": " + evmTrigger.getAmount() + ", "
                               + Utils.TRANSACTION_HASH + ": " + evmTrigger.getTransactionHash() + ", " + Utils.TRIGGER + ": "
-                              + evmTrigger.getTrigger() + "}";
+                              + evmTrigger.getTrigger() + ", " + Utils.TRANSACTION_ID + ": " + evmTrigger.getTransactionId() + ", "
+                              + Utils.RULE_ID + ": " + evmTrigger.getRuleId() + "}";
         broadcastEvmEvent(evmTrigger.getTrigger(),
                           receiverId,
                           evmTrigger.getNetworkId() + "#" + evmTrigger.getTransactionHash(),

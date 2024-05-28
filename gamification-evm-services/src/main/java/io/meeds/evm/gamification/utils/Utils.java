@@ -22,6 +22,8 @@ public class Utils {
 
   public static final String CONNECTOR_NAME      = "evm";
 
+  public static final String EVM_VALID_EVENT     = "evm.valid.event";
+
   public static final String SEND_TOKEN_EVENT    = "sendToken";
 
   public static final String RECEIVE_TOKEN_EVENT = "receiveToken";
@@ -47,6 +49,12 @@ public class Utils {
   public static final String TRANSACTION_HASH    = "transactionHash";
 
   public static final String TRIGGER             = "trigger";
+
+  public static final String TRANSACTION_ID      = "transactionId";
+
+  public static final String RULE_ID            = "ruleId";
+
+  public static final String LAST_ID_PROCCED    = "lastIdProcced";
 
   private Utils() {
 

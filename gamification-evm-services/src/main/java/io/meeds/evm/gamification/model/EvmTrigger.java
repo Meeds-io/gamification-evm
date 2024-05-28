@@ -36,6 +36,10 @@ public class EvmTrigger {
 
   private String     transactionHash;
 
+  private Long       transactionId;
+
+  private Long       ruleId;
+
   private String     blockchainNetwork;
 
   private String     networkId;
@@ -52,6 +56,8 @@ public class EvmTrigger {
                           contractAddress,
                           type,
                           transactionHash,
+                          transactionId,
+                          ruleId,
                           blockchainNetwork,
                           networkId,
                           targetAddress,

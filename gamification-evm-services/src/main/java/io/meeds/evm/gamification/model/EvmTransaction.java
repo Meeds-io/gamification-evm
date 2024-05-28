@@ -16,51 +16,33 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-package io.meeds.evm.gamification.entity;
+package io.meeds.evm.gamification.model;
 
-import io.meeds.evm.gamification.utils.TreatedTransactionStatus;
-import jakarta.persistence.*;
-import lombok.Data;
-
-import java.io.Serializable;
 import java.math.BigInteger;
-import java.util.Map;
 
-@Entity(name = "TransactionDetails")
-@Table(name = "EVM_TRANSACTION_DETAILS")
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 @Data
-public class TransactionDetailsEntity implements Serializable {
+@AllArgsConstructor
+@NoArgsConstructor
+public class EvmTransaction {
 
-  @Id
-  @SequenceGenerator(name = "SEQ_EVM_TRANSACTION_DETAILS_ID", sequenceName = "SEQ_EVM_TRANSACTION_DETAILS_ID", allocationSize = 1)
-  @GeneratedValue(strategy = GenerationType.AUTO, generator = "SEQ_EVM_TRANSACTION_DETAILS_ID")
-  @Column(name = "ID", nullable = false)
   private Long                                  id;
 
-  @Column(name = "TRANSACTION_HASH", nullable = false)
   private String                                transactionHash;
 
-  @Column(name = "NETWORK_ID", nullable = false)
   private Long                                  networkId;
 
-  @Column(name = "FROM_ADDRESS", nullable = false)
   private String                                fromAddress;
 
-  @Column(name = "TO_ADDRESS", nullable = false)
   private String                                toAddress;
 
-  @Column(name = "CONTRACT_ADDRESS", nullable = false)
   private String                                contractAddress;
 
-  @Column(name = "SENT_DATE", nullable = false)
   private Long                                  sentDate;
 
-  @Column(name = "AMOUNT", nullable = false)
   private BigInteger                            amount;
 
-  @ElementCollection(fetch = FetchType.EAGER)
-  @MapKeyColumn(name = "\"TRIGGER\"")
-  @Column(name = "TREATED_TRANSACTION_STATUS")
-  @CollectionTable(name = "EVM_EVENT_STATUS", joinColumns = { @JoinColumn(name = "ID") })
-  private Map<String, TreatedTransactionStatus> treatedTransactionStatus;
 }

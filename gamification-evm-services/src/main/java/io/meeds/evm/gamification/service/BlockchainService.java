@@ -17,8 +17,7 @@ package io.meeds.evm.gamification.service;
 
 import io.meeds.evm.gamification.blockchain.BlockchainConfiguration;
 import io.meeds.evm.gamification.model.ERC20Token;
-import io.meeds.evm.gamification.model.TransactionDetails;
-import io.meeds.evm.gamification.utils.TreatedTransactionStatus;
+import io.meeds.evm.gamification.model.EvmTransaction;
 import io.meeds.evm.gamification.utils.Utils;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -58,24 +57,24 @@ import java.util.stream.Stream;
 @Service
 public class BlockchainService {
 
-  private static final Log          LOG            = ExoLogger.getLogger(BlockchainService.class);
+  private static final Log      LOG            = ExoLogger.getLogger(BlockchainService.class);
 
   @Autowired
-  BlockchainConfiguration           blockchainConfiguration;
+  BlockchainConfiguration       blockchainConfiguration;
 
   @Autowired
-  private WalletAccountService      walletAccountService;
+  private WalletAccountService  walletAccountService;
 
   @Autowired
-  private TransactionDetailsService transactionDetailsService;
+  private EvmTransactionService evmTransactionService;
 
-  public static final Event         TRANSFER_EVENT = new Event("Transfer",
-                                                               Arrays.<TypeReference<?>> asList(new TypeReference<Address>(true) {
-                                                                                                                },
-                                                                                                new TypeReference<Address>(true) {
-                                                                                                },
-                                                                                                new TypeReference<Uint256>(false) {
-                                                                                                }));
+  public static final Event     TRANSFER_EVENT = new Event("Transfer",
+                                                           Arrays.<TypeReference<?>> asList(new TypeReference<Address>(true) {
+                                                                                                        },
+                                                                                            new TypeReference<Address>(true) {
+                                                                                            },
+                                                                                            new TypeReference<Uint256>(false) {
+                                                                                            }));
 
   /**
    * saves the list of ERC20 Token transfer transactions starting from a block to
@@ -101,29 +100,24 @@ public class BlockchainService {
       if (CollectionUtils.isEmpty(ethLogs)) {
         return;
       }
-      List<TransactionDetails> transferEvents = ethLogs.stream()
-                                                       .map(logResult -> (EthLog.LogObject) logResult.get())
-                                                       .filter(logObject -> !logObject.isRemoved())
-                                                       .map(EthLog.LogObject::getTransactionHash)
-                                                       .map(transactionHash -> getTransactionReceipt(transactionHash, networkWeb3j))
-                                                       .filter(TransactionReceipt::isStatusOK)
-                                                       .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt, contractAddress))
-                                                       .toList();
+      List<EvmTransaction> transferEvents = ethLogs.stream()
+                                                   .map(logResult -> (EthLog.LogObject) logResult.get())
+                                                   .filter(logObject -> !logObject.isRemoved())
+                                                   .map(EthLog.LogObject::getTransactionHash)
+                                                   .map(transactionHash -> getTransactionReceipt(transactionHash, networkWeb3j))
+                                                   .filter(TransactionReceipt::isStatusOK)
+                                                   .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt, contractAddress))
+                                                   .toList();
       if (transferEvents != null && !transferEvents.isEmpty()) {
         transferEvents.forEach(transferEvent -> {
-          Map<String, TreatedTransactionStatus> status = new HashMap<>();
           Wallet sender = walletAccountService.getWalletByAddress(transferEvent.getFromAddress());
           Wallet receiver = walletAccountService.getWalletByAddress(transferEvent.getToAddress());
           if ((sender != null && StringUtils.isNotBlank(sender.getAddress()))
               || (receiver != null && StringUtils.isNotBlank(receiver.getAddress()))) {
             transferEvent.setContractAddress(contractAddress);
-            status.put(Utils.SEND_TOKEN_EVENT, TreatedTransactionStatus.NONE);
-            status.put(Utils.RECEIVE_TOKEN_EVENT, TreatedTransactionStatus.NONE);
-            status.put(Utils.HOLD_TOKEN_EVENT, TreatedTransactionStatus.NONE);
-            transferEvent.setTreatedTransactionStatus(status);
             transferEvent.setNetworkId(networkId);
             transferEvent.setSentDate(System.currentTimeMillis());
-            transactionDetailsService.saveTransaction(transferEvent);
+            evmTransactionService.saveTransaction(transferEvent);
           }
         });
       }
@@ -238,12 +232,12 @@ public class BlockchainService {
                       new StaticGasProvider(BigInteger.valueOf(20000000000l), BigInteger.valueOf(300000l)));
   }
 
-  private Stream<TransactionDetails> getTransferEvents(TransactionReceipt transactionReceipt, String contractAddress) {
+  private Stream<EvmTransaction> getTransferEvents(TransactionReceipt transactionReceipt, String contractAddress) {
     try {
       List<TransferEventResponse> transferEvents = getTransactionTransferEvents(transactionReceipt, contractAddress);
       if (transferEvents != null && !transferEvents.isEmpty()) {
         return transferEvents.stream().map(transferEventResponse -> {
-          TransactionDetails transferEvent = new TransactionDetails();
+          EvmTransaction transferEvent = new EvmTransaction();
           transferEvent.setTransactionHash(transferEventResponse.log.getTransactionHash());
           transferEvent.setFromAddress(transferEventResponse.from);
           transferEvent.setToAddress(transferEventResponse.to);
@@ -310,8 +304,7 @@ public class BlockchainService {
     return responses;
   }
 
-  protected List<EventValuesWithLog> extractEventParametersWithLog(Event event,
-                                                                   TransactionReceipt transactionReceipt) {
+  protected List<EventValuesWithLog> extractEventParametersWithLog(Event event, TransactionReceipt transactionReceipt) {
     return transactionReceipt.getLogs()
                              .stream()
                              .map(log -> extractEventParametersWithLog(event, log))
