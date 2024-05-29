@@ -24,22 +24,15 @@ import io.meeds.gamification.plugin.EventPlugin;
 import jakarta.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.services.listener.ListenerService;
-import org.exoplatform.services.log.ExoLogger;
-import org.exoplatform.services.log.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.meeds.evm.gamification.utils.Utils.EVM_VALID_EVENT;
-
 @Component
 public class EvmEventPlugin extends EventPlugin {
-
-  private static final Log   LOG        = ExoLogger.getLogger(EvmEventPlugin.class);
 
   public static final String EVENT_TYPE = "evm";
 
@@ -84,16 +77,6 @@ public class EvmEventPlugin extends EventPlugin {
     }
     if (StringUtils.isNotBlank(desiredTargetAddress)) {
       isValidFilters = isValidFilters && isValidTargetAddress(desiredTargetAddress, triggerDetailsMop.get(Utils.TARGET_ADDRESS));
-    }
-    if (isValidFilters) {
-      try {
-        Map<String, String> gam = new HashMap<>();
-        gam.put("ruleId", triggerDetailsMop.get(Utils.RULE_ID));
-        gam.put("lastTransactionId", triggerDetailsMop.get(Utils.TRANSACTION_ID));
-        listenerService.broadcast(EVM_VALID_EVENT, gam, "");
-      } catch (Exception e) {
-        LOG.error("Cannot broadcast evm event", e);
-      }
     }
     return isValidFilters;
   }

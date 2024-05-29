@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class EvmTransactionStorage {
@@ -46,9 +47,14 @@ public class EvmTransactionStorage {
     return evmTransactionsEntities.stream().map(td -> EntityMapper.fromEntity(td)).toList();
   }
 
-  public List<EvmTransaction> getEvmTransactionsFromId(Long id) {
-    List<EvmTransactionEntity> evmTransactionsEntities = evmTransactionDAO.findAllFromId(id);
+  public List<EvmTransaction> getEvmTransactionsByContractAddressAndNetworkIdFromId(String contractAddress, Long networkId, Long id) {
+    List<EvmTransactionEntity> evmTransactionsEntities = evmTransactionDAO.findByContractAddressAndNetworkIdAndIdGreaterThan(contractAddress, networkId, id);
     return evmTransactionsEntities.stream().map(td -> EntityMapper.fromEntity(td)).toList();
+  }
+
+  public EvmTransaction getEvmTransactionByContractAddressAndNetworkIdOrderByIdDesc(String contractAddress, Long networkId) {
+    EvmTransactionEntity evmTransactionsEntity = evmTransactionDAO.findTopByContractAddressAndNetworkIdOrderByIdDesc(contractAddress, networkId);
+    return EntityMapper.fromEntity(evmTransactionsEntity);
   }
 
 }

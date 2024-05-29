@@ -15,8 +15,10 @@
  */
 package io.meeds.evm.gamification.scheduling.task;
 
+import java.util.HashMap;
 import java.util.List;
 import java.math.BigInteger;
+import java.util.Map;
 
 import io.meeds.common.ContainerTransactional;
 import io.meeds.evm.gamification.model.EvmTransaction;
@@ -38,11 +40,14 @@ import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
 import org.exoplatform.commons.api.settings.SettingValue;
 
+import org.exoplatform.services.listener.ListenerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import static io.meeds.evm.gamification.utils.Utils.EVM_SAVE_ACTION_EVENT;
 
 @Component
 public class ERC20TransferTask {
@@ -69,6 +74,9 @@ public class ERC20TransferTask {
   @Autowired
   private EvmTransactionService evmTransactionService;
 
+  @Autowired
+  private ListenerService       listenerService;
+
   @ContainerTransactional
   @Scheduled(cron = "0 * * * * *")
   public synchronized void listenTokenTransfer() {
@@ -76,16 +84,23 @@ public class ERC20TransferTask {
       List<RuleDTO> filteredRules = getFilteredEVMRules();
       if (CollectionUtils.isNotEmpty(filteredRules)) {
         filteredRules.forEach(rule -> {
+          Long lastIdProcced = 0l;
           String trigger = rule.getEvent().getTrigger();
           String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
-          String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
+          String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase();
           Long networkId = Long.parseLong(rule.getEvent().getProperties().get(Utils.NETWORK_ID));
-          Long lastIdProcced = Long.parseLong(rule.getEvent().getProperties().get(Utils.LAST_ID_PROCCED));
-          List<EvmTransaction> transactions = evmTransactionService.getTransactionsByFromAId(lastIdProcced + 1);
+          if (StringUtils.isBlank(rule.getEvent().getProperties().get(Utils.LAST_ID_PROCCED))) {
+            if (evmTransactionService.getTransactionByContractAddressAndNetworkIdOrderByIdDesc(contractAddress, networkId) != null) {
+              lastIdProcced = evmTransactionService.getTransactionByContractAddressAndNetworkIdOrderByIdDesc(contractAddress, networkId).getId();
+            }
+            broadcastEvmActionEvent(lastIdProcced.toString(), rule.getId().toString());
+          } else {
+            lastIdProcced = Long.parseLong(rule.getEvent().getProperties().get(Utils.LAST_ID_PROCCED));
+          }
+          List<EvmTransaction> transactions = evmTransactionService.getTransactionsByContractAddressAndNetworkIdFromId(contractAddress, networkId, lastIdProcced);
           if (CollectionUtils.isNotEmpty(transactions)) {
             transactions.forEach(transaction -> {
               try {
-
                 if (trigger.equals(Utils.SEND_TOKEN_EVENT) || trigger.equals(Utils.RECEIVE_TOKEN_EVENT)
                     || (trigger.equals(Utils.HOLD_TOKEN_EVENT)
                         && isValidHoldingToken(transaction,
@@ -113,6 +128,7 @@ public class ERC20TransferTask {
                     evmTrigger.setWalletAddress(transaction.getToAddress());
                   }
                   evmTriggerService.handleTriggerAsync(evmTrigger);
+                  broadcastEvmActionEvent(transaction.getId().toString(), rule.getId().toString());
                 }
               } catch (Exception e) {
                 LOG.warn("Error broadcasting event", e);
@@ -147,7 +163,7 @@ public class ERC20TransferTask {
           }
           blockchainService.saveTokenTransactions(lastCheckedBlock + 1,
                                                   lastBlock,
-                                                  contractAddress,
+                                                  contractAddress.toLowerCase(),
                                                   blockchainNetwork,
                                                   Long.parseLong(networkId));
           saveLastCheckedBlock(lastBlock, contractAddress, networkId);
@@ -211,5 +227,16 @@ public class ERC20TransferTask {
       }
     }
     return validDuration && amountHeld;
+  }
+
+  private void broadcastEvmActionEvent(String transactionId, String ruleId) {
+    try {
+      Map<String, String> gam = new HashMap<>();
+      gam.put("ruleId", ruleId);
+      gam.put("transactionId", transactionId);
+      listenerService.broadcast(EVM_SAVE_ACTION_EVENT, gam, "");
+    } catch (Exception e) {
+      LOG.error("Cannot broadcast evm event", e);
+    }
   }
 }

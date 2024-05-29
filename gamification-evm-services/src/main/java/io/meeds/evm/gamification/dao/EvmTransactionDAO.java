@@ -19,9 +19,7 @@
 package io.meeds.evm.gamification.dao;
 
 import io.meeds.evm.gamification.entity.EvmTransactionEntity;
-import io.meeds.evm.gamification.model.EvmTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
@@ -31,11 +29,8 @@ public interface EvmTransactionDAO extends JpaRepository<EvmTransactionEntity, L
 
   List<EvmTransactionEntity> findByFromAddress(String fromAddress);
 
-  @Query("""
-          SELECT t FROM EvmTransaction t
-          WHERE t.id >= ?1
-          ORDER BY t.id
-          """)
-  List<EvmTransactionEntity> findAllFromId(Long id);
+  List<EvmTransactionEntity> findByContractAddressAndNetworkIdAndIdGreaterThan(String contractAddress, Long networkId, Long id);
+
+  EvmTransactionEntity findTopByContractAddressAndNetworkIdOrderByIdDesc(String contractAddress, Long networkId);
 
 }

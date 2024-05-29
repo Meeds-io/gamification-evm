@@ -22,7 +22,7 @@ public class Utils {
 
   public static final String CONNECTOR_NAME      = "evm";
 
-  public static final String EVM_VALID_EVENT     = "evm.valid.event";
+  public static final String EVM_SAVE_ACTION_EVENT     = "evm.save.action.event";
 
   public static final String SEND_TOKEN_EVENT    = "sendToken";
 

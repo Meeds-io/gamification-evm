@@ -28,8 +28,6 @@ import org.exoplatform.services.listener.Event;
 import org.exoplatform.services.listener.Listener;
 
 import org.exoplatform.services.listener.ListenerService;
-import org.exoplatform.services.log.ExoLogger;
-import org.exoplatform.services.log.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -37,14 +35,12 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.List;
 
-import static io.meeds.evm.gamification.utils.Utils.EVM_VALID_EVENT;
+import static io.meeds.evm.gamification.utils.Utils.EVM_SAVE_ACTION_EVENT;
 
 @Service
 public class EvmRuleUpdateListener extends Listener<Map<String, String>, String> {
 
-  private static final Log          LOG              = ExoLogger.getLogger(EvmRuleUpdateListener.class);
-
-  private static final List<String> SUPPORTED_EVENTS = Arrays.asList(EVM_VALID_EVENT);
+  private static final List<String> SUPPORTED_EVENTS = Arrays.asList(EVM_SAVE_ACTION_EVENT);
 
   @Autowired
   private RuleService               ruleService;
