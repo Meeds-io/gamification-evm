@@ -29,7 +29,7 @@ import org.exoplatform.services.listener.Listener;
 
 import org.exoplatform.services.listener.ListenerService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -37,7 +37,7 @@ import java.util.List;
 
 import static io.meeds.evm.gamification.utils.Utils.EVM_SAVE_ACTION_EVENT;
 
-@Service
+@Component
 public class EvmRuleUpdateListener extends Listener<Map<String, String>, String> {
 
   private static final List<String> SUPPORTED_EVENTS = Arrays.asList(EVM_SAVE_ACTION_EVENT);

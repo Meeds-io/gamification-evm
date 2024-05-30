@@ -16,9 +16,8 @@
 package io.meeds.evm.gamification.service;
 
 import io.meeds.evm.gamification.blockchain.BlockchainConfiguration;
-import io.meeds.evm.gamification.model.ERC20Token;
+import io.meeds.evm.gamification.model.EvmContract;
 import io.meeds.evm.gamification.model.EvmTransaction;
-import io.meeds.evm.gamification.utils.Utils;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -55,9 +54,9 @@ import java.util.*;
 import java.util.stream.Stream;
 
 @Service
-public class BlockchainService {
+public class EvmBlockchainService {
 
-  private static final Log      LOG            = ExoLogger.getLogger(BlockchainService.class);
+  private static final Log      LOG            = ExoLogger.getLogger(EvmBlockchainService.class);
 
   @Autowired
   BlockchainConfiguration       blockchainConfiguration;
@@ -132,18 +131,15 @@ public class BlockchainService {
    * @param contractAddress the ERC20 token contract address
    * @return erc20 token details
    */
-  public ERC20Token getERC20TokenDetails(String contractAddress, String blockchainNetwork) {
+  public EvmContract getERC20TokenDetails(String contractAddress, String blockchainNetwork) {
     Web3j networkWeb3j = blockchainConfiguration.getNetworkWeb3j(blockchainNetwork);
     String name = erc20Name(contractAddress, networkWeb3j);
     String symbol = erc20Symbol(contractAddress, networkWeb3j);
-    BigInteger totalSupply = erc20TotalSupply(contractAddress, networkWeb3j);
     BigInteger decimals = erc20Decimals(contractAddress, networkWeb3j);
-    ERC20Token erc20Token = new ERC20Token();
-    if (StringUtils.isNotBlank(name) && StringUtils.isNotBlank(symbol) && !totalSupply.equals(BigInteger.ZERO)
-        && !decimals.equals(BigInteger.ZERO)) {
+    EvmContract erc20Token = new EvmContract();
+    if (StringUtils.isNotBlank(name) && StringUtils.isNotBlank(symbol) && !decimals.equals(BigInteger.ZERO)) {
       erc20Token.setSymbol(symbol);
       erc20Token.setDecimals(decimals);
-      erc20Token.setTotalSupply(totalSupply);
       erc20Token.setName(name);
       return erc20Token;
     }
@@ -195,18 +191,6 @@ public class BlockchainService {
       return erc20Token.decimals().send();
     } catch (Exception e) {
       throw new IllegalStateException("Error calling decimals method", e);
-    }
-  }
-
-  /**
-   * @return ERC20 token totalSupply
-   */
-  public BigInteger erc20TotalSupply(String contractAddress, Web3j networkWeb3j) {
-    try {
-      ERC20 erc20Token = loadERC20Token(contractAddress, networkWeb3j);
-      return erc20Token.totalSupply().send();
-    } catch (Exception e) {
-      throw new IllegalStateException("Error calling totalSupply method", e);
     }
   }
 

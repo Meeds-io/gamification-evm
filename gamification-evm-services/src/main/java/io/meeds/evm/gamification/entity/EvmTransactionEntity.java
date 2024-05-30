@@ -25,13 +25,13 @@ import java.io.Serializable;
 import java.math.BigInteger;
 
 @Entity(name = "EvmTransaction")
-@Table(name = "EVM_TRANSACTION")
+@Table(name = "EVM_TRANSACTIONS")
 @Data
 public class EvmTransactionEntity implements Serializable {
 
   @Id
-  @SequenceGenerator(name = "SEQ_EVM_TRANSACTION_ID", sequenceName = "SEQ_EVM_TRANSACTION_ID", allocationSize = 1)
-  @GeneratedValue(strategy = GenerationType.AUTO, generator = "SEQ_EVM_TRANSACTION_ID")
+  @SequenceGenerator(name = "SEQ_EVM_TRANSACTIONS_ID", sequenceName = "SEQ_EVM_TRANSACTIONS_ID", allocationSize = 1)
+  @GeneratedValue(strategy = GenerationType.AUTO, generator = "SEQ_EVM_TRANSACTIONS_ID")
   @Column(name = "ID", nullable = false)
   private Long                                  id;
 

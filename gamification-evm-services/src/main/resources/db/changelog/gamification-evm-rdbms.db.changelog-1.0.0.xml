@@ -24,45 +24,35 @@
   <property name="autoIncrement" value="true" dbms="mysql,mssql,h2,sybase,db2,hsqldb"/>
   <property name="autoIncrement" value="false" dbms="oracle,postgresql"/>
 
-  <!-- Definition of EVM_TRANSACTION table -->
+  <!-- Definition of EVM_TRANSACTIONS table -->
   <changeSet author="evm-connector" id="1.0.0-1">
-    <createTable tableName="EVM_TRANSACTION">
+    <createTable tableName="EVM_TRANSACTIONS">
       <column name="ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
-        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_EVM_TRANSACTION"/>
+        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_EVM_TRANSACTIONS_ID"/>
       </column>
       <column name="TRANSACTION_HASH" type="NVARCHAR(250)">
-        <constraints nullable="false"/>
       </column>
       <column name="NETWORK_ID" type="BIGINT">
-        <constraints nullable="false"/>
       </column>
       <column name="FROM_ADDRESS" type="NVARCHAR(250)">
-        <constraints nullable="false"/>
       </column>
       <column name="TO_ADDRESS" type="NVARCHAR(250)">
-        <constraints nullable="false"/>
       </column>
       <column name="CONTRACT_ADDRESS" type="NVARCHAR(250)">
-        <constraints nullable="false"/>
       </column>
       <column name="SENT_DATE" type="BIGINT">
-        <constraints nullable="false"/>
       </column>
       <column name="AMOUNT" type="BIGINT">
-        <constraints nullable="false"/>
       </column>
     </createTable>
   </changeSet>
-  <changeSet author="evm-connector" id="1.0.0-2" dbms="oracle,postgresql,hsqldb" onValidationFail="MARK_RAN" failOnError="false">
+  <changeSet author="evm-connector" id="1.0.0-2" dbms="oracle,postgresql,hsqldb">
     <validCheckSum>ANY</validCheckSum>
     <preConditions>
       <not>
-        <sequenceExists sequenceName="SEQ_EVM_TRANSACTION_ID" />
+        <sequenceExists sequenceName="SEQ_EVM_TRANSACTIONS_ID" />
       </not>
     </preConditions>
-    <createSequence sequenceName="SEQ_EVM_TRANSACTION_ID" startValue="1"/>
+    <createSequence sequenceName="SEQ_EVM_TRANSACTIONS_ID" startValue="1"/>
   </changeSet>
-
 </databaseChangeLog>
-
-

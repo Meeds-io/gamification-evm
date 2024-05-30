@@ -30,7 +30,7 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 
 @Service
-public class NetworksService {
+public class EvmNetworkService {
 
   @Autowired
   private BlockchainConfigurationProperties blockchainProperties;

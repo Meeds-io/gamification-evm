@@ -29,20 +29,20 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class EvmTransaction {
 
-  private Long                                  id;
+  private Long       id;
 
-  private String                                transactionHash;
+  private String     transactionHash;
 
-  private Long                                  networkId;
+  private Long       networkId;
 
-  private String                                fromAddress;
+  private String     fromAddress;
 
-  private String                                toAddress;
+  private String     toAddress;
 
-  private String                                contractAddress;
+  private String     contractAddress;
 
-  private Long                                  sentDate;
+  private Long       sentDate;
 
-  private BigInteger                            amount;
+  private BigInteger amount;
 
 }

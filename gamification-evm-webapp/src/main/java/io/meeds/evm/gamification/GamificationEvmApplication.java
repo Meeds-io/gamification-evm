@@ -28,8 +28,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @SpringBootApplication(scanBasePackages = {
     GamificationEvmApplication.MODULE_NAME,
     AvailableIntegration.KERNEL_MODULE,
-    AvailableIntegration.WEB_SECURITY_MODULE,
-    AvailableIntegration.WEB_TRANSACTION_MODULE,
+    AvailableIntegration.WEB_MODULE,
     AvailableIntegration.JPA_MODULE,
     AvailableIntegration.LIQUIBASE_MODULE,
 })

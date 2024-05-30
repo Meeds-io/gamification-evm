@@ -9,13 +9,11 @@ import java.math.BigInteger;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ERC20Token {
+public class EvmContract {
 
   private String     name;
 
   private String     symbol;
-
-  private BigInteger totalSupply;
 
   private BigInteger decimals;
 }

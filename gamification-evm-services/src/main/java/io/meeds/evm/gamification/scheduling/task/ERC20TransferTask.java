@@ -22,7 +22,7 @@ import java.util.Map;
 
 import io.meeds.common.ContainerTransactional;
 import io.meeds.evm.gamification.model.EvmTransaction;
-import io.meeds.evm.gamification.service.BlockchainService;
+import io.meeds.evm.gamification.service.EvmBlockchainService;
 import io.meeds.evm.gamification.service.EvmTransactionService;
 import io.meeds.evm.gamification.utils.Utils;
 import io.meeds.gamification.constant.DateFilterType;
@@ -63,7 +63,7 @@ public class ERC20TransferTask {
   private SettingService        settingService;
 
   @Autowired
-  private BlockchainService     blockchainService;
+  private EvmBlockchainService  evmBlockchainService;
 
   @Autowired
   private EvmTriggerService     evmTriggerService;
@@ -131,7 +131,7 @@ public class ERC20TransferTask {
                   broadcastEvmActionEvent(transaction.getId().toString(), rule.getId().toString());
                 }
               } catch (Exception e) {
-                LOG.warn("Error broadcasting event", e);
+                LOG.warn("Error broadcasting EVM event for transaction {} and trigger {}", transaction.getTransactionHash(), trigger, e);
               }
             });
           }
@@ -153,7 +153,7 @@ public class ERC20TransferTask {
           String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
           String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
           String networkId = rule.getEvent().getProperties().get(Utils.NETWORK_ID);
-          long lastBlock = blockchainService.getLastBlock(blockchainNetwork);
+          long lastBlock = evmBlockchainService.getLastBlock(blockchainNetwork);
           long lastCheckedBlock = getLastCheckedBlock(contractAddress, networkId);
           if (lastCheckedBlock == 0) {
             // If this is the first time that it's started, save the last block as
@@ -161,7 +161,7 @@ public class ERC20TransferTask {
             saveLastCheckedBlock(lastBlock, contractAddress, networkId);
             return;
           }
-          blockchainService.saveTokenTransactions(lastCheckedBlock + 1,
+          evmBlockchainService.saveTokenTransactions(lastCheckedBlock + 1,
                                                   lastBlock,
                                                   contractAddress.toLowerCase(),
                                                   blockchainNetwork,
@@ -221,7 +221,7 @@ public class ERC20TransferTask {
     }
     List<EvmTransaction> transferTransactions = evmTransactionService.getTransactionsByFromAddress(tokenHolder);
     if (CollectionUtils.isNotEmpty(transferTransactions)) {
-      BigInteger balanceOf = blockchainService.erc20BalanceOf(tokenHolder, contractAddress, blockchainNetwork);
+      BigInteger balanceOf = evmBlockchainService.erc20BalanceOf(tokenHolder, contractAddress, blockchainNetwork);
       if (balanceOf.compareTo(transaction.getAmount()) < 0) {
         amountHeld = false;
       }
