@@ -59,14 +59,14 @@ public class EvmEventPlugin extends EventPlugin {
 
   @Override
   public boolean isValidEvent(Map<String, String> eventProperties, String triggerDetails) {
-    String desiredContractAddress = eventProperties.get(Utils.CONTRACT_ADDRESS);
+    String desiredContractAddress = eventProperties.get(Utils.CONTRACT_ADDRESS).toLowerCase();
     String desiredTargetAddress = eventProperties.get(Utils.TARGET_ADDRESS);
     String minAmount = eventProperties.get(Utils.MIN_AMOUNT);
     String desiredNetwork = eventProperties.get(Utils.BLOCKCHAIN_NETWORK);
     String tokenDecimals = eventProperties.get(Utils.DECIMALS);
     Map<String, String> triggerDetailsMop = Utils.stringToMap(triggerDetails);
     if (!desiredNetwork.equals(triggerDetailsMop.get(Utils.BLOCKCHAIN_NETWORK))
-        || !desiredContractAddress.equals(triggerDetailsMop.get(Utils.CONTRACT_ADDRESS))) {
+        || !desiredContractAddress.equals(triggerDetailsMop.get(Utils.CONTRACT_ADDRESS).toLowerCase())) {
       return false;
     }
     boolean isValidFilters = true;
@@ -88,6 +88,6 @@ public class EvmEventPlugin extends EventPlugin {
   }
 
   private boolean isValidTargetAddress(String desiredTargetAddress, String targetAddress) {
-    return desiredTargetAddress.toUpperCase().equals(targetAddress.toUpperCase());
+    return desiredTargetAddress.toLowerCase().equals(targetAddress.toLowerCase());
   }
 }
