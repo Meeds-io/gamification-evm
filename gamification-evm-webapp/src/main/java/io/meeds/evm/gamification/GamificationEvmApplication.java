@@ -19,31 +19,25 @@
 package io.meeds.evm.gamification;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
-import org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.PropertySource;
 
 import io.meeds.spring.AvailableIntegration;
 import io.meeds.spring.kernel.PortalApplicationContextInitializer;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication(scanBasePackages = {
-    "io.meeds.evm.gamification",
+    GamificationEvmApplication.MODULE_NAME,
     AvailableIntegration.KERNEL_MODULE,
-    AvailableIntegration.WEB_SECURITY_MODULE,
-    AvailableIntegration.WEB_TRANSACTION_MODULE,
-  }, exclude = {
-    LiquibaseAutoConfiguration.class,
-    DataSourceAutoConfiguration.class,
-    DataSourceTransactionManagerAutoConfiguration.class,
-    HibernateJpaAutoConfiguration.class
+    AvailableIntegration.WEB_MODULE,
+    AvailableIntegration.JPA_MODULE,
+    AvailableIntegration.LIQUIBASE_MODULE,
 })
-@EnableCaching
+@EnableJpaRepositories(basePackages = GamificationEvmApplication.MODULE_NAME)
 @PropertySource("classpath:application.properties")
 @PropertySource("classpath:application-common.properties")
 @PropertySource("classpath:evm.properties")
 public class GamificationEvmApplication extends PortalApplicationContextInitializer {
+
+  public static final String MODULE_NAME = "io.meeds.evm.gamification";
 
 }

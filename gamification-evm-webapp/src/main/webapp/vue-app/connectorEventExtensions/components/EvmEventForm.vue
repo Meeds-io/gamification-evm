@@ -118,20 +118,22 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <span v-else-if="isInvalidERC20Address" class="error--text">{{ $t('gamification.event.detail.invalidERC20ContractAddress.error') }}</span>
       <span v-else-if="emptyERC20Token">{{ $t('gamification.event.detail.verifyToken.message') }}</span>
       <div v-if="erc20Token">
-        <v-card-text class="px-0 dark-grey-color font-weight-bold">
-          {{ addressLabel }}
-        </v-card-text>
-        <v-text-field
-          ref="targetAddress"
-          v-model="targetAddress"
-          :placeholder="addressPlaceholder"
-          class="pa-0"
-          type="text"
-          outlined
-          dense
-          @input="handleAddress"
-          @change="selectedTargetAddress" />
-        <span v-if="!validTargetAddress" class="error--text">{{ invalidTargetAddress }}</span>
+        <div v-if="!isHoldEvent">
+          <v-card-text class="px-0 dark-grey-color font-weight-bold">
+            {{ addressLabel }}
+          </v-card-text>
+          <v-text-field
+            ref="targetAddress"
+            v-model="targetAddress"
+            :placeholder="addressPlaceholder"
+            class="pa-0"
+            type="text"
+            outlined
+            dense
+            @input="handleAddress"
+            @change="selectedTargetAddress" />
+          <span v-if="!validTargetAddress" class="error--text">{{ invalidTargetAddress }}</span>
+        </div>
         <v-card-text class="px-0 dark-grey-color font-weight-bold">
           {{ $t('gamification.event.form.minAmount') }}
         </v-card-text>
@@ -144,6 +146,38 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           outlined
           dense
           @change="selectedAmount" />
+        <div v-if="isHoldEvent">
+          <v-card-text class="px-0 dark-grey-color font-weight-bold">
+            {{ $t('gamification.event.form.duration') }}
+          </v-card-text>
+          <div class="d-flex flex-row">
+            <v-card
+              flat
+              class="d-flex flex-grow-1">
+              <v-text-field
+                v-model="durationNumber"
+                class="mt-0 pt-0 me-2"
+                type="number"
+                outlined
+                dense
+                required />
+            </v-card>
+            <select
+              v-model="durationFilter"
+              class="d-flex flex-grow-0 flex-shrink-0 ignore-vuetify-classes my-0"
+              @change="resetDates">
+              <option value="DAYS">
+                {{ $t('gamification.event.form.duration.days') }}
+              </option>
+              <option value="WEEKS">
+                {{ $t('gamification.event.form.duration.weeks') }}
+              </option>
+              <option value="MONTHS">
+                {{ $t('gamification.event.form.duration.months') }}
+              </option>
+            </select>
+          </div>
+        </div>
       </div>
     </template>
   </div>
@@ -178,7 +212,9 @@ export default {
       eventProperties: null,
       networkId: null,
       validTargetAddress: true,
-      targetAddress: null
+      targetAddress: null,
+      durationFilter: 'DAYS',
+      durationNumber: 0
     };
   },
   computed: {
@@ -224,6 +260,9 @@ export default {
     invalidTargetAddress() {
       return this.trigger === 'sendToken' ? this.$t('gamification.event.detail.invalidRecipientAddress.error') : this.$t('gamification.event.detail.invalidSenderAddress.error');
     },
+    isHoldEvent() {
+      return this.trigger === 'holdToken';
+    }
   },
   created() {
     this.retrieveNetworks();
@@ -236,6 +275,12 @@ export default {
       if ( oldVal !== null && newVal !== oldVal) {
         this.erc20Token = null;
       }
+    },
+    durationNumber() {
+      this.changeDuration();
+    },
+    durationFilter() {
+      this.changeDuration();
     }
   },
   methods: {
@@ -370,6 +415,33 @@ export default {
           };
         }
         document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
+      }
+    },
+    durationToTimestamp(months, weeks, days) {
+      let durationTimestamp = new Date();
+      durationTimestamp.setMonth(durationTimestamp.getMonth() + months);
+      durationTimestamp.setDate(durationTimestamp.getDate() + weeks * 7 + days);
+      durationTimestamp = (durationTimestamp - new Date());
+      this.eventProperties = {
+        contractAddress: this.contractAddress,
+        blockchainNetwork: this.selected?.providerUrl,
+        networkId: this.selected?.networkId,
+        tokenName: this.erc20Token.name,
+        tokenSymbol: this.erc20Token.symbol,
+        tokenDecimals: this.erc20Token.decimals,
+        minAmount: this.minAmount,
+        duration: durationTimestamp,
+        frequency: months !== 0 ? 'MONTHS' : weeks !== 0 ? 'WEEKS' : 'DAYS'
+      };
+      document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
+    },
+    changeDuration() {
+      if (this.durationFilter === 'MONTHS') {
+        this.durationToTimestamp(parseInt(this.durationNumber), 0, 0);
+      } else if (this.durationFilter === 'WEEKS') {
+        this.durationToTimestamp(0, parseInt(this.durationNumber), 0);
+      } else {
+        this.durationToTimestamp(0, 0, parseInt(this.durationNumber));
       }
     }
   }

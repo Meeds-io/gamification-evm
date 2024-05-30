@@ -9,25 +9,26 @@
  * version 3 of the License, or (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-import '../connectorEventExtensions/initComponents';
-import '../connectorEventExtensions/services';
+package io.meeds.evm.gamification.dao;
 
-export function init() {
-  extensionRegistry.registerComponent('engagementCenterEvent', 'connector-event-extensions', {
-    id: 'evm-event',
-    name: 'evm',
-    vueComponent: Vue.options.components['evm-connector-event'],
-    isEnabled: (params) => [
-      'sendToken',
-      'receiveToken',
-      'holdToken'
-    ].includes(params?.trigger),
-  });
+import io.meeds.evm.gamification.entity.EvmTransactionEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface EvmTransactionDAO extends JpaRepository<EvmTransactionEntity, Long> {
+
+  List<EvmTransactionEntity> findByFromAddress(String fromAddress);
+
+  List<EvmTransactionEntity> findByContractAddressAndNetworkIdAndIdGreaterThan(String contractAddress, Long networkId, Long id);
+
+  EvmTransactionEntity findTopByContractAddressAndNetworkIdOrderByIdDesc(String contractAddress, Long networkId);
+
 }
