@@ -26,25 +26,48 @@ import java.math.BigInteger;
 @NoArgsConstructor
 public class EvmTrigger {
 
-  private String trigger;
+  private String     trigger;
 
-  private String walletAddress;
+  private String     walletAddress;
 
-  private String contractAddress;
+  private String     contractAddress;
 
-  private String type;
+  private String     type;
 
-  private String transactionHash;
+  private String     transactionHash;
 
-  private String blockchainNetwork;
+  private Long       transactionId;
 
-  private String networkId;
+  private Long       ruleId;
 
-  private String targetAddress;
+  private String     blockchainNetwork;
+
+  private String     networkId;
+
+  private String     targetAddress;
 
   private BigInteger amount;
 
+  private Long       sentDate;
+
+  private BigInteger tokenBalance;
+
+  private Long       duration;
+
   public EvmTrigger clone() {
-      return new EvmTrigger(trigger, walletAddress, contractAddress, type, transactionHash, blockchainNetwork, networkId, targetAddress, amount);
+    return new EvmTrigger(trigger,
+                          walletAddress,
+                          contractAddress,
+                          type,
+                          transactionHash,
+                          transactionId,
+                          ruleId,
+                          blockchainNetwork,
+                          networkId,
+                          targetAddress,
+                          amount,
+                          sentDate,
+                          tokenBalance,
+                          duration);
   }
 }
