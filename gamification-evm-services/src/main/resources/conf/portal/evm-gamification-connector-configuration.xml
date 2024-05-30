@@ -66,6 +66,27 @@
         </object-param>
       </init-params>
     </component-plugin>
+    <component-plugin>
+      <name>HoldToken</name>
+      <set-method>addPlugin</set-method>
+      <type>io.meeds.gamification.plugin.EventConfigPlugin</type>
+      <init-params>
+        <object-param>
+          <name>event</name>
+          <object type="io.meeds.gamification.model.EventDTO">
+            <field name="title">
+              <string>holdToken</string>
+            </field>
+            <field name="type">
+              <string>evm</string>
+            </field>
+            <field name="trigger">
+              <string>holdToken</string>
+            </field>
+          </object>
+        </object-param>
+      </init-params>
+    </component-plugin>
   </external-component-plugins>
 
 </configuration>

@@ -13,5 +13,5 @@ public class BlockchainNetwork {
 
   private String providerUrl;
 
-  private long networkId;
+  private long   networkId;
 }

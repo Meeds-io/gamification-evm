@@ -26,7 +26,8 @@ export function init() {
     vueComponent: Vue.options.components['evm-connector-event'],
     isEnabled: (params) => [
       'sendToken',
-      'receiveToken'
+      'receiveToken',
+      'holdToken'
     ].includes(params?.trigger),
   });
 }
