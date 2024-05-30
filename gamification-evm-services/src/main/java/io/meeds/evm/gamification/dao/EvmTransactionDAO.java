@@ -25,8 +25,6 @@ import java.util.List;
 
 public interface EvmTransactionDAO extends JpaRepository<EvmTransactionEntity, Long> {
 
-  List<EvmTransactionEntity> findByContractAddressAndNetworkId(String contractAddress, Long networkId);
-
   List<EvmTransactionEntity> findByFromAddress(String fromAddress);
 
   List<EvmTransactionEntity> findByContractAddressAndNetworkIdAndIdGreaterThan(String contractAddress, Long networkId, Long id);

@@ -17,8 +17,6 @@ package io.meeds.evm.gamification.service;
 
 import io.meeds.evm.gamification.model.EvmTransaction;
 import io.meeds.evm.gamification.storage.EvmTransactionStorage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,17 +25,11 @@ import java.util.*;
 @Service
 public class EvmTransactionService {
 
-  private static final Logger       LOG = LoggerFactory.getLogger(EvmTransactionService.class);
-
   @Autowired
   private EvmTransactionStorage evmTransactionStorage;
 
   public void saveTransaction(EvmTransaction transaction) {
     evmTransactionStorage.saveEvmTransaction(transaction);
-  }
-
-  public List<EvmTransaction> getTransferredTokensTransactions(String contractAddress, long networkId) {
-    return evmTransactionStorage.getEvmTransactionsByContractAddressAndNetworkId(contractAddress, networkId);
   }
 
   public List<EvmTransaction> getTransactionsByFromAddress(String fromAddress) {
