@@ -18,64 +18,53 @@ package io.meeds.evm.gamification.service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-import io.meeds.evm.gamification.model.EvmTrigger;
-import io.meeds.evm.gamification.utils.Utils;
-import jakarta.annotation.PostConstruct;
-
-import jakarta.annotation.PreDestroy;
-import io.meeds.wallet.service.WalletAccountService;
-import io.meeds.wallet.model.Wallet;
-import io.meeds.gamification.model.EventDTO;
-import io.meeds.gamification.service.EventService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.manager.IdentityManager;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-@Component
+import io.meeds.evm.gamification.model.EvmTrigger;
+import io.meeds.evm.gamification.utils.Utils;
+import io.meeds.gamification.model.EventDTO;
+import io.meeds.gamification.service.EventService;
+import io.meeds.wallet.model.Wallet;
+import io.meeds.wallet.service.WalletAccountService;
+import org.springframework.stereotype.Service;
+
+@Service
 public class EvmTriggerService {
 
-  private static final Log   LOG                        = ExoLogger.getLogger(EvmTriggerService.class);
+  private static final Log     LOG                        = ExoLogger.getLogger(EvmTriggerService.class);
 
-  public static final String GAMIFICATION_GENERIC_EVENT = "exo.gamification.generic.action";
-
-  @Autowired
-  private IdentityManager identityManager;
+  public static final String   GAMIFICATION_GENERIC_EVENT = "exo.gamification.generic.action";
 
   @Autowired
-  private ListenerService listenerService;
+  private IdentityManager      identityManager;
 
   @Autowired
-  private EventService eventService;
+  private ListenerService      listenerService;
 
   @Autowired
-  private WalletAccountService walletAccountService;
+  private EventService         eventService;
 
-  private ExecutorService executorService;
+  @Autowired
+  private WalletAccountService     walletAccountService;
 
-  @PostConstruct
-  public void init() {
-    QueuedThreadPool threadFactory = new QueuedThreadPool(5, 1, 1);
-    threadFactory.setName("Gamification - Evm connector");
-    executorService = Executors.newCachedThreadPool(threadFactory);
-  }
+  @Autowired
+  private ThreadPoolTaskExecutor   threadPoolTaskExecutor;
 
-  @PreDestroy
-  public void stop() {
-    if (executorService != null) {
-      executorService.shutdownNow();
-    }
-  }
+  @Autowired
+  private ScheduledExecutorService scheduledExecutorService;
 
   /**
    * Handle evm trigger asynchronously
@@ -83,7 +72,9 @@ public class EvmTriggerService {
    * @param evmTrigger evm retrieved trigger
    */
   public void handleTriggerAsync(EvmTrigger evmTrigger) {
-    executorService.execute(() -> handleTriggerAsyncInternal(evmTrigger));
+    scheduledExecutorService.schedule(() -> threadPoolTaskExecutor.execute(() -> handleTriggerAsyncInternal(evmTrigger)),
+                                      1,
+                                      TimeUnit.SECONDS);
   }
 
   @ExoTransactional
@@ -100,7 +91,10 @@ public class EvmTriggerService {
         String eventDetails = "{" + Utils.CONTRACT_ADDRESS + ": " + evmTrigger.getContractAddress() + ", "
                               + Utils.BLOCKCHAIN_NETWORK + ": " + evmTrigger.getBlockchainNetwork() + ", "
                               + Utils.TARGET_ADDRESS + ": " + evmTrigger.getTargetAddress() + ", "
-                              + Utils.MIN_AMOUNT + ": " + evmTrigger.getAmount() + "}";
+                              + Utils.MIN_AMOUNT + ": " + evmTrigger.getAmount() + ", "
+                              + Utils.SENT_DATE + ": " + evmTrigger.getSentDate() + ", "
+                              + Utils.TOKEN_BALANCE + ": " + evmTrigger.getTokenBalance() + ", "
+                              + Utils.DURATION + ": " + evmTrigger.getDuration() + "}";
         broadcastEvmEvent(evmTrigger.getTrigger(),
                           receiverId,
                           evmTrigger.getNetworkId() + "#" + evmTrigger.getTransactionHash(),
@@ -134,5 +128,4 @@ public class EvmTriggerService {
       LOG.error("Cannot broadcast evm gamification event", e);
     }
   }
-
 }
