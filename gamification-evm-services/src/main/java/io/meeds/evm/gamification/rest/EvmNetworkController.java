@@ -2,7 +2,7 @@ package io.meeds.evm.gamification.rest;
 
 import java.util.Set;
 
-import io.meeds.evm.gamification.service.NetworksService;
+import io.meeds.evm.gamification.service.EvmNetworkService;
 import io.meeds.evm.gamification.model.BlockchainNetwork;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -17,10 +17,10 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/gamification/connectors/evm/networks")
-public class NetworksController {
+public class EvmNetworkController {
 
   @Autowired
-  NetworksService networksService;
+  EvmNetworkService evmNetworkService;
 
   @GetMapping
   @Operation(summary = "Retrieves the list of networks", method = "GET")
@@ -28,7 +28,7 @@ public class NetworksController {
   @ApiResponse(responseCode = "404", description = "Not found")
   public Set<BlockchainNetwork> getNetworks() {
       try {
-          return networksService.getNetworks();
+          return evmNetworkService.getNetworks();
       } catch (IOException e) {
           throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No networks found");
       }
