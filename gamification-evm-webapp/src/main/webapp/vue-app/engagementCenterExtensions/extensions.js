@@ -25,7 +25,8 @@ export function init() {
       iconColorClass: 'text-color',
       match: (actionLabel) => [
         'sendToken',
-        'receiveToken'
+        'receiveToken',
+        'holdToken'
       ].includes(actionLabel),
       getLink: realization => {
         if (realization.objectType === 'evm' && realization.objectId !== '') {
