@@ -44,6 +44,12 @@
     <div class="text-font-size align-self-start">
       {{ minAmount }}
     </div>
+    <div v-if="duration" class="subtitle-1 font-weight-bold mb-2 mt-4">
+      {{ $t('gamification.event.form.duration') }}
+    </div>
+    <div class="text-font-size align-self-start">
+      {{ durationToDisplay }}
+    </div>
   </div>
 </template>
 <script>
@@ -57,6 +63,12 @@ export default {
       type: String,
       default: null
     },
+  },
+  data() {
+    return {
+      averageDaysInAMonth: 30.44,
+      dayInMilliseconds: 1000 * 60 * 60 * 24
+    };
   },
   computed: {
     contractAddress() {
@@ -85,6 +97,9 @@ export default {
     minAmount() {
       return this.properties?.minAmount;
     },
+    duration() {
+      return this.properties?.duration;
+    },
     targetAddress() {
       return this.properties?.targetAddress;
     },
@@ -98,6 +113,25 @@ export default {
     addressLabel() {
       return this.trigger === 'sendToken' ? this.$t('gamification.event.form.recipientAddress') : this.$t('gamification.event.form.senderAddress');
     },
+    durationNumber() {
+      const freq = this.properties?.frequency;
+      const freqInMilliseconds = this.getFreqInMilliseconds(freq);
+      return (this.duration / freqInMilliseconds).toFixed();
+    },
+    durationToDisplay() {
+      return this.properties?.duration ? this.durationNumber.toString() + this.properties?.frequency : '';
+    }
   },
+  methods: {
+    getFreqInMilliseconds(freq) {
+      if (freq === 'DAYS') {
+        return this.dayInMilliseconds;
+      } else if (freq === 'WEEKS') {
+        return this.dayInMilliseconds * 7;
+      } else {
+        return this.dayInMilliseconds * this.averageDaysInAMonth;
+      }
+    }
+  }
 };
 </script>
