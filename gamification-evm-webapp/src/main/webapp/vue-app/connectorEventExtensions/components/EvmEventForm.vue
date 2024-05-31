@@ -277,13 +277,6 @@ export default {
     }
   },
   methods: {
-    submitEventProperties() {
-      if (this.checkContractAddress(this.eventProperties.contractAddress) && this.erc20Token) {
-        document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
-      } else {
-        document.dispatchEvent(new CustomEvent('event-form-unfilled'));
-      }
-    },
     handleAddress() {
       if (this.contractAddress) {
         this.startTypingKeywordTimeout = Date.now() + this.startSearchAfterInMilliseconds;
@@ -314,6 +307,15 @@ export default {
       return this.$evmConnectorService.getTokenDetailsByAddress({contractAddress: this.contractAddress, blockchainNetwork: this.selected?.providerUrl})
         .then(token => {
           this.erc20Token = token;
+          this.eventProperties = {
+            contractAddress: this.contractAddress,
+            blockchainNetwork: this.selected?.providerUrl,
+            networkId: this.selected?.networkId,
+            tokenName: token.name,
+            tokenSymbol: token.symbol,
+            tokenDecimals: token.decimals,
+          };
+          document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
         })
         .then(() => this.loading = false )
         .catch(() => {
