@@ -347,8 +347,9 @@ export default {
             this.targetAddress = this.properties?.targetAddress;
             this.readOnly = true;
             this.isValidAddress = true;
+          } else {
+            document.dispatchEvent(new CustomEvent('event-form-unfilled'));
           }
-          document.dispatchEvent(new CustomEvent('event-form-unfilled'));
           this.loadingNetworks = false;
         });
     },
