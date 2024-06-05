@@ -82,9 +82,9 @@ public class EvmContractTransferService {
   private Long getLastIdProcced(RuleDTO rule, String contractAddress, Long networkId) {
     Long lastIdProcced = 0l;
     if (StringUtils.isBlank(rule.getEvent().getProperties().get(Utils.LAST_ID_PROCCED))) {
-      if (evmTransactionService.getTransactionByContractAddressAndNetworkIdOrderByIdDesc(contractAddress, networkId) != null) {
-        lastIdProcced = evmTransactionService.getTransactionByContractAddressAndNetworkIdOrderByIdDesc(contractAddress, networkId)
-                                             .getId();
+      EvmTransaction lastTransaction = evmTransactionService.getTransactionByContractAddressAndNetworkIdOrderByIdDesc(contractAddress, networkId);
+      if (lastTransaction != null) {
+        lastIdProcced = lastTransaction.getId();
       }
       broadcastEvmActionEvent(lastIdProcced.toString(), rule.getId().toString());
     } else {

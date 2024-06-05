@@ -19,7 +19,9 @@
 package io.meeds.evm.gamification.listener;
 
 import io.meeds.evm.gamification.utils.Utils;
+import io.meeds.gamification.model.EventDTO;
 import io.meeds.gamification.model.RuleDTO;
+import io.meeds.gamification.service.EventService;
 import io.meeds.gamification.service.RuleService;
 import jakarta.annotation.PostConstruct;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
@@ -48,6 +50,9 @@ public class EvmRuleUpdateListener extends Listener<Map<String, String>, String>
   @Autowired
   private ListenerService           listenerService;
 
+  @Autowired
+  private EventService              eventService;
+
   @PostConstruct
   public void init() {
     for (String eventName : SUPPORTED_EVENTS) {
@@ -64,9 +69,13 @@ public class EvmRuleUpdateListener extends Listener<Map<String, String>, String>
     if (rule == null) {
       throw new ObjectNotFoundException(String.format("Rule with id %s wasn't found", rule.getId()));
     }
-    Map<String, String> map = rule.getEvent().getProperties();
-    map.put(Utils.LAST_ID_PROCCED, lastIdToSave.toString());
-    rule.getEvent().setProperties(map);
+    if (rule.getEvent() != null) {
+      Map<String, String> map = rule.getEvent().getProperties();
+      map.put(Utils.LAST_ID_PROCCED, lastIdToSave.toString());
+      rule.getEvent().setProperties(map);
+      EventDTO eventDTO = eventService.updateEvent(rule.getEvent());
+      rule.setEvent(eventDTO);
+    }
     ruleService.updateRule(rule);
   }
 }
