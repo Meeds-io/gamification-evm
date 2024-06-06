@@ -130,7 +130,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             type="text"
             outlined
             dense
+            @input="handleAddress"
             @change="selectedTargetAddress" />
+          <span v-if="!validTargetAddress" class="error--text">{{ invalidTargetAddress }}</span>
         </div>
         <v-card-text class="px-0 dark-grey-color font-weight-bold">
           {{ $t('gamification.event.form.minAmount') }}
@@ -210,7 +212,9 @@ export default {
       eventProperties: null,
       networkId: null,
       durationFilter: 'DAYS',
-      durationNumber: 0
+      durationNumber: 0,
+      validTargetAddress: true,
+      targetAddress: null
     };
   },
   computed: {
@@ -253,6 +257,9 @@ export default {
     addressPlaceholder() {
       return this.trigger === 'sendToken' ? this.$t('gamification.event.form.recipientAddress.placeholder') : this.$t('gamification.event.form.senderAddress.placeholder');
     },
+    invalidTargetAddress() {
+      return this.trigger === 'sendToken' ? this.$t('gamification.event.detail.invalidRecipientAddress.error') : this.$t('gamification.event.detail.invalidSenderAddress.error');
+    },
     isHoldEvent() {
       return this.trigger === 'holdToken';
     }
@@ -278,7 +285,7 @@ export default {
   },
   methods: {
     handleAddress() {
-      if (this.contractAddress) {
+      if (this.contractAddress || this.targetAddress) {
         this.startTypingKeywordTimeout = Date.now() + this.startSearchAfterInMilliseconds;
         if (!this.typing) {
           this.typing = true;
@@ -290,8 +297,13 @@ export default {
       window.setTimeout(() => {
         if (Date.now() > this.startTypingKeywordTimeout) {
           this.typing = false;
-          this.checkContractAddress(this.contractAddress);
-          this.isValidERC20Address = true;
+          if (this.contractAddress) {
+            this.isValidAddress = this.checkContractAddress(this.contractAddress);
+            this.isValidERC20Address = true;
+          }
+          if (this.targetAddress) {
+            this.validTargetAddress = this.checkContractAddress(this.targetAddress);
+          }
         } else {
           this.waitForEndTyping();
         }
@@ -299,8 +311,7 @@ export default {
     },
     checkContractAddress(contractAddress) {
       const addressUrlRegex = /^(0x)?[0-9a-f]{40}$/i;
-      this.isValidAddress = addressUrlRegex.test(contractAddress);
-      return this.isValidAddress;
+      return addressUrlRegex.test(contractAddress);
     },
     retrieveERC20Token() {
       this.loading = true;
@@ -379,29 +390,32 @@ export default {
       document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
     },
     selectedTargetAddress(targetAddress) {
-      if (this.minAmount) {
-        this.eventProperties = {
-          contractAddress: this.contractAddress,
-          blockchainNetwork: this.selected?.providerUrl,
-          networkId: this.selected?.networkId,
-          tokenName: this.erc20Token.name,
-          tokenSymbol: this.erc20Token.symbol,
-          tokenDecimals: this.erc20Token.decimals,
-          targetAddress: targetAddress,
-          minAmount: this.minAmount
-        };
-      } else {
-        this.eventProperties = {
-          contractAddress: this.contractAddress,
-          blockchainNetwork: this.selected?.providerUrl,
-          networkId: this.selected?.networkId,
-          tokenName: this.erc20Token.name,
-          tokenSymbol: this.erc20Token.symbol,
-          tokenDecimals: this.erc20Token.decimals,
-          targetAddress: targetAddress
-        };
+      this.validTargetAddress = this.checkContractAddress(targetAddress);
+      if (this.validTargetAddress) {
+        if (this.minAmount) {
+          this.eventProperties = {
+            contractAddress: this.contractAddress,
+            blockchainNetwork: this.selected?.providerUrl,
+            networkId: this.selected?.networkId,
+            tokenName: this.erc20Token.name,
+            tokenSymbol: this.erc20Token.symbol,
+            tokenDecimals: this.erc20Token.decimals,
+            targetAddress: targetAddress,
+            minAmount: this.minAmount
+          };
+        } else {
+          this.eventProperties = {
+            contractAddress: this.contractAddress,
+            blockchainNetwork: this.selected?.providerUrl,
+            networkId: this.selected?.networkId,
+            tokenName: this.erc20Token.name,
+            tokenSymbol: this.erc20Token.symbol,
+            tokenDecimals: this.erc20Token.decimals,
+            targetAddress: targetAddress
+          };
+        }
+        document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
       }
-      document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
     },
     durationToTimestamp(months, weeks, days) {
       let durationTimestamp = new Date();
