@@ -148,6 +148,9 @@ public class EvmContractTransferService {
       }
       evmTrigger.setWalletAddress(transaction.getToAddress());
     }
+    if (trigger.equals(Utils.HOLD_TOKEN_EVENT)) {
+      evmTrigger.setTokenBalance(evmBlockchainService.erc20BalanceOf(transaction.getToAddress(), contractAddress, blockchainNetwork));
+    }
     return evmTrigger;
   }
 
