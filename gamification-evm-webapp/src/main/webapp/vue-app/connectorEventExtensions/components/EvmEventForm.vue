@@ -215,7 +215,9 @@ export default {
       validTargetAddress: true,
       targetAddress: null,
       durationFilter: 'DAYS',
-      durationNumber: 0
+      durationNumber: 0,
+      averageDaysInAMonth: 30.44,
+      dayInMilliseconds: 1000 * 60 * 60 * 24
     };
   },
   computed: {
@@ -359,6 +361,8 @@ export default {
             };
             this.minAmount = this.properties?.minAmount;
             this.targetAddress = this.properties?.targetAddress;
+            this.durationFilter = this.properties?.frequency;
+            this.durationNumber = (this.properties?.duration / this.getFreqInMilliseconds(this.durationFilter)).toFixed();
             this.readOnly = true;
             this.isValidAddress = true;
           } else {
@@ -445,6 +449,15 @@ export default {
         this.durationToTimestamp(0, parseInt(this.durationNumber), 0);
       } else {
         this.durationToTimestamp(0, 0, parseInt(this.durationNumber));
+      }
+    },
+    getFreqInMilliseconds(freq) {
+      if (freq === 'DAYS') {
+        return this.dayInMilliseconds;
+      } else if (freq === 'WEEKS') {
+        return this.dayInMilliseconds * 7;
+      } else {
+        return this.dayInMilliseconds * this.averageDaysInAMonth;
       }
     }
   }
