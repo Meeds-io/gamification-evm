@@ -46,15 +46,15 @@ public class Utils {
 
   public static final String DURATION            = "duration";
 
-  public static final String TRANSACTION_HASH    = "transactionHash";
-
-  public static final String TRIGGER             = "trigger";
-
   public static final String TRANSACTION_ID      = "transactionId";
 
   public static final String RULE_ID            = "ruleId";
 
   public static final String LAST_ID_PROCCED    = "lastIdProcced";
+
+  public static final String SENT_DATE          = "sentDate";
+
+  public static final String TOKEN_BALANCE      = "tokenBalance";
 
   private Utils() {
 
