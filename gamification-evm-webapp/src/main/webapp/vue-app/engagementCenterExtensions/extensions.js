@@ -21,7 +21,8 @@ export function init() {
     type: 'evm',
     options: {
       rank: 60,
-      image: '/gamification-evm/images/EVM.png',
+      icon: 'fab fa-ethereum',
+      iconColorClass: 'text-color',
       match: (actionLabel) => [
         'sendToken',
         'receiveToken',
