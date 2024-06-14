@@ -102,7 +102,8 @@ public class EvmTriggerService {
                               + Utils.TARGET_ADDRESS + ": " + evmTrigger.getTargetAddress() + ", "
                               + Utils.MIN_AMOUNT + ": " + evmTrigger.getAmount() + ", "
                               + Utils.SENT_DATE + ": " + evmTrigger.getSentDate() + ", "
-                              + Utils.TOKEN_BALANCE + ": " + evmTrigger.getTokenBalance() + "}";
+                              + Utils.TOKEN_BALANCE + ": " + evmTrigger.getTokenBalance() + ", "
+                              + Utils.DURATION + ": " + evmTrigger.getDuration() + "}";
         broadcastEvmEvent(evmTrigger.getTrigger(),
                           receiverId,
                           evmTrigger.getNetworkId() + "#" + evmTrigger.getTransactionHash(),
