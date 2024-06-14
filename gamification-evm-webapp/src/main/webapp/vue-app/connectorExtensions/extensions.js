@@ -20,7 +20,8 @@ export function init() {
   extensionRegistry.registerExtension('engagementCenterConnectors', 'connector-extensions', {
     id: 'evm',
     name: 'evm',
-    image: '/gamification-evm/images/EVM.png',
+    icon: 'fab fa-ethereum',
+    iconColorClass: 'text-color',
     title: 'EVM Blockchain',
     description: 'gamification.admin.evm.label.description',
     rank: 40,
