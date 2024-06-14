@@ -18,21 +18,16 @@ package io.meeds.evm.gamification.service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import io.meeds.evm.gamification.model.EvmTrigger;
 import io.meeds.evm.gamification.utils.Utils;
-import jakarta.annotation.PostConstruct;
 
-import jakarta.annotation.PreDestroy;
 import org.exoplatform.wallet.service.WalletAccountService;
 import org.exoplatform.wallet.model.Wallet;
 import io.meeds.gamification.model.EventDTO;
 import io.meeds.gamification.service.EventService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.log.ExoLogger;
@@ -41,6 +36,8 @@ import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
 
 @Service
 public class EvmTriggerService {
@@ -61,21 +58,8 @@ public class EvmTriggerService {
   @Autowired
   private WalletAccountService walletAccountService;
 
-  private ExecutorService      executorService;
-
-  @PostConstruct
-  public void init() {
-    QueuedThreadPool threadFactory = new QueuedThreadPool(5, 1, 1);
-    threadFactory.setName("Gamification - Evm connector");
-    executorService = Executors.newCachedThreadPool(threadFactory);
-  }
-
-  @PreDestroy
-  public void stop() {
-    if (executorService != null) {
-      executorService.shutdownNow();
-    }
-  }
+  @Autowired
+  private ThreadPoolTaskExecutor threadPoolTaskExecutor;
 
   /**
    * Handle evm trigger asynchronously
@@ -83,7 +67,7 @@ public class EvmTriggerService {
    * @param evmTrigger evm retrieved trigger
    */
   public void handleTriggerAsync(EvmTrigger evmTrigger) {
-    executorService.execute(() -> handleTriggerAsyncInternal(evmTrigger));
+    threadPoolTaskExecutor.execute(() -> handleTriggerAsyncInternal(evmTrigger));
   }
 
   @ExoTransactional
