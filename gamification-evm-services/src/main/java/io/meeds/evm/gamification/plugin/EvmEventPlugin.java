@@ -79,7 +79,8 @@ public class EvmEventPlugin extends EventPlugin {
                                                                   minAmount,
                                                                   Integer.parseInt(tokenDecimals),
                                                                   sentDate,
-                                                                  Long.parseLong(eventProperties.get(Utils.DURATION)));
+                                                                  Long.parseLong(eventProperties.get(Utils.DURATION)),
+                                                                  Long.parseLong(triggerDetailsMop.get(Utils.DURATION)));
     } else {
       if (StringUtils.isNotBlank(minAmount) && StringUtils.isNotBlank(tokenDecimals)) {
         isValidFilters = isValidMinAmount(minAmount,
@@ -104,7 +105,11 @@ public class EvmEventPlugin extends EventPlugin {
                                            String minAmount,
                                            Integer tokenDecimals,
                                            Long sentDate,
-                                           Long duration) {
+                                           Long duration,
+                                           Long desiredDuration) {
+    if (duration.compareTo(desiredDuration) != 0) {
+      return false;
+    }
     Long holdingDuration = System.currentTimeMillis() - sentDate;
     BigInteger base = new BigInteger("10");
     BigInteger desiredMinAmount = base.pow(tokenDecimals).multiply(new BigInteger(minAmount));
