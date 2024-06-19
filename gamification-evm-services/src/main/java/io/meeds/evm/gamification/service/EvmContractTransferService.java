@@ -48,6 +48,7 @@ public class EvmContractTransferService {
     String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
     String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase();
     Long networkId = Long.parseLong(rule.getEvent().getProperties().get(Utils.NETWORK_ID));
+    Long duration = Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION));
     Long lastIdProcced = getLastIdProcced(rule, contractAddress, networkId);
     List<EvmTransaction> transactions = evmTransactionService.getTransactionsByContractAddressAndNetworkIdFromId(contractAddress,
                                                                                                                  networkId,
@@ -55,7 +56,7 @@ public class EvmContractTransferService {
     if (CollectionUtils.isNotEmpty(transactions)) {
       transactions.forEach(transaction -> {
         try {
-          handleEvmTrigger(rule, transaction, trigger, contractAddress, networkId, blockchainNetwork);
+          handleEvmTrigger(rule, transaction, trigger, contractAddress, networkId, blockchainNetwork, duration);
         } catch (Exception e) {
           LOG.warn("Error broadcasting EVM event for transaction {} and trigger {}",
                    transaction.getTransactionHash(),
@@ -109,14 +110,15 @@ public class EvmContractTransferService {
                                 String trigger,
                                 String contractAddress,
                                 Long networkId,
-                                String blockchainNetwork) {
+                                String blockchainNetwork,
+                                Long duration) {
     if (trigger.equals(Utils.SEND_TOKEN_EVENT) || trigger.equals(Utils.RECEIVE_TOKEN_EVENT)
         || (trigger.equals(Utils.HOLD_TOKEN_EVENT)
             && isValidHoldingToken(transaction,
                                    Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION)),
                                    contractAddress,
                                    blockchainNetwork))) {
-      EvmTrigger evmTrigger = newEvmTrigger(transaction, rule.getId(), trigger, contractAddress, blockchainNetwork, networkId);
+      EvmTrigger evmTrigger = newEvmTrigger(transaction, rule.getId(), trigger, contractAddress, blockchainNetwork, networkId, duration);
       evmTriggerService.handleTriggerAsync(evmTrigger);
       broadcastEvmActionEvent(transaction.getId().toString(), rule.getId().toString());
     }
@@ -127,7 +129,8 @@ public class EvmContractTransferService {
                                    String trigger,
                                    String contractAddress,
                                    String blockchainNetwork,
-                                   Long networkId) {
+                                   Long networkId,
+                                   Long duration) {
     EvmTrigger evmTrigger = new EvmTrigger();
     evmTrigger.setTrigger(trigger);
     evmTrigger.setType(Utils.CONNECTOR_NAME);
@@ -139,6 +142,7 @@ public class EvmContractTransferService {
     evmTrigger.setAmount(transaction.getAmount());
     evmTrigger.setNetworkId(networkId.toString());
     evmTrigger.setSentDate(transaction.getSentDate());
+    evmTrigger.setDuration(duration);
     if (trigger.equals(Utils.SEND_TOKEN_EVENT)) {
       evmTrigger.setWalletAddress(transaction.getFromAddress());
       evmTrigger.setTargetAddress(transaction.getToAddress());

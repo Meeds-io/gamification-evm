@@ -52,6 +52,8 @@ public class EvmTrigger {
 
   private BigInteger tokenBalance;
 
+  private Long       duration;
+
   public EvmTrigger clone() {
     return new EvmTrigger(trigger,
                           walletAddress,
@@ -65,6 +67,7 @@ public class EvmTrigger {
                           targetAddress,
                           amount,
                           sentDate,
-                          tokenBalance);
+                          tokenBalance,
+                          duration);
   }
 }
