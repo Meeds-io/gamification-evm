@@ -119,7 +119,16 @@ export default {
       return (this.duration / freqInMilliseconds).toFixed();
     },
     durationToDisplay() {
-      return this.properties?.duration ? this.durationNumber.toString() + this.properties?.frequency : '';
+      switch (this.properties?.frequency) {
+      case 'DAYS':
+        return parseInt(this.durationNumber) === 1 ? `${this.durationNumber} day` : `${this.durationNumber} days`;
+      case 'WEEKS':
+        return parseInt(this.durationNumber) === 1 ? `${this.durationNumber} week` : `${this.durationNumber} weeks`;
+      case 'MONTHS':
+        return parseInt(this.durationNumber) === 1 ? `${this.durationNumber} month` : `${this.durationNumber} months`;
+      default:
+        return '';
+      }
     }
   },
   methods: {
