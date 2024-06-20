@@ -51,6 +51,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         outlined
         required
         dense
+        @keyup.enter="retrieveERC20Token"
         @input="handleAddress"
         @change="checkContractAddress(contractAddress)">
         <template #append-outer>
@@ -316,26 +317,28 @@ export default {
       return addressUrlRegex.test(contractAddress);
     },
     retrieveERC20Token() {
-      this.loading = true;
-      return this.$evmConnectorService.getTokenDetailsByAddress({contractAddress: this.contractAddress, blockchainNetwork: this.selected?.providerUrl})
-        .then(token => {
-          this.erc20Token = token;
-          this.eventProperties = {
-            contractAddress: this.contractAddress,
-            blockchainNetwork: this.selected?.providerUrl,
-            networkId: this.selected?.networkId,
-            tokenName: token.name,
-            tokenSymbol: token.symbol,
-            tokenDecimals: token.decimals,
-          };
-          document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
-        })
-        .then(() => this.loading = false )
-        .catch(() => {
-          this.isValidERC20Address = false;
-          this.erc20Token = null;
-          this.loading = false;
-        });
+      if (this.isValidAddress) {
+        this.loading = true;
+        return this.$evmConnectorService.getTokenDetailsByAddress({contractAddress: this.contractAddress, blockchainNetwork: this.selected?.providerUrl})
+          .then(token => {
+            this.erc20Token = token;
+            this.eventProperties = {
+              contractAddress: this.contractAddress,
+              blockchainNetwork: this.selected?.providerUrl,
+              networkId: this.selected?.networkId,
+              tokenName: token.name,
+              tokenSymbol: token.symbol,
+              tokenDecimals: token.decimals,
+            };
+            document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
+          })
+          .then(() => this.loading = false )
+          .catch(() => {
+            this.isValidERC20Address = false;
+            this.erc20Token = null;
+            this.loading = false;
+          });
+      }
     },
     resetERC20Token() {
       this.erc20Token = null;
