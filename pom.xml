@@ -26,7 +26,7 @@
   <parent>
     <artifactId>addons-parent-pom</artifactId>
     <groupId>io.meeds.addons</groupId>
-    <version>18-mips-SNAPSHOT</version>
+    <version>18-M04</version>
     <relativePath/>
   </parent>
   <groupId>io.meeds.gamification-evm</groupId>
@@ -53,7 +53,6 @@
 
     <!-- Sonar properties -->
     <sonar.organization>meeds-io</sonar.organization>
-    <exo.snapshots.repo.url>https://repository.exoplatform.org/content/repositories/meeds-snapshots</exo.snapshots.repo.url>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -73,7 +72,7 @@
         <scope>import</scope>
       </dependency>
       <dependency>
-        <groupId>io.meeds.addons.gamification</groupId>
+        <groupId>io.meeds.gamification</groupId>
         <artifactId>gamification</artifactId>
         <version>${addon.meeds.gamification.version}</version>
         <type>pom</type>
