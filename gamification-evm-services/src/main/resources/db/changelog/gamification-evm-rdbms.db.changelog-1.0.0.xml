@@ -53,4 +53,7 @@
     </preConditions>
     <createSequence sequenceName="SEQ_EVM_TRANSACTIONS_ID" startValue="1"/>
   </changeSet>
+  <changeSet author="evm-connector" id="1.0.0-3">
+    <modifyDataType tableName="EVM_TRANSACTIONS" columnName="AMOUNT" newDataType="DECIMAL(30,0)"/>
+  </changeSet>
 </databaseChangeLog>
