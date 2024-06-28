@@ -18,7 +18,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 -->
 <template>
   <div>
-    <v-card-text class="px-0 dark-grey-color font-weight-bold">
+    <v-card-text class="px-0">
       {{ $t('gamification.event.form.networks') }}
     </v-card-text>
     <v-progress-circular
@@ -37,7 +37,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         :network="network" />
     </v-chip-group>
     <template v-if="selected">
-      <v-card-text class="px-0 dark-grey-color font-weight-bold">
+      <v-card-text class="px-0">
         {{ $t('gamification.event.form.contractAddress') }}
       </v-card-text>
       <v-text-field
@@ -120,7 +120,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       <span v-else-if="emptyERC20Token">{{ $t('gamification.event.detail.verifyToken.message') }}</span>
       <div v-if="erc20Token">
         <div v-if="!isHoldEvent">
-          <v-card-text class="px-0 dark-grey-color font-weight-bold">
+          <v-card-text class="px-0">
             {{ addressLabel }}
           </v-card-text>
           <v-text-field
@@ -135,7 +135,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             @change="selectedTargetAddress" />
           <span v-if="!validTargetAddress" class="error--text">{{ invalidTargetAddress }}</span>
         </div>
-        <v-card-text class="px-0 dark-grey-color font-weight-bold">
+        <v-card-text class="px-0">
           {{ $t('gamification.event.form.minAmount') }}
         </v-card-text>
         <v-text-field
@@ -148,7 +148,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           dense
           @change="selectedAmount" />
         <div v-if="isHoldEvent">
-          <v-card-text class="px-0 dark-grey-color font-weight-bold">
+          <v-card-text class="px-0">
             {{ $t('gamification.event.form.duration') }}
           </v-card-text>
           <div class="d-flex flex-row">
