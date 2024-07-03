@@ -384,15 +384,29 @@ export default {
           minAmount: minAmount
         };
       } else {
-        this.eventProperties = {
-          contractAddress: this.contractAddress,
-          blockchainNetwork: this.selected?.providerUrl,
-          networkId: this.selected?.networkId,
-          tokenName: this.erc20Token.name,
-          tokenSymbol: this.erc20Token.symbol,
-          tokenDecimals: this.erc20Token.decimals,
-          minAmount: minAmount
-        };
+        if (this.properties?.duration && this.properties?.frequency) {
+          this.eventProperties = {
+            contractAddress: this.contractAddress,
+            blockchainNetwork: this.selected?.providerUrl,
+            networkId: this.selected?.networkId,
+            tokenName: this.erc20Token.name,
+            tokenSymbol: this.erc20Token.symbol,
+            tokenDecimals: this.erc20Token.decimals,
+            minAmount: minAmount,
+            duration: this.properties?.duration,
+            frequency: this.properties?.frequency
+          };
+        } else {
+          this.eventProperties = {
+            contractAddress: this.contractAddress,
+            blockchainNetwork: this.selected?.providerUrl,
+            networkId: this.selected?.networkId,
+            tokenName: this.erc20Token.name,
+            tokenSymbol: this.erc20Token.symbol,
+            tokenDecimals: this.erc20Token.decimals,
+            minAmount: minAmount
+          };
+        }
       }
       document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
     },
