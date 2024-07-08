@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This file is part of the Meeds project (https://meeds.io/).
+  Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 3 of the License, or (at your option) any later version.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+  You should have received a copy of the GNU Lesser General Public License
+  along with this program; if not, write to the Free Software Foundation,
+  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+-->
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+  <property name="autoIncrement" value="true" dbms="mysql,mssql,h2,sybase,db2,hsqldb"/>
+  <property name="autoIncrement" value="false" dbms="oracle,postgresql"/>
+
+  <!-- Definition of EVM_TRANSACTIONS table -->
+  <changeSet author="evm-connector" id="1.0.0-1">
+    <createTable tableName="EVM_TRANSACTIONS">
+      <column name="ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_EVM_TRANSACTIONS_ID"/>
+      </column>
+      <column name="TRANSACTION_HASH" type="NVARCHAR(250)">
+      </column>
+      <column name="NETWORK_ID" type="BIGINT">
+      </column>
+      <column name="FROM_ADDRESS" type="NVARCHAR(250)">
+      </column>
+      <column name="TO_ADDRESS" type="NVARCHAR(250)">
+      </column>
+      <column name="CONTRACT_ADDRESS" type="NVARCHAR(250)">
+      </column>
+      <column name="SENT_DATE" type="BIGINT">
+      </column>
+      <column name="AMOUNT" type="BIGINT">
+      </column>
+    </createTable>
+  </changeSet>
+  <changeSet author="evm-connector" id="1.0.0-2" dbms="oracle,postgresql,hsqldb">
+    <validCheckSum>ANY</validCheckSum>
+    <preConditions>
+      <not>
+        <sequenceExists sequenceName="SEQ_EVM_TRANSACTIONS_ID" />
+      </not>
+    </preConditions>
+    <createSequence sequenceName="SEQ_EVM_TRANSACTIONS_ID" startValue="1"/>
+  </changeSet>
+  <changeSet author="evm-connector" id="1.0.0-3">
+    <modifyDataType tableName="EVM_TRANSACTIONS" columnName="AMOUNT" newDataType="DECIMAL(30,0)"/>
+  </changeSet>
+</databaseChangeLog>
