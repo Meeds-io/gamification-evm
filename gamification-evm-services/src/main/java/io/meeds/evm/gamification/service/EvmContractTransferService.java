@@ -43,7 +43,7 @@ public class EvmContractTransferService {
   @Autowired
   private RuleService           ruleService;
 
-  public void listenEvmContractTransfer(RuleDTO rule) {
+  public void scanForContractTransactions(RuleDTO rule) {
     String trigger = rule.getEvent().getTrigger();
     String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
     String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase();
@@ -66,7 +66,7 @@ public class EvmContractTransferService {
     }
   }
 
-  public List<RuleDTO> getFilteredEVMRules() {
+  public List<RuleDTO> getEnabledEvmRules() {
     RuleFilter ruleFilter = new RuleFilter(true);
     ruleFilter.setEventType(Utils.CONNECTOR_NAME);
     ruleFilter.setStatus(EntityStatusType.ENABLED);

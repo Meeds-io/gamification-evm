@@ -30,7 +30,7 @@ public class TaskExecutorConfig {
     executor.setCorePoolSize(5);
     executor.setMaxPoolSize(10);
     executor.setQueueCapacity(25);
-    executor.setThreadNamePrefix("MyExecutor-");
+    executor.setThreadNamePrefix("Gamification-EVM-");
     executor.initialize();
     return executor;
   }
