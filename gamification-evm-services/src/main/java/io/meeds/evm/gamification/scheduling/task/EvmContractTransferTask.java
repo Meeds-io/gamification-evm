@@ -55,13 +55,14 @@ public class EvmContractTransferTask {
   private EvmContractTransferService evmContractTransferService;
 
   @ContainerTransactional
+  @Scheduled(cron = "${gamification.evm.transactionScan.cron:0 * * * * *}")
   @Scheduled(cron = "0 * * * * *")
-  public synchronized void listenEVMContractTransfer() {
+  public synchronized void scanForContractTransactions() {
     try {
-      List<RuleDTO> filteredRules = evmContractTransferService.getFilteredEVMRules();
+      List<RuleDTO> filteredRules = evmContractTransferService.getEnabledEvmRules();
       if (CollectionUtils.isNotEmpty(filteredRules)) {
         filteredRules.forEach(rule -> {
-          evmContractTransferService.listenEvmContractTransfer(rule);
+          evmContractTransferService.scanForContractTransactions(rule);
         });
       }
     } catch (Exception e) {
@@ -73,7 +74,7 @@ public class EvmContractTransferTask {
   @Scheduled(cron = "0 * * * * *")
   public synchronized void saveEVMContractTransactions() {
     try {
-      List<RuleDTO> filteredRules = evmContractTransferService.getFilteredEVMRules();
+      List<RuleDTO> filteredRules = evmContractTransferService.getEnabledEvmRules();
       if (CollectionUtils.isNotEmpty(filteredRules)) {
         LOG.info("Start listening evm token transfers for {} configured rules", filteredRules.size());
         filteredRules.forEach(rule -> {
