@@ -48,7 +48,6 @@ public class EvmContractTransferService {
     String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
     String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase();
     Long networkId = Long.parseLong(rule.getEvent().getProperties().get(Utils.NETWORK_ID));
-    Long duration = Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION));
     Long lastIdProcced = getLastIdProcced(rule, contractAddress, networkId);
     List<EvmTransaction> transactions = evmTransactionService.getTransactionsByContractAddressAndNetworkIdFromId(contractAddress,
                                                                                                                  networkId,
@@ -56,7 +55,7 @@ public class EvmContractTransferService {
     if (CollectionUtils.isNotEmpty(transactions)) {
       transactions.forEach(transaction -> {
         try {
-          handleEvmTrigger(rule, transaction, trigger, contractAddress, networkId, blockchainNetwork, duration);
+          handleEvmTrigger(rule, transaction, trigger, contractAddress, networkId, blockchainNetwork);
         } catch (Exception e) {
           LOG.warn("Error broadcasting EVM event for transaction {} and trigger {}",
                    transaction.getTransactionHash(),
@@ -110,16 +109,26 @@ public class EvmContractTransferService {
                                 String trigger,
                                 String contractAddress,
                                 Long networkId,
-                                String blockchainNetwork,
-                                Long duration) {
-    if (trigger.equals(Utils.SEND_TOKEN_EVENT) || trigger.equals(Utils.RECEIVE_TOKEN_EVENT)
-        || (trigger.equals(Utils.HOLD_TOKEN_EVENT)
-            && isValidHoldingToken(transaction,
-                                   Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION)),
-                                   contractAddress,
-                                   blockchainNetwork))) {
-      EvmTrigger evmTrigger = newEvmTrigger(transaction, rule.getId(), trigger, contractAddress, blockchainNetwork, networkId, duration);
+                                String blockchainNetwork) {
+    Boolean isSendTokenEvent = trigger.equals(Utils.SEND_TOKEN_EVENT);
+    Boolean isReceiveTokenEvent = trigger.equals(Utils.RECEIVE_TOKEN_EVENT);
+    if (isSendTokenEvent || isReceiveTokenEvent) {
+      EvmTrigger evmTrigger;
+      if (isSendTokenEvent) {
+        evmTrigger = newEvmTrigger(transaction, rule.getId(), trigger, contractAddress, blockchainNetwork, networkId, null, transaction.getFromAddress(), transaction.getToAddress());
+      } else {
+        evmTrigger = newEvmTrigger(transaction, rule.getId(), trigger, contractAddress, blockchainNetwork, networkId, null, transaction.getToAddress(), transaction.getFromAddress());
+      }
       evmTriggerService.handleTriggerAsync(evmTrigger);
+      broadcastEvmActionEvent(transaction.getId().toString(), rule.getId().toString());
+    }
+    if (trigger.equals(Utils.HOLD_TOKEN_EVENT)
+        && isValidDurationHoldingToken(transaction, Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION)))) {
+      Long duration = Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION));
+      EvmTrigger evmTriggerForReceiver = newEvmTrigger(transaction, rule.getId(), trigger, contractAddress, blockchainNetwork, networkId, duration, transaction.getToAddress(), null);
+      EvmTrigger evmTriggerForSender = newEvmTrigger(transaction, rule.getId(), trigger, contractAddress, blockchainNetwork, networkId, duration, transaction.getFromAddress(), null);
+      evmTriggerService.handleTriggerAsync(evmTriggerForReceiver);
+      evmTriggerService.handleTriggerAsync(evmTriggerForSender);
       broadcastEvmActionEvent(transaction.getId().toString(), rule.getId().toString());
     }
   }
@@ -130,7 +139,9 @@ public class EvmContractTransferService {
                                    String contractAddress,
                                    String blockchainNetwork,
                                    Long networkId,
-                                   Long duration) {
+                                   Long duration,
+                                   String walletAddress,
+                                   String targetAddress) {
     EvmTrigger evmTrigger = new EvmTrigger();
     evmTrigger.setTrigger(trigger);
     evmTrigger.setType(Utils.CONNECTOR_NAME);
@@ -143,39 +154,16 @@ public class EvmContractTransferService {
     evmTrigger.setNetworkId(networkId.toString());
     evmTrigger.setSentDate(transaction.getSentDate());
     evmTrigger.setDuration(duration);
-    if (trigger.equals(Utils.SEND_TOKEN_EVENT)) {
-      evmTrigger.setWalletAddress(transaction.getFromAddress());
-      evmTrigger.setTargetAddress(transaction.getToAddress());
-    } else {
-      if (trigger.equals(Utils.RECEIVE_TOKEN_EVENT)) {
-        evmTrigger.setTargetAddress(transaction.getFromAddress());
-      }
-      evmTrigger.setWalletAddress(transaction.getToAddress());
-    }
+    evmTrigger.setWalletAddress(walletAddress);
+    evmTrigger.setTargetAddress(targetAddress);
     if (trigger.equals(Utils.HOLD_TOKEN_EVENT)) {
-      evmTrigger.setTokenBalance(evmBlockchainService.erc20BalanceOf(transaction.getToAddress(), contractAddress, blockchainNetwork));
+      evmTrigger.setTokenBalance(evmBlockchainService.erc20BalanceOf(walletAddress, contractAddress, blockchainNetwork));
     }
     return evmTrigger;
   }
 
-  private Boolean isValidHoldingToken(EvmTransaction transaction,
-                                      Long desiredDuration,
-                                      String contractAddress,
-                                      String blockchainNetwork) {
+  private Boolean isValidDurationHoldingToken(EvmTransaction transaction, Long desiredDuration) {
     Long holdingDuration = System.currentTimeMillis() - transaction.getSentDate();
-    Boolean validDuration = holdingDuration.compareTo(desiredDuration) >= 0;
-    String tokenHolder = transaction.getToAddress();
-    Boolean amountHeld = true;
-    if (!validDuration) {
-      return false;
-    }
-    List<EvmTransaction> transferTransactions = evmTransactionService.getTransactionsByFromAddress(tokenHolder);
-    if (CollectionUtils.isNotEmpty(transferTransactions)) {
-      BigInteger balanceOf = evmBlockchainService.erc20BalanceOf(tokenHolder, contractAddress, blockchainNetwork);
-      if (balanceOf.compareTo(transaction.getAmount()) < 0) {
-        amountHeld = false;
-      }
-    }
-    return validDuration && amountHeld;
+    return holdingDuration.compareTo(desiredDuration) >= 0;
   }
 }
