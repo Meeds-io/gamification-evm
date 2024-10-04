@@ -24,8 +24,8 @@ import java.util.concurrent.TimeUnit;
 import io.meeds.evm.gamification.model.EvmTrigger;
 import io.meeds.evm.gamification.utils.Utils;
 
-import io.meeds.wallet.wallet.service.WalletAccountService;
-import io.meeds.wallet.wallet.model.Wallet;
+import io.meeds.wallet.service.WalletAccountService;
+import io.meeds.wallet.model.Wallet;
 import io.meeds.gamification.model.EventDTO;
 import io.meeds.gamification.service.EventService;
 import org.apache.commons.collections.CollectionUtils;

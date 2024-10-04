@@ -26,8 +26,8 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.wallet.contract.ERC20;
 import org.exoplatform.wallet.contract.ERC20.TransferEventResponse;
-import io.meeds.wallet.wallet.model.Wallet;
-import io.meeds.wallet.wallet.service.WalletAccountService;
+import io.meeds.wallet.model.Wallet;
+import io.meeds.wallet.service.WalletAccountService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -62,7 +62,7 @@ public class EvmBlockchainService {
   BlockchainConfiguration       blockchainConfiguration;
 
   @Autowired
-  private WalletAccountService  walletAccountService;
+  private WalletAccountService walletAccountService;
 
   @Autowired
   private EvmTransactionService evmTransactionService;
