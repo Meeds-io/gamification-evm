@@ -62,7 +62,7 @@ public class EvmBlockchainService {
   BlockchainConfiguration       blockchainConfiguration;
 
   @Autowired
-  private WalletAccountService walletAccountService;
+  private WalletAccountService  walletAccountService;
 
   @Autowired
   private EvmTransactionService evmTransactionService;
