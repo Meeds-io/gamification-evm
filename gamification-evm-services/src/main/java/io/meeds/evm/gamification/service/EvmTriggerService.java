@@ -26,8 +26,8 @@ import io.meeds.evm.gamification.utils.Utils;
 import jakarta.annotation.PostConstruct;
 
 import jakarta.annotation.PreDestroy;
-import org.exoplatform.wallet.service.WalletAccountService;
-import org.exoplatform.wallet.model.Wallet;
+import io.meeds.wallet.service.WalletAccountService;
+import io.meeds.wallet.model.Wallet;
 import io.meeds.gamification.model.EventDTO;
 import io.meeds.gamification.service.EventService;
 import org.apache.commons.collections.CollectionUtils;
