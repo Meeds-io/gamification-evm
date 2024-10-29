@@ -21,7 +21,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-
+/*
 @Configuration
 public class TaskExecutorConfig {
   @Bean(name = "threadPoolTaskExecutor")
@@ -40,3 +40,4 @@ public class TaskExecutorConfig {
     return Executors.newScheduledThreadPool(1);
   }
 }
+*/

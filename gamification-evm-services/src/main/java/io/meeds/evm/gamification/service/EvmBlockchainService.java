@@ -108,7 +108,7 @@ public class EvmBlockchainService {
                                                    .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt, contractAddress))
                                                    .toList();
       if (transferEvents != null && !transferEvents.isEmpty()) {
-        transferEvents.forEach(transferEvent -> {
+       /* transferEvents.forEach(transferEvent -> {
           Wallet sender = walletAccountService.getWalletByAddress(transferEvent.getFromAddress());
           Wallet receiver = walletAccountService.getWalletByAddress(transferEvent.getToAddress());
           if ((sender != null && StringUtils.isNotBlank(sender.getAddress()))
@@ -118,7 +118,7 @@ public class EvmBlockchainService {
             transferEvent.setSentDate(System.currentTimeMillis());
             evmTransactionService.saveTransaction(transferEvent);
           }
-        });
+        });*/
       }
     } catch (IOException e) {
       throw new IllegalStateException("Error retrieving event logs", e);

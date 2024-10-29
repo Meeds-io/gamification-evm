@@ -18,7 +18,7 @@ package io.meeds.evm.gamification.service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
+//import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import io.meeds.evm.gamification.model.EvmTrigger;
@@ -64,8 +64,8 @@ public class EvmTriggerService {
   @Autowired
   private ThreadPoolTaskExecutor   threadPoolTaskExecutor;
 
-  @Autowired
-  private ScheduledExecutorService scheduledExecutorService;
+ /* @Autowired
+  private ScheduledExecutorService scheduledExecutorService;*/
 
   /**
    * Handle evm trigger asynchronously
@@ -73,9 +73,10 @@ public class EvmTriggerService {
    * @param evmTrigger evm retrieved trigger
    */
   public void handleTriggerAsync(EvmTrigger evmTrigger) {
-    scheduledExecutorService.schedule(() -> threadPoolTaskExecutor.execute(() -> handleTriggerAsyncInternal(evmTrigger)),
+    threadPoolTaskExecutor.execute(() -> handleTriggerAsyncInternal(evmTrigger));
+    /*scheduledExecutorService.schedule(() -> threadPoolTaskExecutor.execute(() -> handleTriggerAsyncInternal(evmTrigger)),
                                       1,
-                                      TimeUnit.SECONDS);
+                                      TimeUnit.SECONDS);*/
   }
 
   @ExoTransactional

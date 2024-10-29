@@ -56,4 +56,22 @@
   <changeSet author="evm-connector" id="1.0.0-3">
     <modifyDataType tableName="EVM_TRANSACTIONS" columnName="AMOUNT" newDataType="DECIMAL(30,0)"/>
   </changeSet>
+  <changeSet author="evm-connector" id="1.0.0-4">
+    <renameColumn tableName="EVM_TRANSACTIONS" columnDataType="BIGINT" oldColumnName="SENT_DATE" newColumnName="TRANSACTION_DATE" />
+  </changeSet>
+  <changeSet author="evm-connector" id="1.0.0-5">
+    <addColumn tableName="EVM_TRANSACTIONS">
+      <column name="WALLET_BALANCE" type="BIGINT" />
+    </addColumn>
+  </changeSet>
+  <changeSet author="evm-connector" id="1.0.0-6">
+    <addColumn tableName="EVM_TRANSACTIONS">
+      <column name="BLOCK_NUMBER" type="BIGINT" />
+    </addColumn>
+  </changeSet>
+  <changeSet author="evm-connector" id="1.0.0-7">
+    <addColumn tableName="EVM_TRANSACTIONS">
+      <column name="BLOCK_HASH" type="BIGINT" />
+    </addColumn>
+  </changeSet>
 </databaseChangeLog>

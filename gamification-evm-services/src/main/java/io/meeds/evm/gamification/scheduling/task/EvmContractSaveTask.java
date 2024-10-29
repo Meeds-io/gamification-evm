@@ -36,8 +36,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
-public class EvmContractTransferTask {
-  private static final Logger        LOG                         = LoggerFactory.getLogger(EvmContractTransferTask.class);
+public class EvmContractSaveTask {
+  private static final Logger        LOG                         = LoggerFactory.getLogger(EvmContractSaveTask.class);
 
   private static final Scope         SETTING_SCOPE               = Scope.APPLICATION.id("GAMIFICATION_EVM");
 
@@ -55,23 +55,7 @@ public class EvmContractTransferTask {
   private EvmContractTransferService evmContractTransferService;
 
   @ContainerTransactional
-  @Scheduled(cron = "${gamification.evm.transactionScan.cron:0 * * * * *}")
-  @Scheduled(cron = "0 * * * * *")
-  public synchronized void scanForContractTransactions() {
-    try {
-      List<RuleDTO> filteredRules = evmContractTransferService.getEnabledEvmRules();
-      if (CollectionUtils.isNotEmpty(filteredRules)) {
-        filteredRules.forEach(rule -> {
-          evmContractTransferService.scanForContractTransactions(rule);
-        });
-      }
-    } catch (Exception e) {
-      LOG.error("An error occurred while rewarding for EVM events", e);
-    }
-  }
-
-  @ContainerTransactional
-  @Scheduled(cron = "0 * * * * *")
+  @Scheduled(cron = "${gamification.evm.transactionSave.cron:0 * * * * *}")
   public synchronized void saveEVMContractTransactions() {
     try {
       List<RuleDTO> filteredRules = evmContractTransferService.getEnabledEvmRules();
