@@ -32,15 +32,11 @@ public class EvmTransactionService {
     evmTransactionStorage.saveEvmTransaction(transaction);
   }
 
-  public List<EvmTransaction> getTransactionsByFromAddress(String fromAddress) {
-    return evmTransactionStorage.getEvmTransactionsByFromAddress(fromAddress);
-  }
-
-  public List<EvmTransaction> getTransactionsByContractAddressAndNetworkIdFromId(String contractAddress, Long networkId, Long id) {
+  public List<EvmTransaction> getLastScannedTransactionsFromId(String contractAddress, Long networkId, Long id) {
     return evmTransactionStorage.getEvmTransactionsByContractAddressAndNetworkIdFromId(contractAddress, networkId, id);
   }
 
-  public EvmTransaction getTransactionByContractAddressAndNetworkIdOrderByIdDesc(String contractAddress, Long networkId) {
+  public EvmTransaction getLastScannedTransaction(String contractAddress, Long networkId) {
     return evmTransactionStorage.getEvmTransactionByContractAddressAndNetworkIdOrderByIdDesc(contractAddress, networkId);
   }
 

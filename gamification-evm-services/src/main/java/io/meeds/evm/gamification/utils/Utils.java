@@ -50,7 +50,7 @@ public class Utils {
 
   public static final String RULE_ID            = "ruleId";
 
-  public static final String LAST_ID_PROCCED    = "lastIdProcced";
+  public static final String LAST_PROCEEDED_TRANSACTION_ID   = "lastProceededTransactionId";
 
   public static final String SENT_DATE          = "sentDate";
 

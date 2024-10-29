@@ -71,7 +71,7 @@ public class EvmRuleUpdateListener extends Listener<Map<String, String>, String>
     }
     if (rule.getEvent() != null) {
       Map<String, String> map = rule.getEvent().getProperties();
-      map.put(Utils.LAST_ID_PROCCED, lastIdToSave.toString());
+      map.put(Utils.LAST_PROCEEDED_TRANSACTION_ID, lastIdToSave.toString());
       rule.getEvent().setProperties(map);
       EventDTO eventDTO = eventService.updateEvent(rule.getEvent());
       rule.setEvent(eventDTO);

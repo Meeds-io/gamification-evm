@@ -48,21 +48,35 @@ public class EvmContractTransferService {
     String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
     String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase();
     Long networkId = Long.parseLong(rule.getEvent().getProperties().get(Utils.NETWORK_ID));
-    Long lastIdProcced = getLastIdProcced(rule, contractAddress, networkId);
-    List<EvmTransaction> transactions = evmTransactionService.getTransactionsByContractAddressAndNetworkIdFromId(contractAddress,
-                                                                                                                 networkId,
-                                                                                                                 lastIdProcced);
-    if (CollectionUtils.isNotEmpty(transactions)) {
-      transactions.forEach(transaction -> {
-        try {
-          handleEvmTrigger(rule, transaction, trigger, contractAddress, networkId, blockchainNetwork);
-        } catch (Exception e) {
-          LOG.warn("Error broadcasting EVM event for transaction {} and trigger {}",
-                   transaction.getTransactionHash(),
-                   trigger,
-                   e);
-        }
-      });
+    Long lastProceededTransactionId = getLastProceededTransactionId(rule, contractAddress, networkId);
+    List<EvmTransaction> transactions = evmTransactionService.getLastScannedTransactionsFromId(contractAddress,
+                                                                                               networkId,
+                                                                                               lastProceededTransactionId);
+    try {
+      if (CollectionUtils.isNotEmpty(transactions)) {
+        transactions.forEach(transaction -> {
+          try {
+            handleEvmTrigger(rule, transaction, trigger, contractAddress, networkId, blockchainNetwork);
+          } catch (Exception e) {
+            LOG.warn("Error broadcasting EVM event for transaction {} and trigger {}",
+                     transaction.getTransactionHash(),
+                     trigger,
+                     e);
+          }
+        });
+      }
+    }
+
+    finally {
+      Long lastProceededTransactionIdToSave = lastProceededTransactionId;
+      if (CollectionUtils.isNotEmpty(transactions)) {
+        lastProceededTransactionIdToSave = transactions.get(transactions.size()-1).getId();
+      }
+      if(trigger.equals(Utils.HOLD_TOKEN_EVENT)
+              && isValidDurationHoldingToken(transaction, Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION)))) {
+
+      }
+      broadcastEvmActionEvent(lastProceededTransactionIdToSave.toString(), rule.getId().toString());
     }
   }
 
@@ -79,18 +93,19 @@ public class EvmContractTransferService {
             .toList();
   }
 
-  private Long getLastIdProcced(RuleDTO rule, String contractAddress, Long networkId) {
-    Long lastIdProcced = 0l;
-    if (StringUtils.isBlank(rule.getEvent().getProperties().get(Utils.LAST_ID_PROCCED))) {
-      EvmTransaction lastTransaction = evmTransactionService.getTransactionByContractAddressAndNetworkIdOrderByIdDesc(contractAddress, networkId);
+  private Long getLastProceededTransactionId(RuleDTO rule, String contractAddress, Long networkId) {
+    Long lastProceededTransactionId = 0l;
+    if (StringUtils.isBlank(rule.getEvent().getProperties().get(Utils.LAST_PROCEEDED_TRANSACTION_ID))) {
+      EvmTransaction lastTransaction = evmTransactionService.getLastScannedTransaction(contractAddress, networkId);
       if (lastTransaction != null) {
-        lastIdProcced = lastTransaction.getId();
+        lastProceededTransactionId = lastTransaction.getId();
       }
-      broadcastEvmActionEvent(lastIdProcced.toString(), rule.getId().toString());
-    } else {
-      lastIdProcced = Long.parseLong(rule.getEvent().getProperties().get(Utils.LAST_ID_PROCCED));
+      //broadcastEvmActionEvent(lastProceededTransactionId.toString(), rule.getId().toString());
     }
-    return lastIdProcced;
+    else {
+      lastProceededTransactionId = Long.parseLong(rule.getEvent().getProperties().get(Utils.LAST_PROCEEDED_TRANSACTION_ID));
+    }
+    return lastProceededTransactionId;
   }
 
   private void broadcastEvmActionEvent(String transactionId, String ruleId) {
@@ -120,7 +135,7 @@ public class EvmContractTransferService {
         evmTrigger = newEvmTrigger(transaction, rule.getId(), trigger, contractAddress, blockchainNetwork, networkId, null, transaction.getToAddress(), transaction.getFromAddress());
       }
       evmTriggerService.handleTriggerAsync(evmTrigger);
-      broadcastEvmActionEvent(transaction.getId().toString(), rule.getId().toString());
+      //broadcastEvmActionEvent(transaction.getId().toString(), rule.getId().toString());
     }
     if (trigger.equals(Utils.HOLD_TOKEN_EVENT)
         && isValidDurationHoldingToken(transaction, Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION)))) {
@@ -129,7 +144,7 @@ public class EvmContractTransferService {
       EvmTrigger evmTriggerForSender = newEvmTrigger(transaction, rule.getId(), trigger, contractAddress, blockchainNetwork, networkId, duration, transaction.getFromAddress(), null);
       evmTriggerService.handleTriggerAsync(evmTriggerForReceiver);
       evmTriggerService.handleTriggerAsync(evmTriggerForSender);
-      broadcastEvmActionEvent(transaction.getId().toString(), rule.getId().toString());
+      //broadcastEvmActionEvent(transaction.getId().toString(), rule.getId().toString());
     }
   }
 
