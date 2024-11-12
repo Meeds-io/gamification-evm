@@ -36,8 +36,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
-public class EvmContractTransferTask {
-  private static final Logger        LOG                         = LoggerFactory.getLogger(EvmContractTransferTask.class);
+public class EvmContractSaveTask {
+  private static final Logger        LOG                         = LoggerFactory.getLogger(EvmContractSaveTask.class);
 
   private static final Scope         SETTING_SCOPE               = Scope.APPLICATION.id("GAMIFICATION_EVM");
 
@@ -55,28 +55,13 @@ public class EvmContractTransferTask {
   private EvmContractTransferService evmContractTransferService;
 
   @ContainerTransactional
-  @Scheduled(cron = "0 * * * * *")
-  public synchronized void listenEVMContractTransfer() {
-    try {
-      List<RuleDTO> filteredRules = evmContractTransferService.getFilteredEVMRules();
-      if (CollectionUtils.isNotEmpty(filteredRules)) {
-        filteredRules.forEach(rule -> {
-          evmContractTransferService.listenEvmContractTransfer(rule);
-        });
-      }
-    } catch (Exception e) {
-      LOG.error("An error occurred while rewarding for EVM events", e);
-    }
-  }
-
-  @ContainerTransactional
-  @Scheduled(cron = "0 * * * * *")
+  @Scheduled(cron = "${gamification.evm.transactionSave.cron:0 */15 * * * *}")
   public synchronized void saveEVMContractTransactions() {
     try {
-      List<RuleDTO> filteredRules = evmContractTransferService.getFilteredEVMRules();
-      if (CollectionUtils.isNotEmpty(filteredRules)) {
-        LOG.info("Start listening evm token transfers for {} configured rules", filteredRules.size());
-        filteredRules.forEach(rule -> {
+      List<RuleDTO> rules = evmContractTransferService.getEvmRules();
+      if (CollectionUtils.isNotEmpty(rules)) {
+        LOG.info("Start listening evm token transfers for {} configured rules", rules.size());
+        rules.forEach(rule -> {
           String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
           String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
           String networkId = rule.getEvent().getProperties().get(Utils.NETWORK_ID);

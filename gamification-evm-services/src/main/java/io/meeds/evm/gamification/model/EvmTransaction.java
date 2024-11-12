@@ -41,8 +41,14 @@ public class EvmTransaction {
 
   private String     contractAddress;
 
-  private Long       sentDate;
+  private Long       transactionDate;
 
   private BigInteger amount;
+
+  private BigInteger walletBalance;
+
+  private BigInteger blockNumber;
+
+  private String     blockHash;
 
 }
