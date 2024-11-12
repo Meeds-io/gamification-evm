@@ -31,24 +31,26 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class EvmContractScanTask {
-    private static final Logger        LOG                         = LoggerFactory.getLogger(EvmContractSaveTask.class);
+  private static final Logger        LOG = LoggerFactory.getLogger(EvmContractSaveTask.class);
 
-    @Autowired
-    private EvmContractTransferService evmContractTransferService;
+  @Autowired
+  private EvmContractTransferService evmContractTransferService;
 
-    @ContainerTransactional
-    @Scheduled(cron = "${gamification.evm.transactionScan.cron:0 */2 * * * *}")
-    public synchronized void scanForContractTransactions() {
+  @ContainerTransactional
+  @Scheduled(cron = "${gamification.evm.transactionScan.cron:0 */2 * * * *}")
+  public synchronized void scanForContractTransactions() {
+
+    List<RuleDTO> enabledRules = evmContractTransferService.getEnabledEvmRules();
+    if (CollectionUtils.isNotEmpty(enabledRules)) {
+        enabledRules.forEach(rule -> {
         try {
-            List<RuleDTO> filteredRules = evmContractTransferService.getEnabledEvmRules();
-            if (CollectionUtils.isNotEmpty(filteredRules)) {
-                filteredRules.forEach(rule -> {
-                    evmContractTransferService.scanForContractTransactions(rule);
-                });
-            }
+          evmContractTransferService.scanForContractTransactions(rule);
         } catch (Exception e) {
-            LOG.error("An error occurred while rewarding for EVM events", e);
+          LOG.error("An error occurred while rewarding for {} rule", rule.getTitle(), e);
         }
+      });
     }
+
+  }
 
 }

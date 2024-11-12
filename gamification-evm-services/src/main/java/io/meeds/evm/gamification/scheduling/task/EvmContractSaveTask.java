@@ -55,13 +55,13 @@ public class EvmContractSaveTask {
   private EvmContractTransferService evmContractTransferService;
 
   @ContainerTransactional
-  @Scheduled(cron = "${gamification.evm.transactionSave.cron:0 * * * * *}")
+  @Scheduled(cron = "${gamification.evm.transactionSave.cron:0 */15 * * * *}")
   public synchronized void saveEVMContractTransactions() {
     try {
-      List<RuleDTO> filteredRules = evmContractTransferService.getEnabledEvmRules();
-      if (CollectionUtils.isNotEmpty(filteredRules)) {
-        LOG.info("Start listening evm token transfers for {} configured rules", filteredRules.size());
-        filteredRules.forEach(rule -> {
+      List<RuleDTO> rules = evmContractTransferService.getEvmRules();
+      if (CollectionUtils.isNotEmpty(rules)) {
+        LOG.info("Start listening evm token transfers for {} configured rules", rules.size());
+        rules.forEach(rule -> {
           String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
           String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
           String networkId = rule.getEvent().getProperties().get(Utils.NETWORK_ID);

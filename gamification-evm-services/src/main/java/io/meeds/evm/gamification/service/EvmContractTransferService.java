@@ -60,10 +60,9 @@ public class EvmContractTransferService {
     String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
     String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase();
     Long networkId = Long.parseLong(rule.getEvent().getProperties().get(Utils.NETWORK_ID));
-    List<Wallet> wallets = getAllDistinctWalletsFromTransactions(contractAddress, rule.getCreatedDate());
-    if (CollectionUtils.isNotEmpty(wallets)) {
-      wallets.forEach(wallet -> {
-        String walletAddress = wallet.getAddress();
+    List<String> walletsAddresses = getAllDistinctWalletsFromTransactions(contractAddress, rule.getCreatedDate());
+    if (CollectionUtils.isNotEmpty(walletsAddresses)) {
+      walletsAddresses.forEach(walletAddress -> {
         long lastRewardTime = getLastRewardTime(walletAddress, rule.getId());
         List<EvmTransaction> transactions =
                                           evmTransactionService.getFilteredTransactionsByWalletAddress(contractAddress,
@@ -88,11 +87,10 @@ public class EvmContractTransferService {
     }
   }
 
-  private List<Wallet> getAllDistinctWalletsFromTransactions(String contractAddress, String ruleCreationDate) {
+  private List<String> getAllDistinctWalletsFromTransactions(String contractAddress, String ruleCreationDate) {
     List<String> walletAddresses = evmTransactionService.getDistinctWalletAddresses(contractAddress, ruleCreationDate);
     return walletAddresses.stream()
-                          .map(walletAddress -> walletAccountService.getWalletByAddress(walletAddress))
-                          .filter(wallet -> wallet != null)
+                          .filter(walletAddress -> walletAccountService.getWalletByAddress(walletAddress) != null)
                           .collect(Collectors.toList());
   }
 
@@ -107,6 +105,17 @@ public class EvmContractTransferService {
                 .filter(r -> !r.getEvent().getProperties().isEmpty()
                     && StringUtils.isNotBlank(r.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS)))
                 .toList();
+  }
+
+  public List<RuleDTO> getEvmRules() {
+    RuleFilter ruleFilter = new RuleFilter(true);
+    ruleFilter.setEventType(Utils.CONNECTOR_NAME);
+    ruleFilter.setDateFilterType(DateFilterType.STARTED);
+    List<RuleDTO> rules = ruleService.getRules(ruleFilter, 0, -1);
+    return rules.stream()
+            .filter(r -> !r.getEvent().getProperties().isEmpty()
+                    && StringUtils.isNotBlank(r.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS)))
+            .toList();
   }
 
   private void handleEvmTrigger(RuleDTO rule,
@@ -195,7 +204,6 @@ public class EvmContractTransferService {
     return holdingDuration.compareTo(desiredDuration) >= 0;
   }
 
-  @ContainerTransactional
   private long getLastRewardTime(String walletAddress, Long ruleId) {
     long lastRewardTime = 0;
     SettingValue<?> settingValue = settingService.get(SETTING_CONTEXT,
@@ -207,7 +215,6 @@ public class EvmContractTransferService {
     return lastRewardTime;
   }
 
-  @ContainerTransactional
   private void saveLastRewardTime(String walletAddress, Long ruleId) {
     settingService.set(SETTING_CONTEXT,
                        SETTING_SCOPE,
