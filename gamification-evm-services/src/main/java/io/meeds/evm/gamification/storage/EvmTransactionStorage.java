@@ -36,19 +36,18 @@ public class EvmTransactionStorage {
     return EntityMapper.fromEntity(evmTransactionEntity);
   }
 
-  public List<EvmTransaction> getEvmTransactionsByFromAddress(String fromAddress) {
-    List<EvmTransactionEntity> evmTransactionsEntities = evmTransactionDAO.findByFromAddress(fromAddress);
+  public List<String> getDistinctWalletAddresses(String contractAddress, Long ruleCreationDate) {
+    return evmTransactionDAO.findDistinctAddresses(contractAddress, ruleCreationDate);
+  }
+
+  public List<EvmTransaction> getToAddressFilteredTransactions(String contractAddress, Long networkId, Long transactionDate, String toAddress) {
+    List<EvmTransactionEntity> evmTransactionsEntities = evmTransactionDAO.findByContractAddressAndNetworkIdAndToAddressAndTransactionDateGreaterThan(contractAddress, networkId, toAddress, transactionDate);
     return evmTransactionsEntities.stream().map(td -> EntityMapper.fromEntity(td)).toList();
   }
 
-  public List<EvmTransaction> getEvmTransactionsByContractAddressAndNetworkIdFromId(String contractAddress, Long networkId, Long id) {
-    List<EvmTransactionEntity> evmTransactionsEntities = evmTransactionDAO.findByContractAddressAndNetworkIdAndIdGreaterThan(contractAddress, networkId, id);
+  public List<EvmTransaction> getFromAddressFilteredTransactions(String contractAddress, Long networkId, Long transactionDate, String fromAddress) {
+    List<EvmTransactionEntity> evmTransactionsEntities = evmTransactionDAO.findByContractAddressAndNetworkIdAndFromAddressAndTransactionDateGreaterThan(contractAddress, networkId, fromAddress, transactionDate);
     return evmTransactionsEntities.stream().map(td -> EntityMapper.fromEntity(td)).toList();
-  }
-
-  public EvmTransaction getEvmTransactionByContractAddressAndNetworkIdOrderByIdDesc(String contractAddress, Long networkId) {
-    EvmTransactionEntity evmTransactionsEntity = evmTransactionDAO.findTopByContractAddressAndNetworkIdOrderByIdDesc(contractAddress, networkId);
-    return EntityMapper.fromEntity(evmTransactionsEntity);
   }
 
 }

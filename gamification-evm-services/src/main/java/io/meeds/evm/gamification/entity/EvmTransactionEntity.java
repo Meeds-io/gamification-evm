@@ -33,26 +33,35 @@ public class EvmTransactionEntity implements Serializable {
   @SequenceGenerator(name = "SEQ_EVM_TRANSACTIONS_ID", sequenceName = "SEQ_EVM_TRANSACTIONS_ID", allocationSize = 1)
   @GeneratedValue(strategy = GenerationType.AUTO, generator = "SEQ_EVM_TRANSACTIONS_ID")
   @Column(name = "ID", nullable = false)
-  private Long                                  id;
+  private Long       id;
 
   @Column(name = "TRANSACTION_HASH", nullable = false)
-  private String                                transactionHash;
+  private String     transactionHash;
 
   @Column(name = "NETWORK_ID", nullable = false)
-  private Long                                  networkId;
+  private Long       networkId;
 
   @Column(name = "FROM_ADDRESS", nullable = false)
-  private String                                fromAddress;
+  private String     fromAddress;
 
   @Column(name = "TO_ADDRESS", nullable = false)
-  private String                                toAddress;
+  private String     toAddress;
 
   @Column(name = "CONTRACT_ADDRESS", nullable = false)
-  private String                                contractAddress;
+  private String     contractAddress;
 
-  @Column(name = "SENT_DATE", nullable = false)
-  private Long                                  sentDate;
+  @Column(name = "TRANSACTION_DATE", nullable = false)
+  private Long       transactionDate;
 
   @Column(name = "AMOUNT", nullable = false)
-  private BigInteger                            amount;
+  private BigInteger amount;
+
+  @Column(name = "WALLET_BALANCE", nullable = false)
+  private BigInteger walletBalance;
+
+  @Column(name = "BLOCK_NUMBER", nullable = false)
+  private BigInteger blockNumber;
+
+  @Column(name = "BLOCK_HASH", nullable = false)
+  private String     blockHash;
 }
