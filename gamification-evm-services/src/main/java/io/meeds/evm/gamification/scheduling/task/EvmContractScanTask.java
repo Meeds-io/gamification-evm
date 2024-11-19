@@ -16,6 +16,7 @@
 package io.meeds.evm.gamification.scheduling.task;
 
 import java.util.List;
+
 import io.meeds.common.ContainerTransactional;
 import io.meeds.evm.gamification.service.EvmContractTransferService;
 import io.meeds.gamification.model.RuleDTO;
