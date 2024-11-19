@@ -36,8 +36,8 @@ public class EvmTransactionStorage {
     return EntityMapper.fromEntity(evmTransactionEntity);
   }
 
-  public List<String> getDistinctWalletAddresses(String contractAddress, Long ruleCreationDate) {
-    return evmTransactionDAO.findDistinctAddresses(contractAddress, ruleCreationDate);
+  public List<String> getDistinctWalletAddresses(String contractAddress, Long ruleCreationDate, Long networkId) {
+    return evmTransactionDAO.findDistinctAddresses(contractAddress, ruleCreationDate, networkId);
   }
 
   public List<EvmTransaction> getToAddressFilteredTransactions(String contractAddress, Long networkId, Long transactionDate, String toAddress) {
@@ -50,4 +50,8 @@ public class EvmTransactionStorage {
     return evmTransactionsEntities.stream().map(td -> EntityMapper.fromEntity(td)).toList();
   }
 
+  public EvmTransaction getLastScannedTransactionByWalletAddress(String contractAddress, Long networkId, String walletAddress) {
+    EvmTransactionEntity lastTransactionEntity = evmTransactionDAO.findTopByContractAddressAndNetworkIdAndFromAddressOrderByIdDesc(contractAddress, networkId, walletAddress);
+    return EntityMapper.fromEntity(lastTransactionEntity);
+  }
 }

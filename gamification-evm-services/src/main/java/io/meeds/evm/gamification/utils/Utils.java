@@ -15,6 +15,8 @@
  */
 package io.meeds.evm.gamification.utils;
 
+import io.meeds.evm.gamification.model.EvmTransaction;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -23,41 +25,45 @@ import java.util.Map;
 
 public class Utils {
 
-  public static final String CONNECTOR_NAME      = "evm";
+  public static final String CONNECTOR_NAME                  = "evm";
 
-  public static final String EVM_SAVE_ACTION_EVENT     = "evm.save.action.event";
+  public static final String NEW_ADDRESS_ASSOCIATED_EVENT    = "exo.wallet.addressAssociation.new";
 
-  public static final String SEND_TOKEN_EVENT    = "sendToken";
+  public static final String MODIFY_ADDRESS_ASSOCIATED_EVENT = "exo.wallet.addressAssociation.modification";
 
-  public static final String RECEIVE_TOKEN_EVENT = "receiveToken";
+  public static final String SEND_TOKEN_EVENT                = "sendToken";
 
-  public static final String HOLD_TOKEN_EVENT    = "holdToken";
+  public static final String RECEIVE_TOKEN_EVENT             = "receiveToken";
 
-  public static final String WALLET_ADDRESS      = "walletAddress";
+  public static final String HOLD_TOKEN_EVENT                = "holdToken";
 
-  public static final String CONTRACT_ADDRESS    = "contractAddress";
+  public static final String WALLET_ADDRESS                  = "walletAddress";
 
-  public static final String BLOCKCHAIN_NETWORK  = "blockchainNetwork";
+  public static final String CONTRACT_ADDRESS                = "contractAddress";
 
-  public static final String NETWORK_ID          = "networkId";
+  public static final String BLOCKCHAIN_NETWORK              = "blockchainNetwork";
 
-  public static final String DECIMALS            = "tokenDecimals";
+  public static final String NETWORK_ID                      = "networkId";
 
-  public static final String MIN_AMOUNT          = "minAmount";
+  public static final String DECIMALS                        = "tokenDecimals";
 
-  public static final String TARGET_ADDRESS      = "targetAddress";
+  public static final String MIN_AMOUNT                      = "minAmount";
 
-  public static final String DURATION            = "duration";
+  public static final String TARGET_ADDRESS                  = "targetAddress";
 
-  public static final String TRANSACTION_ID      = "transactionId";
+  public static final String DURATION                        = "duration";
 
-  public static final String RULE_ID            = "ruleId";
+  public static final String TRANSACTION_ID                  = "transactionId";
+
+  public static final String RULE_ID                         = "ruleId";
 
   public static final String LAST_PROCEEDED_TRANSACTION_ID   = "lastProceededTransactionId";
 
-  public static final String SENT_DATE          = "sentDate";
+  public static final String SENT_DATE                       = "sentDate";
 
-  public static final String TOKEN_BALANCE      = "tokenBalance";
+  public static final String TOKEN_BALANCE                   = "tokenBalance";
+
+  public static final String TOKEN_DECIMALS                  = "tokenDecimals";
 
   private Utils() {
 
@@ -84,5 +90,10 @@ public class Utils {
     } catch (ParseException e) {
       throw new RuntimeException("Invalid date format", e);
     }
+  }
+
+  public static Boolean isValidDurationHoldingToken(EvmTransaction transaction, Long desiredDuration) {
+    Long holdingDuration = System.currentTimeMillis() - transaction.getTransactionDate();
+    return holdingDuration.compareTo(desiredDuration) >= 0;
   }
 }

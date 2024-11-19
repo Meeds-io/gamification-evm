@@ -60,7 +60,7 @@ public class EvmContractTransferService {
     String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
     String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase();
     Long networkId = Long.parseLong(rule.getEvent().getProperties().get(Utils.NETWORK_ID));
-    List<String> walletsAddresses = getAllDistinctWalletsFromTransactions(contractAddress, rule.getCreatedDate());
+    List<String> walletsAddresses = getAllDistinctWalletsFromTransactions(contractAddress, rule.getCreatedDate(), networkId);
     if (CollectionUtils.isNotEmpty(walletsAddresses)) {
       walletsAddresses.forEach(walletAddress -> {
         long lastRewardTime = getLastRewardTime(walletAddress, rule.getId());
@@ -87,8 +87,8 @@ public class EvmContractTransferService {
     }
   }
 
-  private List<String> getAllDistinctWalletsFromTransactions(String contractAddress, String ruleCreationDate) {
-    List<String> walletAddresses = evmTransactionService.getDistinctWalletAddresses(contractAddress, ruleCreationDate);
+  private List<String> getAllDistinctWalletsFromTransactions(String contractAddress, String ruleCreationDate, Long networkId) {
+    List<String> walletAddresses = evmTransactionService.getDistinctWalletAddresses(contractAddress, ruleCreationDate, networkId);
     return walletAddresses.stream()
                           .filter(walletAddress -> walletAccountService.getWalletByAddress(walletAddress) != null)
                           .collect(Collectors.toList());
@@ -116,6 +116,39 @@ public class EvmContractTransferService {
             .filter(r -> !r.getEvent().getProperties().isEmpty()
                     && StringUtils.isNotBlank(r.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS)))
             .toList();
+  }
+
+  public List<RuleDTO> getHoldEventEvmRules() {
+    RuleFilter ruleFilter = new RuleFilter(true);
+    ruleFilter.setEventType(Utils.CONNECTOR_NAME);
+    ruleFilter.setDateFilterType(DateFilterType.STARTED);
+    List<RuleDTO> rules = ruleService.getRules(ruleFilter, 0, -1);
+    return rules.stream()
+            .filter(r -> !r.getEvent().getProperties().isEmpty()
+                    && StringUtils.isNotBlank(r.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS))
+                    && r.getEvent().getTrigger().equals(Utils.HOLD_TOKEN_EVENT))
+            .toList();
+  }
+  
+  public void handleTriggerForHoldEvent(RuleDTO rule,
+                                        EvmTransaction transaction,
+                                        String walletAddress) {
+    Long duration = Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION));
+    String trigger = rule.getEvent().getTrigger();
+    String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
+    String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
+    Long networkId = Long.parseLong(rule.getEvent().getProperties().get(Utils.NETWORK_ID));
+    EvmTrigger evmTriggerForReceiver = newEvmTrigger(transaction,
+                                                     rule.getId(),
+                                                     trigger,
+                                                     contractAddress,
+                                                     blockchainNetwork,
+                                                     networkId,
+                                                     duration,
+                                                     transaction.getToAddress(),
+                                                     null);
+    evmTriggerService.handleTriggerAsync(evmTriggerForReceiver);
+    saveLastRewardTime(walletAddress, rule.getId());
   }
 
   private void handleEvmTrigger(RuleDTO rule,
@@ -154,19 +187,8 @@ public class EvmContractTransferService {
       saveLastRewardTime(walletAddress, rule.getId());
     }
     if (trigger.equals(Utils.HOLD_TOKEN_EVENT)
-        && isValidDurationHoldingToken(transaction, Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION)))) {
-      Long duration = Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION));
-      EvmTrigger evmTriggerForReceiver = newEvmTrigger(transaction,
-                                                       rule.getId(),
-                                                       trigger,
-                                                       contractAddress,
-                                                       blockchainNetwork,
-                                                       networkId,
-                                                       duration,
-                                                       transaction.getToAddress(),
-                                                       null);
-      evmTriggerService.handleTriggerAsync(evmTriggerForReceiver);
-      saveLastRewardTime(walletAddress, rule.getId());
+        && Utils.isValidDurationHoldingToken(transaction, Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION)))) {
+      handleTriggerForHoldEvent(rule, transaction, walletAddress);
     }
   }
 
@@ -197,11 +219,6 @@ public class EvmContractTransferService {
       evmTrigger.setTokenBalance(evmBlockchainService.erc20BalanceOf(walletAddress, contractAddress, blockchainNetwork));
     }
     return evmTrigger;
-  }
-
-  private Boolean isValidDurationHoldingToken(EvmTransaction transaction, Long desiredDuration) {
-    Long holdingDuration = System.currentTimeMillis() - transaction.getTransactionDate();
-    return holdingDuration.compareTo(desiredDuration) >= 0;
   }
 
   private long getLastRewardTime(String walletAddress, Long ruleId) {
