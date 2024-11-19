@@ -15,6 +15,8 @@
  */
 package io.meeds.evm.gamification.utils;
 
+import io.meeds.evm.gamification.model.EvmTransaction;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -25,7 +27,7 @@ public class Utils {
 
   public static final String CONNECTOR_NAME      = "evm";
 
-  public static final String EVM_SAVE_ACTION_EVENT     = "evm.save.action.event";
+  public static final String EVM_HOLD_ACTION_EVENT     = "evm.hold.action.event";
 
   public static final String SEND_TOKEN_EVENT    = "sendToken";
 
@@ -59,6 +61,8 @@ public class Utils {
 
   public static final String TOKEN_BALANCE      = "tokenBalance";
 
+  public static final String TOKEN_DECIMALS    = "tokenDecimals";
+
   private Utils() {
 
   }
@@ -84,5 +88,10 @@ public class Utils {
     } catch (ParseException e) {
       throw new RuntimeException("Invalid date format", e);
     }
+  }
+
+  public static Boolean isValidDurationHoldingToken(EvmTransaction transaction, Long desiredDuration) {
+    Long holdingDuration = System.currentTimeMillis() - transaction.getTransactionDate();
+    return holdingDuration.compareTo(desiredDuration) >= 0;
   }
 }
