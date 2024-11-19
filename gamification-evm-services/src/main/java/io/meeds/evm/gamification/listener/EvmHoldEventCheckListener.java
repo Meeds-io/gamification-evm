@@ -21,13 +21,13 @@ import io.meeds.evm.gamification.service.EvmContractTransferService;
 import io.meeds.evm.gamification.service.EvmTransactionService;
 import io.meeds.evm.gamification.utils.Utils;
 import io.meeds.gamification.model.RuleDTO;
+import io.meeds.wallet.model.Wallet;
 import jakarta.annotation.PostConstruct;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import org.exoplatform.commons.api.persistence.ExoTransactional;
-import org.exoplatform.commons.exception.ObjectNotFoundException;
 import org.exoplatform.services.listener.Event;
 import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.listener.Listener;
@@ -35,13 +35,13 @@ import org.exoplatform.services.listener.Listener;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
-import static io.meeds.evm.gamification.utils.Utils.EVM_HOLD_ACTION_EVENT;
+import static io.meeds.evm.gamification.utils.Utils.NEW_ADDRESS_ASSOCIATED_EVENT;
+import static io.meeds.evm.gamification.utils.Utils.MODIFY_ADDRESS_ASSOCIATED_EVENT;
 
 @Component
-public class EvmHoldEventCheckListener extends Listener<Map<String, String>, String> {
-  private static final List<String>  SUPPORTED_EVENTS = Arrays.asList(EVM_HOLD_ACTION_EVENT);
+public class EvmHoldEventCheckListener extends Listener<Wallet, String> {
+  private static final List<String>  SUPPORTED_EVENTS = Arrays.asList(NEW_ADDRESS_ASSOCIATED_EVENT, MODIFY_ADDRESS_ASSOCIATED_EVENT);
 
   @Autowired
   private ListenerService            listenerService;
@@ -64,9 +64,10 @@ public class EvmHoldEventCheckListener extends Listener<Map<String, String>, Str
 
   @Override
   @ExoTransactional
-  public void onEvent(Event<Map<String, String>, String> event) {
+  public void onEvent(Event<Wallet, String> event) {
     List<RuleDTO> holdEventEvmRules = evmContractTransferService.getHoldEventEvmRules();
-    String walletAddress = event.getSource().get(Utils.WALLET_ADDRESS).toLowerCase();
+    Wallet wallet = event.getSource();
+    String walletAddress = wallet.getAddress();
     if (CollectionUtils.isNotEmpty(holdEventEvmRules)) {
       holdEventEvmRules.forEach(holdEventEvmRule -> {
           BigInteger minAmount = new BigInteger(holdEventEvmRule.getEvent().getProperties().get(Utils.MIN_AMOUNT));
