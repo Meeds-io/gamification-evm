@@ -33,9 +33,9 @@ public class EvmTransactionService {
     evmTransactionStorage.saveEvmTransaction(transaction);
   }
 
-  public List<String> getDistinctWalletAddresses(String contractAddress, String ruleCreationDate) {
+  public List<String> getDistinctWalletAddresses(String contractAddress, String ruleCreationDate, Long networkId) {
     long convertedDate = Utils.convertDateStringToTimestamp(ruleCreationDate);
-    return evmTransactionStorage.getDistinctWalletAddresses(contractAddress, convertedDate);
+    return evmTransactionStorage.getDistinctWalletAddresses(contractAddress, convertedDate, networkId);
   }
 
   public List<EvmTransaction> getFilteredTransactionsByWalletAddress(String contractAddress, Long networkId, String walletAddress, Long creationActionTime, Long lastRewardTime, String trigger) {
@@ -50,6 +50,9 @@ public class EvmTransactionService {
     } else {
       return evmTransactionStorage.getFromAddressFilteredTransactions(contractAddress, networkId, lastTimeToCompare, walletAddress);
     }
+  }
 
+  public EvmTransaction getLastScannedTransactionByWalletAddress(String contractAddress, Long networkId, String walletAddress) {
+    return evmTransactionStorage.getLastScannedTransactionByWalletAddress(contractAddress, networkId, walletAddress);
   }
 }
