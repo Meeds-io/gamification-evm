@@ -26,14 +26,15 @@ import java.util.List;
 
 public interface EvmTransactionDAO extends JpaRepository<EvmTransactionEntity, Long> {
 
+  EvmTransactionEntity findTopByContractAddressAndNetworkIdAndFromAddressOrderByIdDesc(String contractAddress, Long networkId, String fromAddress);
   @Query("""
           SELECT DISTINCT fromAddress AS address FROM EvmTransaction tr
-          WHERE tr.contractAddress = ?1 AND tr.transactionDate >= ?2
+          WHERE tr.contractAddress = ?1 AND tr.transactionDate >= ?2 AND tr.networkId = ?3
           UNION
           SELECT DISTINCT toAddress AS address FROM EvmTransaction tr
-          WHERE tr.contractAddress = ?1 AND tr.transactionDate >= ?2
+          WHERE tr.contractAddress = ?1 AND tr.transactionDate >= ?2 AND tr.networkId = ?3
       """)
-  List<String> findDistinctAddresses(String contractAddress, Long ruleCreationDate);
+  List<String> findDistinctAddresses(String contractAddress, Long ruleCreationDate, Long networkId);
 
   List<EvmTransactionEntity> findByContractAddressAndNetworkIdAndToAddressAndTransactionDateGreaterThan(String contractAddress,
                                                                                                         Long networkId,

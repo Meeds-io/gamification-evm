@@ -112,15 +112,10 @@ public class EvmBlockchainService {
                                                    .toList();
       if (transferEvents != null && !transferEvents.isEmpty()) {
         transferEvents.forEach(transferEvent -> {
-          Wallet sender = walletAccountService.getWalletByAddress(transferEvent.getFromAddress());
-          Wallet receiver = walletAccountService.getWalletByAddress(transferEvent.getToAddress());
-          if ((sender != null && StringUtils.isNotBlank(sender.getAddress()))
-              || (receiver != null && StringUtils.isNotBlank(receiver.getAddress()))) {
-            transferEvent.setContractAddress(contractAddress);
-            transferEvent.setNetworkId(networkId);
-            transferEvent.setTransactionDate(System.currentTimeMillis());
-            evmTransactionService.saveTransaction(transferEvent);
-          }
+          transferEvent.setContractAddress(contractAddress);
+          transferEvent.setNetworkId(networkId);
+          transferEvent.setTransactionDate(System.currentTimeMillis());
+          evmTransactionService.saveTransaction(transferEvent);
         });
       }
     } catch (IOException e) {
