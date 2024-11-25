@@ -36,8 +36,8 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.meeds.evm.gamification.utils.Utils.NEW_ADDRESS_ASSOCIATED_EVENT;
-import static io.meeds.evm.gamification.utils.Utils.MODIFY_ADDRESS_ASSOCIATED_EVENT;
+import static io.meeds.wallet.utils.WalletUtils.NEW_ADDRESS_ASSOCIATED_EVENT;
+import static io.meeds.wallet.utils.WalletUtils.MODIFY_ADDRESS_ASSOCIATED_EVENT;
 
 @Component
 public class EvmHoldEventCheckListener extends Listener<Wallet, String> {
