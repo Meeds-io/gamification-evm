@@ -17,10 +17,7 @@ package io.meeds.evm.gamification.service;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -46,6 +43,7 @@ import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
 import org.web3j.protocol.core.methods.response.EthLog;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.protocol.core.methods.response.EthLog.LogResult;
 import org.web3j.tx.Contract;
 import org.web3j.tx.ReadonlyTransactionManager;
 import org.web3j.tx.gas.StaticGasProvider;
@@ -53,8 +51,6 @@ import org.web3j.tx.gas.StaticGasProvider;
 import io.meeds.evm.gamification.blockchain.BlockchainConfiguration;
 import io.meeds.evm.gamification.model.EvmContract;
 import io.meeds.evm.gamification.model.EvmTransaction;
-import io.meeds.wallet.model.Wallet;
-import io.meeds.wallet.service.WalletAccountService;
 
 @Service
 public class EvmBlockchainService {
@@ -63,9 +59,6 @@ public class EvmBlockchainService {
 
   @Autowired
   BlockchainConfiguration       blockchainConfiguration;
-
-  @Autowired
-  private WalletAccountService  walletAccountService;
 
   @Autowired
   private EvmTransactionService evmTransactionService;
@@ -84,40 +77,54 @@ public class EvmBlockchainService {
    *
    * @param fromBlock Start block
    * @param toBlock End Block to filter
+   * @param contractAddress The ERC20 token contract address
+   * @param blockchainNetwork The url of used provider
+   * @param networkId Network id 
    */
   public void saveTokenTransactions(long fromBlock,
                                     long toBlock,
                                     String contractAddress,
                                     String blockchainNetwork,
                                     long networkId) {
+    List<EvmTransaction> transferEvents = getEvmTransactions(fromBlock, toBlock, contractAddress, blockchainNetwork);
+    if (transferEvents != null && !transferEvents.isEmpty()) {
+      transferEvents.forEach(transferEvent -> {
+        transferEvent.setContractAddress(contractAddress);
+        transferEvent.setNetworkId(networkId);
+        transferEvent.setTransactionDate(System.currentTimeMillis());
+        evmTransactionService.saveTransaction(transferEvent);
+      });
+    }
+  }
+  /**
+   * get the list of ERC20 Token transfer transactions
+   *
+   * @param fromBlock Start block
+   * @param toBlock End Block to filter
+   * @param contractAddress The ERC20 token contract address
+   * @param blockchainNetwork The url of used provider
+   */
+  public List<EvmTransaction> getEvmTransactions(long fromBlock, long toBlock, String contractAddress, String blockchainNetwork) {
     Web3j networkWeb3j = blockchainConfiguration.getNetworkWeb3j(blockchainNetwork);
     EthFilter ethFilter = new EthFilter(new DefaultBlockParameterNumber(fromBlock),
-                                        new DefaultBlockParameterNumber(toBlock),
-                                        contractAddress);
+            new DefaultBlockParameterNumber(toBlock),
+            contractAddress);
     ethFilter.addSingleTopic(EventEncoder.encode(TRANSFER_EVENT));
     try {
       EthLog ethLog = networkWeb3j.ethGetLogs(ethFilter).send();
       @SuppressWarnings("rawtypes")
-      List<EthLog.LogResult> ethLogs = ethLog.getLogs();
+      List<LogResult> ethLogs = ethLog.getLogs();
       if (CollectionUtils.isEmpty(ethLogs)) {
-        return;
+        return Collections.emptyList();
       }
-      List<EvmTransaction> transferEvents = ethLogs.stream()
-                                                   .map(logResult -> (EthLog.LogObject) logResult.get())
-                                                   .filter(logObject -> !logObject.isRemoved())
-                                                   .map(EthLog.LogObject::getTransactionHash)
-                                                   .map(transactionHash -> getTransactionReceipt(transactionHash, networkWeb3j))
-                                                   .filter(TransactionReceipt::isStatusOK)
-                                                   .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt, contractAddress, blockchainNetwork))
-                                                   .toList();
-      if (transferEvents != null && !transferEvents.isEmpty()) {
-        transferEvents.forEach(transferEvent -> {
-          transferEvent.setContractAddress(contractAddress);
-          transferEvent.setNetworkId(networkId);
-          transferEvent.setTransactionDate(System.currentTimeMillis());
-          evmTransactionService.saveTransaction(transferEvent);
-        });
-      }
+      return ethLogs.stream()
+              .map(logResult -> (EthLog.LogObject) logResult.get())
+              .filter(logObject -> !logObject.isRemoved())
+              .map(EthLog.LogObject::getTransactionHash)
+              .map(transactionHash -> getTransactionReceipt(transactionHash, networkWeb3j))
+              .filter(TransactionReceipt::isStatusOK)
+              .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt, contractAddress, blockchainNetwork))
+              .toList();
     } catch (IOException e) {
       throw new IllegalStateException("Error retrieving event logs", e);
     }
