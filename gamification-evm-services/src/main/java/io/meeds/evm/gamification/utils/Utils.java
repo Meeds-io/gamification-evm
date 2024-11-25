@@ -27,10 +27,6 @@ public class Utils {
 
   public static final String CONNECTOR_NAME                  = "evm";
 
-  public static final String NEW_ADDRESS_ASSOCIATED_EVENT    = "exo.wallet.addressAssociation.new";
-
-  public static final String MODIFY_ADDRESS_ASSOCIATED_EVENT = "exo.wallet.addressAssociation.modification";
-
   public static final String SEND_TOKEN_EVENT                = "sendToken";
 
   public static final String RECEIVE_TOKEN_EVENT             = "receiveToken";
