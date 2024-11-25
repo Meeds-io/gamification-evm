@@ -15,14 +15,17 @@
  */
 package io.meeds.evm.gamification.scheduling.task;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.meeds.common.ContainerTransactional;
 import io.meeds.evm.gamification.service.EvmContractTransferService;
+import io.meeds.evm.gamification.utils.Utils;
 import io.meeds.gamification.model.RuleDTO;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.slf4j.Logger;
@@ -42,9 +45,24 @@ public class EvmContractScanTask {
 
     List<RuleDTO> enabledRules = evmContractTransferService.getEnabledEvmRules();
     if (CollectionUtils.isNotEmpty(enabledRules)) {
-        enabledRules.forEach(rule -> {
+      List<RuleDTO> rules = new ArrayList<>();
+      enabledRules.forEach(rule -> {
         try {
-          evmContractTransferService.scanForContractTransactions(rule);
+          boolean isRuleExists = false;
+          if (rules != null) {
+            isRuleExists = rules.stream()
+                                .anyMatch(ruleDTO -> ruleDTO.getEvent()
+                                                            .getProperties()
+                                                            .get(Utils.NETWORK_ID)
+                                                            .compareTo(rule.getEvent().getProperties().get(Utils.NETWORK_ID)) == 0
+                                    && StringUtils.equals(ruleDTO.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase(),
+                                                          rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase())
+                                    && StringUtils.equals(ruleDTO.getEvent().getTrigger(), rule.getEvent().getTrigger()));
+          }
+          if (!isRuleExists) {
+            evmContractTransferService.scanForContractTransactions(rule);
+            rules.add(rule);
+          }
         } catch (Exception e) {
           LOG.error("An error occurred while rewarding for {} rule", rule.getTitle(), e);
         }

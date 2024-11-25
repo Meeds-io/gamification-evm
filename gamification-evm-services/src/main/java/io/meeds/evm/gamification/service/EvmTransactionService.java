@@ -45,10 +45,15 @@ public class EvmTransactionService {
     } else {
       lastTimeToCompare = lastRewardTime;
     }
-    if (trigger.equals(Utils.HOLD_TOKEN_EVENT) || trigger.equals(Utils.RECEIVE_TOKEN_EVENT)) {
+    if (trigger.equals(Utils.RECEIVE_TOKEN_EVENT)) {
      return evmTransactionStorage.getToAddressFilteredTransactions(contractAddress, networkId, lastTimeToCompare, walletAddress);
-    } else {
+    } else if (trigger.equals(Utils.SEND_TOKEN_EVENT)) {
       return evmTransactionStorage.getFromAddressFilteredTransactions(contractAddress, networkId, lastTimeToCompare, walletAddress);
+    } else {
+      Set<EvmTransaction> filteredTransactions = new HashSet<>();
+      filteredTransactions.addAll(evmTransactionStorage.getFromAddressFilteredTransactions(contractAddress, networkId, lastTimeToCompare, walletAddress));
+      filteredTransactions.addAll(evmTransactionStorage.getToAddressFilteredTransactions(contractAddress, networkId, lastTimeToCompare, walletAddress));
+      return new ArrayList<>(filteredTransactions);
     }
   }
 
