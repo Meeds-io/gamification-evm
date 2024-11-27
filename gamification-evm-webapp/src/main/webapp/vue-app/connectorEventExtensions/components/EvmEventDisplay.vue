@@ -105,9 +105,9 @@ export default {
     },
     networkImageUrl() {
       if (this.networkId === 137 || this.networkId === 80002) {
-        return '/gamification-evm/images/polygon.png';
+        return '/gamification-evm/images/polygonLogo.svg';
       } else {
-        return '/gamification-evm/images/EVM.png';
+        return '/gamification-evm/images/EethereumLogo.svg';
       }
     },
     addressLabel() {
