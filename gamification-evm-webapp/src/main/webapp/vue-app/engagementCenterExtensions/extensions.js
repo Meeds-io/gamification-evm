@@ -33,6 +33,9 @@ export function init() {
           const transactionDetails = realization.objectId.split('#');
           const networkId = parseInt(transactionDetails[0]);
           const transactionHash = transactionDetails[1];
+          if (transactionHash !== '') {
+            return '';
+          }
           switch (networkId) {
           case 1:
             realization.link = `https://etherscan.io/tx/${transactionHash}`;
