@@ -139,7 +139,6 @@ public class EvmContractTransferService {
     String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
     Long networkId = Long.parseLong(rule.getEvent().getProperties().get(Utils.NETWORK_ID));
     EvmTrigger evmTriggerForReceiver = newEvmTrigger(transaction,
-                                                     rule.getId(),
                                                      trigger,
                                                      contractAddress,
                                                      blockchainNetwork,
@@ -164,7 +163,6 @@ public class EvmContractTransferService {
       EvmTrigger evmTrigger;
       if (isSendTokenEvent) {
         evmTrigger = newEvmTrigger(transaction,
-                                   rule.getId(),
                                    trigger,
                                    contractAddress,
                                    blockchainNetwork,
@@ -174,7 +172,6 @@ public class EvmContractTransferService {
                                    transaction.getToAddress());
       } else {
         evmTrigger = newEvmTrigger(transaction,
-                                   rule.getId(),
                                    trigger,
                                    contractAddress,
                                    blockchainNetwork,
@@ -193,7 +190,6 @@ public class EvmContractTransferService {
   }
 
   private EvmTrigger newEvmTrigger(EvmTransaction transaction,
-                                   Long ruleId,
                                    String trigger,
                                    String contractAddress,
                                    String blockchainNetwork,
@@ -205,8 +201,6 @@ public class EvmContractTransferService {
     evmTrigger.setTrigger(trigger);
     evmTrigger.setType(Utils.CONNECTOR_NAME);
     evmTrigger.setTransactionHash(transaction.getTransactionHash());
-    evmTrigger.setTransactionId(transaction.getId());
-    evmTrigger.setRuleId(ruleId);
     evmTrigger.setContractAddress(contractAddress);
     evmTrigger.setBlockchainNetwork(blockchainNetwork);
     evmTrigger.setAmount(transaction.getAmount());
