@@ -19,10 +19,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 <template>
   <v-chip
     dark
-    class="width-fit-content my-0">
-    <v-avatar left>
-      <v-img :src="networkImageUrl" />
-    </v-avatar>
+    class="width-fit-content my-0 ps-0">
+    <v-img
+      :src="networkImageUrl"
+      height="30px"
+      width="30px"
+      class="rounded-circle me-3" />
     <span class="text-truncate">
       {{ networkName }}
     </span>
@@ -43,9 +45,9 @@ export default {
     },
     networkImageUrl() {
       if (this.networkName === 'Polygon') {
-        return '/gamification-evm/images/polygon.png';
+        return '/gamification-evm/images/polygonLogo.svg';
       } else {
-        return '/gamification-evm/images/EVM.png';
+        return '/gamification-evm/images/ethereumLogo.svg';
       }
     }
   }
