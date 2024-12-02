@@ -145,7 +145,8 @@ public class EvmContractTransferService {
                                                      networkId,
                                                      duration,
                                                      transaction.getToAddress(),
-                                                     null);
+                                                     null,
+                                                     rule.getId().toString());
     evmTriggerService.handleTriggerAsync(evmTriggerForReceiver);
     saveLastRewardTime(walletAddress, rule.getId());
   }
@@ -169,7 +170,8 @@ public class EvmContractTransferService {
                                    networkId,
                                    null,
                                    transaction.getFromAddress(),
-                                   transaction.getToAddress());
+                                   transaction.getToAddress(),
+                                   rule.getId().toString());
       } else {
         evmTrigger = newEvmTrigger(transaction,
                                    trigger,
@@ -178,7 +180,8 @@ public class EvmContractTransferService {
                                    networkId,
                                    null,
                                    transaction.getToAddress(),
-                                   transaction.getFromAddress());
+                                   transaction.getFromAddress(),
+                                   rule.getId().toString());
       }
       evmTriggerService.handleTriggerAsync(evmTrigger);
       saveLastRewardTime(walletAddress, rule.getId());
@@ -196,7 +199,8 @@ public class EvmContractTransferService {
                                    Long networkId,
                                    Long duration,
                                    String walletAddress,
-                                   String targetAddress) {
+                                   String targetAddress,
+                                   String ruleId) {
     EvmTrigger evmTrigger = new EvmTrigger();
     evmTrigger.setTrigger(trigger);
     evmTrigger.setType(Utils.CONNECTOR_NAME);
@@ -209,6 +213,7 @@ public class EvmContractTransferService {
     evmTrigger.setDuration(duration);
     evmTrigger.setWalletAddress(walletAddress);
     evmTrigger.setTargetAddress(targetAddress);
+    evmTrigger.setRuleId(ruleId);
     if (trigger.equals(Utils.HOLD_TOKEN_EVENT)) {
       evmTrigger.setTokenBalance(evmBlockchainService.erc20BalanceOf(walletAddress, contractAddress, blockchainNetwork));
     }

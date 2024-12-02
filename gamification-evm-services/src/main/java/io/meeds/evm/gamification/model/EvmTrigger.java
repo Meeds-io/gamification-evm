@@ -50,6 +50,8 @@ public class EvmTrigger {
 
   private Long       duration;
 
+  private String     ruleId;
+
   public EvmTrigger clone() {
     return new EvmTrigger(trigger,
                           walletAddress,
@@ -62,6 +64,7 @@ public class EvmTrigger {
                           amount,
                           sentDate,
                           tokenBalance,
-                          duration);
+                          duration,
+                          ruleId);
   }
 }
