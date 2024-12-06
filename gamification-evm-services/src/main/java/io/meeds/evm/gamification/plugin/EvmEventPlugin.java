@@ -64,11 +64,9 @@ public class EvmEventPlugin extends EventPlugin {
     String minAmount = eventProperties.get(Utils.MIN_AMOUNT);
     String desiredNetwork = eventProperties.get(Utils.BLOCKCHAIN_NETWORK);
     String tokenDecimals = eventProperties.get(Utils.DECIMALS);
-    String desiredRuleId = eventProperties.get(Utils.RULE_ID);
     Map<String, String> triggerDetailsMop = Utils.stringToMap(triggerDetails);
     Long sentDate = Long.parseLong(triggerDetailsMop.get(Utils.SENT_DATE));
-    if (!desiredRuleId.equals(triggerDetailsMop.get(Utils.RULE_ID))
-        || !desiredNetwork.equals(triggerDetailsMop.get(Utils.BLOCKCHAIN_NETWORK))
+    if ( !desiredNetwork.equals(triggerDetailsMop.get(Utils.BLOCKCHAIN_NETWORK))
         || !desiredContractAddress.equals(triggerDetailsMop.get(Utils.CONTRACT_ADDRESS).toLowerCase())) {
       return false;
     }
