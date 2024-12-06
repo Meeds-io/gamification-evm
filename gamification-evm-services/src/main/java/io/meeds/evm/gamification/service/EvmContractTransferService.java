@@ -138,15 +138,15 @@ public class EvmContractTransferService {
     String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
     String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
     Long networkId = Long.parseLong(rule.getEvent().getProperties().get(Utils.NETWORK_ID));
-    EvmTrigger evmTriggerForReceiver = newEvmTrigger(transaction,
+    EvmTrigger evmTrigger = newEvmTrigger(transaction,
                                                      trigger,
                                                      contractAddress,
                                                      blockchainNetwork,
                                                      networkId,
                                                      duration,
-                                                     transaction.getToAddress(),
+                                                     walletAddress,
                                                      null);
-    evmTriggerService.handleTriggerAsync(evmTriggerForReceiver);
+    evmTriggerService.handleTriggerAsync(evmTrigger);
     saveLastRewardTime(walletAddress, rule.getId());
   }
 

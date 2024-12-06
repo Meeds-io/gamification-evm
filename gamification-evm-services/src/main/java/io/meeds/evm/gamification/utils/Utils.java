@@ -55,6 +55,8 @@ public class Utils {
 
   public static final String  TOKEN_DECIMALS      = "tokenDecimals";
 
+  public static final String  RULE_ID             = "ruleId";
+
   public static final Integer BLOCK_TIME_AVERAGE  = 13;
 
   private Utils() {

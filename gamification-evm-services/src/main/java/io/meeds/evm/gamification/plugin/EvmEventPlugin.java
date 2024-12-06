@@ -66,7 +66,7 @@ public class EvmEventPlugin extends EventPlugin {
     String tokenDecimals = eventProperties.get(Utils.DECIMALS);
     Map<String, String> triggerDetailsMop = Utils.stringToMap(triggerDetails);
     Long sentDate = Long.parseLong(triggerDetailsMop.get(Utils.SENT_DATE));
-    if (!desiredNetwork.equals(triggerDetailsMop.get(Utils.BLOCKCHAIN_NETWORK))
+    if ( !desiredNetwork.equals(triggerDetailsMop.get(Utils.BLOCKCHAIN_NETWORK))
         || !desiredContractAddress.equals(triggerDetailsMop.get(Utils.CONTRACT_ADDRESS).toLowerCase())) {
       return false;
     }

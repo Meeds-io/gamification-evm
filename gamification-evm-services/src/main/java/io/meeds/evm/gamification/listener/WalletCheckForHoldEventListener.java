@@ -34,6 +34,7 @@ import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.services.listener.Listener;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -70,48 +71,64 @@ public class WalletCheckForHoldEventListener extends Listener<Wallet, String> {
   @ExoTransactional
   public void onEvent(Event<Wallet, String> event) {
     List<RuleDTO> holdEventEvmRules = evmContractTransferService.getHoldEventEvmRules();
-    Wallet wallet = event.getSource();
-    String walletAddress = wallet.getAddress();
     if (CollectionUtils.isNotEmpty(holdEventEvmRules)) {
+      Wallet wallet = event.getSource();
+      String walletAddress = wallet.getAddress();
+      List<RuleDTO> rules = new ArrayList<>();
       holdEventEvmRules.forEach(holdEventEvmRule -> {
-        BigInteger minAmount = new BigInteger(holdEventEvmRule.getEvent().getProperties().get(Utils.MIN_AMOUNT));
-        BigInteger base = new BigInteger("10");
-        Integer tokenDecimals = Integer.parseInt(holdEventEvmRule.getEvent().getProperties().get(Utils.TOKEN_DECIMALS));
-        BigInteger desiredMinAmount = base.pow(tokenDecimals).multiply(minAmount);
-        String contractAddress = holdEventEvmRule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase();
-        String blockchainNetwork = holdEventEvmRule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
-        Long networkId = Long.parseLong(holdEventEvmRule.getEvent().getProperties().get(Utils.NETWORK_ID));
-        Long duration = Long.parseLong(holdEventEvmRule.getEvent().getProperties().get(Utils.DURATION));
-        BigInteger walletBalance = evmBlockchainService.erc20BalanceOf(walletAddress, contractAddress, blockchainNetwork);
-        if (walletBalance.compareTo(desiredMinAmount) >= 0) {
-          EvmTransaction lastTransaction = evmTransactionService.getLastScannedTransactionByWalletAddress(contractAddress,
-                                                                                                          networkId,
-                                                                                                          walletAddress);
-          if (lastTransaction != null) {
-            if (Utils.isValidDurationHoldingToken(lastTransaction, duration)) {
-              evmContractTransferService.handleTriggerForHoldEvent(holdEventEvmRule, lastTransaction, walletAddress);
-            }
-          } else {
-            long toBlock = evmBlockchainService.getLastBlock(blockchainNetwork);
-            long fromBlock = toBlock - (duration / BLOCK_TIME_AVERAGE);
-            List<EvmTransaction> evmTransactions = evmBlockchainService.getEvmTransactions(fromBlock,
-                                                                                           toBlock,
-                                                                                           contractAddress,
-                                                                                           blockchainNetwork);
-            evmTransactions = evmTransactions.stream()
-                                             .filter(transaction -> StringUtils.equals(transaction.getFromAddress(), walletAddress))
-                                             .collect(Collectors.toList());
-            if (CollectionUtils.isEmpty(evmTransactions)) {
-              EvmTransaction transaction = new EvmTransaction();
-              transaction.setTransactionHash("");
-              transaction.setAmount(desiredMinAmount);
-              transaction.setToAddress(walletAddress);
-              transaction.setTransactionDate(System.currentTimeMillis() - duration);
-              evmContractTransferService.handleTriggerForHoldEvent(holdEventEvmRule, transaction, walletAddress);
+        boolean isRuleExists = false;
+        if (rules != null) {
+          isRuleExists = rules.stream()
+                              .anyMatch(rule -> rule.getEvent()
+                                                    .getProperties()
+                                                    .get(Utils.NETWORK_ID)
+                                                    .compareTo(holdEventEvmRule.getEvent()
+                                                                               .getProperties()
+                                                                               .get(Utils.NETWORK_ID)) == 0
+                                  && StringUtils.equals(rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS),
+                                                        holdEventEvmRule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS)));
+        }
+        if (!isRuleExists) {
+          BigInteger minAmount = new BigInteger(holdEventEvmRule.getEvent().getProperties().get(Utils.MIN_AMOUNT));
+          BigInteger base = new BigInteger("10");
+          Integer tokenDecimals = Integer.parseInt(holdEventEvmRule.getEvent().getProperties().get(Utils.TOKEN_DECIMALS));
+          BigInteger desiredMinAmount = base.pow(tokenDecimals).multiply(minAmount);
+          String contractAddress = holdEventEvmRule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase();
+          String blockchainNetwork = holdEventEvmRule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
+          Long networkId = Long.parseLong(holdEventEvmRule.getEvent().getProperties().get(Utils.NETWORK_ID));
+          Long duration = Long.parseLong(holdEventEvmRule.getEvent().getProperties().get(Utils.DURATION));
+          BigInteger walletBalance = evmBlockchainService.erc20BalanceOf(walletAddress, contractAddress, blockchainNetwork);
+          if (walletBalance.compareTo(desiredMinAmount) >= 0) {
+            EvmTransaction lastTransaction = evmTransactionService.getLastScannedTransactionByWalletAddress(contractAddress,
+                                                                                                            networkId,
+                                                                                                            walletAddress);
+            if (lastTransaction != null) {
+              if (Utils.isValidDurationHoldingToken(lastTransaction, duration)) {
+                evmContractTransferService.handleTriggerForHoldEvent(holdEventEvmRule, lastTransaction, walletAddress);
+                rules.add(holdEventEvmRule);
+              }
+            } else {
+              long toBlock = evmBlockchainService.getLastBlock(blockchainNetwork);
+              long fromBlock = toBlock - (duration / BLOCK_TIME_AVERAGE);
+              List<EvmTransaction> evmTransactions = evmBlockchainService.getEvmTransactions(fromBlock,
+                                                                                             toBlock,
+                                                                                             contractAddress,
+                                                                                             blockchainNetwork);
+              evmTransactions = evmTransactions.stream()
+                                               .filter(transaction -> StringUtils.equals(transaction.getFromAddress(), walletAddress))
+                                               .collect(Collectors.toList());
+              if (CollectionUtils.isEmpty(evmTransactions)) {
+                EvmTransaction transaction = new EvmTransaction();
+                transaction.setTransactionHash("");
+                transaction.setAmount(desiredMinAmount);
+                transaction.setToAddress(walletAddress);
+                transaction.setTransactionDate(System.currentTimeMillis() - duration);
+                evmContractTransferService.handleTriggerForHoldEvent(holdEventEvmRule, transaction, walletAddress);
+                rules.add(holdEventEvmRule);
+              }
             }
           }
         }
-
       });
     }
   }
