@@ -35,7 +35,7 @@ export function getTokenDetailsByAddress(paramsObj) {
     if (resp?.ok) {
       return resp.json();
     } else {
-      throw new Error('Error when getting erc20 token details');
+      throw new Error('Error when getting token details');
     }
   });
 }
