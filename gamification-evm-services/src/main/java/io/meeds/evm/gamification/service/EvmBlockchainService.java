@@ -20,6 +20,7 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Stream;
 
+import io.meeds.evm.gamification.utils.Utils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -32,18 +33,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.web3j.abi.EventEncoder;
 import org.web3j.abi.EventValues;
+import org.web3j.abi.FunctionEncoder;
+import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.TypeReference;
-import org.web3j.abi.datatypes.Address;
-import org.web3j.abi.datatypes.Event;
-import org.web3j.abi.datatypes.Type;
+import org.web3j.abi.datatypes.*;
+import org.web3j.abi.datatypes.generated.Bytes4;
 import org.web3j.abi.datatypes.generated.Uint256;
+import org.web3j.abi.datatypes.generated.Uint8;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterNumber;
+import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.request.EthFilter;
+import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
 import org.web3j.protocol.core.methods.response.EthLog;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.core.methods.response.EthLog.LogResult;
+import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.tx.Contract;
 import org.web3j.tx.ReadonlyTransactionManager;
 import org.web3j.tx.gas.StaticGasProvider;
@@ -52,10 +58,25 @@ import io.meeds.evm.gamification.blockchain.BlockchainConfiguration;
 import io.meeds.evm.gamification.model.EvmContract;
 import io.meeds.evm.gamification.model.EvmTransaction;
 
+import static io.meeds.evm.gamification.utils.Utils.ERC1155_INTERFACE_ID;
+import static io.meeds.evm.gamification.utils.Utils.ERC721_INTERFACE_ID;
+
 @Service
 public class EvmBlockchainService {
 
   private static final Log      LOG            = ExoLogger.getLogger(EvmBlockchainService.class);
+  
+  private static final Function FUNC_DECIMALS  = new Function("decimals",
+                                                              Arrays.asList(),
+                                                              Arrays.asList(new TypeReference<Uint8>() {}));
+
+  private static final Function FUNC_SYMBOL    = new Function("symbol",
+                                                              Arrays.asList(),
+                                                              Arrays.asList(new TypeReference<Utf8String>() {}));
+
+  private static final Function FUNC_NAME      = new Function("name",
+                                                              Arrays.asList(),
+                                                              Arrays.asList(new TypeReference<Utf8String>() {}));
 
   @Autowired
   BlockchainConfiguration       blockchainConfiguration;
@@ -131,24 +152,95 @@ public class EvmBlockchainService {
   }
 
   /**
-   * Retrieves the details of ERC20 Token from its contract address
+   * Retrieves the Token details from its contract address
    *
-   * @param contractAddress the ERC20 token contract address
-   * @return erc20 token details
+   * @param contractAddress the token contract address
+   * @return token details
    */
-  public EvmContract getERC20TokenDetails(String contractAddress, String blockchainNetwork) {
-    Web3j networkWeb3j = blockchainConfiguration.getNetworkWeb3j(blockchainNetwork);
-    String name = erc20Name(contractAddress, networkWeb3j);
-    String symbol = erc20Symbol(contractAddress, networkWeb3j);
-    BigInteger decimals = erc20Decimals(contractAddress, networkWeb3j);
-    EvmContract erc20Token = new EvmContract();
-    if (StringUtils.isNotBlank(name) && StringUtils.isNotBlank(symbol) && !decimals.equals(BigInteger.ZERO)) {
-      erc20Token.setSymbol(symbol);
-      erc20Token.setDecimals(decimals);
-      erc20Token.setName(name);
-      return erc20Token;
+  public EvmContract getTokenDetails(String contractAddress, String blockchainNetwork) {
+    try {
+      Web3j networkWeb3j = blockchainConfiguration.getNetworkWeb3j(blockchainNetwork);
+      EvmContract token = new EvmContract();
+      token.setType(detectTokenType(networkWeb3j, contractAddress));
+      if (token.getType().equals("ERC-20")) {
+        BigInteger decimals = new BigInteger(callFunction(networkWeb3j, contractAddress, FUNC_DECIMALS));
+        token.setDecimals(decimals);
+      }
+      String name = getTokenName(networkWeb3j, contractAddress, token.getType());
+      token.setName(name);
+      String symbol = getTokenSymbol(networkWeb3j, contractAddress, token.getType());
+      token.setSymbol(symbol);
+      return token;
+    } catch (Exception e) {
+      LOG.info("the error", e);
     }
     return null;
+  }
+
+  private String detectTokenType(Web3j web3j, String contractAddress) throws Exception {
+    if (supportsInterface(web3j, contractAddress, ERC721_INTERFACE_ID)) {
+      return "ERC-721";
+    } else if (supportsInterface(web3j, contractAddress, ERC1155_INTERFACE_ID)) {
+      return "ERC-1155";
+    } else if (!(new BigInteger(callFunction(web3j, contractAddress, FUNC_DECIMALS))).equals(BigInteger.ZERO)) {
+      return "ERC-20";
+    }
+    return "Unknown type token";
+  }
+
+  private boolean supportsInterface(Web3j web3j, String tokenAddress, String interfaceId) throws Exception {
+    Function supportsInterfaceFunction = new Function("supportsInterface",
+                                                      Arrays.asList(new Bytes4(Utils.hexStringToByteArray(interfaceId))),
+                                                      Arrays.asList(new TypeReference<Bool>() {
+                                                      }));
+    String encodedFunction = FunctionEncoder.encode(supportsInterfaceFunction);
+    EthCall response = web3j
+                            .ethCall(Transaction.createEthCallTransaction("0x0000000000000000000000000000000000000000",
+                                                                          tokenAddress,
+                                                                          encodedFunction),
+                                     DefaultBlockParameterName.LATEST)
+                            .send();
+
+    String value = response.getValue();
+    if (value != null) {
+      if (value.startsWith("0x")) {
+        value = value.substring(2);
+      }
+      value = value.replaceFirst("^0+(?!$)", "");
+
+      return value.equals("1");
+    }
+    return false;
+  }
+
+  private String callFunction(Web3j web3j, String contractAddress, Function function) throws Exception {
+    String encodedFunction = FunctionEncoder.encode(function);
+    EthCall response = web3j.ethCall(Transaction.createEthCallTransaction(contractAddress, contractAddress, encodedFunction),
+                                     DefaultBlockParameterName.LATEST)
+                            .send();
+
+    List<Type> result = FunctionReturnDecoder.decode(response.getValue(), function.getOutputParameters());
+    if (function.getOutputParameters().get(0).getType().equals(Utf8String.class)) {
+      return ((Utf8String) result.get(0)).getValue();
+    } else if (function.getOutputParameters().get(0).getType().equals(Uint8.class)) {
+      return String.valueOf(((Uint8) result.get(0)).getValue());
+    } else {
+      return "Unexpected output type";
+    }
+  }
+
+  private String getTokenName(Web3j web3j, String contractAddress, String tokenType) throws Exception {
+    if ("ERC-20".equals(tokenType) || "ERC-721".equals(tokenType)) {
+      return callFunction(web3j, contractAddress, FUNC_NAME);
+    }
+    return "Unknown name token";
+  }
+
+  private String getTokenSymbol(Web3j web3j, String contractAddress, String tokenType) throws Exception {
+    if ("ERC-20".equals(tokenType) || "ERC-721".equals(tokenType)) {
+      return callFunction(web3j, contractAddress, FUNC_SYMBOL);
+    }
+    return "Unknown symbol token";
   }
 
   /**
@@ -160,42 +252,6 @@ public class EvmBlockchainService {
       return networkWeb3j.ethBlockNumber().send().getBlockNumber().longValue();
     } catch (IOException e) {
       throw new IllegalStateException("Error getting last block number", e);
-    }
-  }
-
-  /**
-   * @return ERC20 token name
-   */
-  public String erc20Name(String contractAddress, Web3j networkWeb3j) {
-    try {
-      ERC20 erc20Token = loadERC20Token(contractAddress, networkWeb3j);
-      return erc20Token.name().send();
-    } catch (Exception e) {
-      throw new IllegalStateException("Error calling name method", e);
-    }
-  }
-
-  /**
-   * @return ERC20 token symbol
-   */
-  public String erc20Symbol(String contractAddress, Web3j networkWeb3j) {
-    try {
-      ERC20 erc20Token = loadERC20Token(contractAddress, networkWeb3j);
-      return erc20Token.symbol().send();
-    } catch (Exception e) {
-      throw new IllegalStateException("Error calling symbol method", e);
-    }
-  }
-
-  /**
-   * @return ERC20 token decimals
-   */
-  public BigInteger erc20Decimals(String contractAddress, Web3j networkWeb3j) {
-    try {
-      ERC20 erc20Token = loadERC20Token(contractAddress, networkWeb3j);
-      return erc20Token.decimals().send();
-    } catch (Exception e) {
-      throw new IllegalStateException("Error calling decimals method", e);
     }
   }
 

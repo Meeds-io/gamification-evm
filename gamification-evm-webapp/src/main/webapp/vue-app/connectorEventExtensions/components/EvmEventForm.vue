@@ -102,14 +102,15 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             <a
               :href="explorerLink"
               target="_blank"
-              class="text-color">
+              class="text-color d-flex flex-row mt-3">
               <v-chip
-                class="mt-3"
+                v-if="!isERC1155Token"
                 color="primary"
                 v-bind="attrs"
                 v-on="on">
                 <span class="mx-2 text-truncate"> {{ tokenName }} ({{ tokenSymbol }}) </span>
               </v-chip>
+              <span class="ma-auto">{{ tokenType }}</span>
             </a>
           </template>
           <span>{{ $t('gamification.event.form.openExplorer') }}</span>
@@ -226,6 +227,12 @@ export default {
     },
     tokenSymbol() {
       return this.erc20Token?.symbol;
+    },
+    tokenType() {
+      return this.erc20Token?.type === 'ERC-20' ? this.$t('gamification.event.form.token') : this.$t('gamification.event.form.nft');
+    },
+    isERC1155Token() {
+      return this.erc20Token?.type === 'ERC-1155';
     },
     networkVerificationMessage() {
       return this.$t('gamification.event.form.contractAddress.tooltip', { 0: this.selected?.name });
