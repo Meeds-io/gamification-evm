@@ -55,9 +55,11 @@ public class Utils {
 
   public static final String  TOKEN_DECIMALS      = "tokenDecimals";
 
-  public static final String  RULE_ID             = "ruleId";
-
   public static final Integer BLOCK_TIME_AVERAGE  = 13;
+
+  public static  final String ERC721_INTERFACE_ID = "0x80ac58cd";
+
+  public static  final String ERC1155_INTERFACE_ID = "0xd9b67a26";
 
   private Utils() {
 
@@ -89,5 +91,19 @@ public class Utils {
   public static Boolean isValidDurationHoldingToken(EvmTransaction transaction, Long desiredDuration) {
     Long holdingDuration = System.currentTimeMillis() - transaction.getTransactionDate();
     return holdingDuration.compareTo(desiredDuration) >= 0;
+  }
+
+  public static byte[] hexStringToByteArray(String hexString) {
+    if (hexString.startsWith("0x")) {
+      hexString = hexString.substring(2);
+    }
+    if (hexString.length() != 8) {
+      throw new IllegalArgumentException("Hex string must be exactly 8 characters long for Bytes4");
+    }
+    byte[] byteArray = new byte[4];
+    for (int i = 0; i < 4; i++) {
+      byteArray[i] = (byte) Integer.parseInt(hexString.substring(i * 2, i * 2 + 2), 16);
+    }
+    return byteArray;
   }
 }
