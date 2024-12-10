@@ -17,11 +17,11 @@ public class EvmTokenController {
   EvmBlockchainService evmBlockchainService;
 
   @GetMapping
-  @Operation(summary = "Retrieves ERC20 Token details", method = "GET")
+  @Operation(summary = "Retrieves Token details", method = "GET")
   @ApiResponse(responseCode = "200", description = "Request fulfilled")
   @ApiResponse(responseCode = "404", description = "Not found")
   @ApiResponse(responseCode = "503", description = "Service unavailable")
-  public EvmContract getERC20Token(
+  public EvmContract getTokenDetails(
                                   @RequestParam(name = "contractAddress")
                                   String contractAddress,
                                   @RequestParam(name = "blockchainNetwork")
@@ -31,7 +31,7 @@ public class EvmTokenController {
     } else if (blockchainNetwork == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Network url is missing");
     }
-    return evmBlockchainService.getERC20TokenDetails(contractAddress, blockchainNetwork);
+    return evmBlockchainService.getTokenDetails(contractAddress, blockchainNetwork);
   }
 
 }
