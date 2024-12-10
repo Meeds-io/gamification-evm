@@ -16,4 +16,6 @@ public class EvmContract {
   private String     symbol;
 
   private BigInteger decimals;
+
+  private String     type;
 }
