@@ -85,8 +85,8 @@ public class WalletCheckForHoldEventListener extends Listener<Wallet, String> {
                                                     .compareTo(holdEventEvmRule.getEvent()
                                                                                .getProperties()
                                                                                .get(Utils.NETWORK_ID)) == 0
-                                  && StringUtils.equals(rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS),
-                                                        holdEventEvmRule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS)));
+                                  && StringUtils.equals(rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase(),
+                                                        holdEventEvmRule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase()));
         }
         if (!isRuleExists) {
           BigInteger minAmount = new BigInteger(holdEventEvmRule.getEvent().getProperties().get(Utils.MIN_AMOUNT));
