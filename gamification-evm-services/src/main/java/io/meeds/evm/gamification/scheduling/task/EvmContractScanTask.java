@@ -55,8 +55,8 @@ public class EvmContractScanTask {
                                                             .getProperties()
                                                             .get(Utils.NETWORK_ID)
                                                             .compareTo(rule.getEvent().getProperties().get(Utils.NETWORK_ID)) == 0
-                                    && StringUtils.equals(ruleDTO.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS),
-                                                          rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS))
+                                    && StringUtils.equals(ruleDTO.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase(),
+                                                          rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase())
                                     && StringUtils.equals(ruleDTO.getEvent().getTrigger(), rule.getEvent().getTrigger()));
           }
           if (!isRuleExists) {
