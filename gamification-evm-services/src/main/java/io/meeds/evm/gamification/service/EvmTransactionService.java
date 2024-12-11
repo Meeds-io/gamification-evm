@@ -17,6 +17,7 @@ package io.meeds.evm.gamification.service;
 
 import io.meeds.evm.gamification.model.EvmTransaction;
 import io.meeds.evm.gamification.storage.EvmTransactionStorage;
+import io.meeds.evm.gamification.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,12 +33,23 @@ public class EvmTransactionService {
     evmTransactionStorage.saveEvmTransaction(transaction);
   }
 
-  public List<EvmTransaction> getLastScannedTransactionsFromId(String contractAddress, Long networkId, Long id) {
-    return evmTransactionStorage.getEvmTransactionsByContractAddressAndNetworkIdFromId(contractAddress, networkId, id);
+  public List<String> getDistinctWalletAddresses(String contractAddress, String ruleCreationDate) {
+    long convertedDate = Utils.convertDateStringToTimestamp(ruleCreationDate);
+    return evmTransactionStorage.getDistinctWalletAddresses(contractAddress, convertedDate);
   }
 
-  public EvmTransaction getLastScannedTransaction(String contractAddress, Long networkId) {
-    return evmTransactionStorage.getEvmTransactionByContractAddressAndNetworkIdOrderByIdDesc(contractAddress, networkId);
-  }
+  public List<EvmTransaction> getFilteredTransactionsByWalletAddress(String contractAddress, Long networkId, String walletAddress, Long creationActionTime, Long lastRewardTime, String trigger) {
+    long lastTimeToCompare;
+    if (creationActionTime.compareTo(lastRewardTime) >= 0) {
+      lastTimeToCompare = creationActionTime;
+    } else {
+      lastTimeToCompare = lastRewardTime;
+    }
+    if (trigger.equals(Utils.HOLD_TOKEN_EVENT) || trigger.equals(Utils.RECEIVE_TOKEN_EVENT)) {
+     return evmTransactionStorage.getToAddressFilteredTransactions(contractAddress, networkId, lastTimeToCompare, walletAddress);
+    } else {
+      return evmTransactionStorage.getFromAddressFilteredTransactions(contractAddress, networkId, lastTimeToCompare, walletAddress);
+    }
 
+  }
 }

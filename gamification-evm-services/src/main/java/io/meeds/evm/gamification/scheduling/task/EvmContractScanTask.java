@@ -18,16 +18,10 @@ package io.meeds.evm.gamification.scheduling.task;
 import java.util.List;
 
 import io.meeds.common.ContainerTransactional;
-import io.meeds.evm.gamification.service.EvmBlockchainService;
 import io.meeds.evm.gamification.service.EvmContractTransferService;
-import io.meeds.evm.gamification.utils.Utils;
 import io.meeds.gamification.model.RuleDTO;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.exoplatform.commons.api.settings.SettingService;
-import org.exoplatform.commons.api.settings.data.Context;
-import org.exoplatform.commons.api.settings.data.Scope;
-import org.exoplatform.commons.api.settings.SettingValue;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -42,9 +36,9 @@ public class EvmContractScanTask {
     @Autowired
     private EvmContractTransferService evmContractTransferService;
 
- //   @ContainerTransactional
-  //  @Scheduled(cron = "${gamification.evm.transactionScan.cron:0 */2 * * * *}")
-   /* public synchronized void scanForContractTransactions() {
+    @ContainerTransactional
+    @Scheduled(cron = "${gamification.evm.transactionScan.cron:0 */2 * * * *}")
+    public synchronized void scanForContractTransactions() {
         try {
             List<RuleDTO> filteredRules = evmContractTransferService.getEnabledEvmRules();
             if (CollectionUtils.isNotEmpty(filteredRules)) {
@@ -55,6 +49,6 @@ public class EvmContractScanTask {
         } catch (Exception e) {
             LOG.error("An error occurred while rewarding for EVM events", e);
         }
-    }*/
+    }
 
 }

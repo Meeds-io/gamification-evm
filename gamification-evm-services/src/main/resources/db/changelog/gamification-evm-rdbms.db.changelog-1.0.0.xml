@@ -74,4 +74,10 @@
       <column name="BLOCK_HASH" type="BIGINT" />
     </addColumn>
   </changeSet>
+  <changeSet author="evm-connector" id="1.0.0-8">
+    <modifyDataType tableName="EVM_TRANSACTIONS" columnName="BLOCK_HASH" newDataType="NVARCHAR(250)" />
+  </changeSet>
+  <changeSet author="evm-connector" id="1.0.0-9">
+    <modifyDataType tableName="EVM_TRANSACTIONS" columnName="WALLET_BALANCE" newDataType="DECIMAL(30,0)"/>
+  </changeSet>
 </databaseChangeLog>
