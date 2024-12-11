@@ -33,7 +33,7 @@ export function init() {
           const transactionDetails = realization.objectId.split('#');
           const networkId = parseInt(transactionDetails[0]);
           const transactionHash = transactionDetails[1];
-          if (transactionHash !== '') {
+          if (transactionHash === '') {
             return '';
           }
           switch (networkId) {
