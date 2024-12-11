@@ -29,6 +29,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class EvmTransaction {
 
+  private Long       id;
+
   private String     transactionHash;
 
   private Long       networkId;
@@ -47,6 +49,6 @@ public class EvmTransaction {
 
   private BigInteger blockNumber;
 
-  private Long       blockHash;
+  private String     blockHash;
 
 }

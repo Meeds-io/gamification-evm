@@ -20,15 +20,28 @@ package io.meeds.evm.gamification.dao;
 
 import io.meeds.evm.gamification.entity.EvmTransactionEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
 public interface EvmTransactionDAO extends JpaRepository<EvmTransactionEntity, Long> {
 
-  List<EvmTransactionEntity> findByFromAddress(String fromAddress);
+  @Query("""
+          SELECT DISTINCT fromAddress AS address FROM EvmTransaction tr
+          WHERE tr.contractAddress = ?1 AND tr.transactionDate >= ?2
+          UNION
+          SELECT DISTINCT toAddress AS address FROM EvmTransaction tr
+          WHERE tr.contractAddress = ?1 AND tr.transactionDate >= ?2
+      """)
+  List<String> findDistinctAddresses(String contractAddress, Long ruleCreationDate);
 
-  List<EvmTransactionEntity> findByContractAddressAndNetworkIdAndIdGreaterThan(String contractAddress, Long networkId, Long id);
+  List<EvmTransactionEntity> findByContractAddressAndNetworkIdAndToAddressAndTransactionDateGreaterThan(String contractAddress,
+                                                                                                        Long networkId,
+                                                                                                        String toAddress,
+                                                                                                        Long transactionDate);
 
-  EvmTransactionEntity findTopByContractAddressAndNetworkIdOrderByIdDesc(String contractAddress, Long networkId);
-
+  List<EvmTransactionEntity> findByContractAddressAndNetworkIdAndFromAddressAndTransactionDateGreaterThan(String contractAddress,
+                                                                                                          Long networkId,
+                                                                                                          String fromAddress,
+                                                                                                          Long transactionDate);
 }

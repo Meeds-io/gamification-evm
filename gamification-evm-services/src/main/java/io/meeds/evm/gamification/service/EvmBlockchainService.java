@@ -25,6 +25,12 @@ import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
+import org.exoplatform.wallet.contract.ERC20;
+import org.exoplatform.wallet.contract.ERC20.TransferEventResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.web3j.abi.EventEncoder;
@@ -43,11 +49,6 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.Contract;
 import org.web3j.tx.ReadonlyTransactionManager;
 import org.web3j.tx.gas.StaticGasProvider;
-
-import org.exoplatform.services.log.ExoLogger;
-import org.exoplatform.services.log.Log;
-import org.exoplatform.wallet.contract.ERC20;
-import org.exoplatform.wallet.contract.ERC20.TransferEventResponse;
 
 import io.meeds.evm.gamification.blockchain.BlockchainConfiguration;
 import io.meeds.evm.gamification.model.EvmContract;
@@ -107,20 +108,20 @@ public class EvmBlockchainService {
                                                    .map(EthLog.LogObject::getTransactionHash)
                                                    .map(transactionHash -> getTransactionReceipt(transactionHash, networkWeb3j))
                                                    .filter(TransactionReceipt::isStatusOK)
-                                                   .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt, contractAddress))
+                                                   .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt, contractAddress, blockchainNetwork))
                                                    .toList();
       if (transferEvents != null && !transferEvents.isEmpty()) {
-       /* transferEvents.forEach(transferEvent -> {
+        transferEvents.forEach(transferEvent -> {
           Wallet sender = walletAccountService.getWalletByAddress(transferEvent.getFromAddress());
           Wallet receiver = walletAccountService.getWalletByAddress(transferEvent.getToAddress());
           if ((sender != null && StringUtils.isNotBlank(sender.getAddress()))
               || (receiver != null && StringUtils.isNotBlank(receiver.getAddress()))) {
             transferEvent.setContractAddress(contractAddress);
             transferEvent.setNetworkId(networkId);
-            transferEvent.setSentDate(System.currentTimeMillis());
+            transferEvent.setTransactionDate(System.currentTimeMillis());
             evmTransactionService.saveTransaction(transferEvent);
           }
-        });*/
+        });
       }
     } catch (IOException e) {
       throw new IllegalStateException("Error retrieving event logs", e);
@@ -218,16 +219,19 @@ public class EvmBlockchainService {
                       new StaticGasProvider(BigInteger.valueOf(20000000000l), BigInteger.valueOf(300000l)));
   }
 
-  private Stream<EvmTransaction> getTransferEvents(TransactionReceipt transactionReceipt, String contractAddress) {
+  private Stream<EvmTransaction> getTransferEvents(TransactionReceipt transactionReceipt, String contractAddress, String blockchainNetwork) {
     try {
       List<TransferEventResponse> transferEvents = getTransactionTransferEvents(transactionReceipt, contractAddress);
       if (transferEvents != null && !transferEvents.isEmpty()) {
         return transferEvents.stream().map(transferEventResponse -> {
           EvmTransaction transferEvent = new EvmTransaction();
           transferEvent.setTransactionHash(transferEventResponse.log.getTransactionHash());
+          transferEvent.setBlockHash(transferEventResponse.log.getBlockHash());
+          transferEvent.setBlockNumber(transferEventResponse.log.getBlockNumber());
           transferEvent.setFromAddress(transferEventResponse.from);
           transferEvent.setToAddress(transferEventResponse.to);
           transferEvent.setAmount(transferEventResponse.value);
+          transferEvent.setWalletBalance(erc20BalanceOf(transferEventResponse.to, contractAddress, blockchainNetwork));
           return transferEvent;
         });
       }

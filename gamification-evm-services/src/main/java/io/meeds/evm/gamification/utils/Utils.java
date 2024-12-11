@@ -15,6 +15,9 @@
  */
 package io.meeds.evm.gamification.utils;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,5 +74,15 @@ public class Utils {
       map.put(key, value);
     }
     return map;
+  }
+
+  public static long convertDateStringToTimestamp(String dateInString) {
+    SimpleDateFormat formatter = new SimpleDateFormat("yyy-MM-dd'T'HH:mm:ss.SSSXXX");
+    try {
+      Date creationDate = formatter.parse(dateInString);
+      return creationDate.getTime();
+    } catch (ParseException e) {
+      throw new RuntimeException("Invalid date format", e);
+    }
   }
 }
