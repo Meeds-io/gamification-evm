@@ -18,6 +18,7 @@
  */
 package io.meeds.evm.gamification.plugin;
 
+import io.meeds.gamification.model.RealizationDTO;
 import io.meeds.gamification.service.EventService;
 import io.meeds.evm.gamification.utils.Utils;
 import io.meeds.gamification.plugin.EventPlugin;
@@ -90,6 +91,27 @@ public class EvmEventPlugin extends EventPlugin {
     }
     return isValidFilters;
   }
+
+  @Override
+  public String getLink(RealizationDTO realization) {
+    if (StringUtils.isNotBlank(realization.getObjectId())) {
+      String[] transactionDetails = realization.getObjectId().split("#");
+      int networkId = Integer.parseInt(transactionDetails[0]);
+      String transactionHash = transactionDetails.length > 1 ? transactionDetails[1] : "";
+      if (transactionHash.isEmpty()) {
+        return "";
+      }
+      return switch (networkId) {
+        case 1 -> "https://etherscan.io/tx/" + transactionHash;
+        case 137 -> "https://polygonscan.com/tx/" + transactionHash;
+        case 80002 -> "https://amoy.polygonscan.com/tx/" + transactionHash;
+        case 11155111 -> "https://sepolia.etherscan.io/tx/" + transactionHash;
+        default -> "";
+      };
+    }
+    return "";
+  }
+
 
   private boolean isValidMinAmount(String minAmount, BigInteger amountTransferred, Integer tokenDecimals) {
     BigInteger base = new BigInteger("10");
