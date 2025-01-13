@@ -50,10 +50,7 @@ public class EvmTransactionService {
     } else if (trigger.equals(Utils.SEND_TOKEN_EVENT)) {
       return evmTransactionStorage.getFromAddressFilteredTransactions(contractAddress, networkId, lastTimeToCompare, walletAddress);
     } else {
-      Set<EvmTransaction> filteredTransactions = new HashSet<>();
-      filteredTransactions.addAll(evmTransactionStorage.getFromAddressFilteredTransactions(contractAddress, networkId, lastTimeToCompare, walletAddress));
-      filteredTransactions.addAll(evmTransactionStorage.getToAddressFilteredTransactions(contractAddress, networkId, lastTimeToCompare, walletAddress));
-      return new ArrayList<>(filteredTransactions);
+      return evmTransactionStorage.getFromAddressFilteredTransactions(contractAddress, networkId, lastTimeToCompare, walletAddress);
     }
   }
 
