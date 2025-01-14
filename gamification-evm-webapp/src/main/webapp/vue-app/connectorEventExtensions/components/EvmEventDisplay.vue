@@ -39,7 +39,7 @@
       {{ targetAddress }}
     </div>
     <div v-if="minAmount" class="subtitle-1 font-weight-bold mb-2 mt-4">
-      {{ $t('gamification.event.form.minAmount') }}
+      {{ minAmountTitle }}
     </div>
     <div class="text-font-size align-self-start">
       {{ minAmount }}
@@ -129,6 +129,12 @@ export default {
       default:
         return '';
       }
+    },
+    isHoldEvent() {
+      return this.trigger === 'holdToken';
+    },
+    minAmountTitle() {
+      return this.isHoldEvent ? this.$t('gamification.event.form.minBalance') : this.$t('gamification.event.form.minAmount');
     }
   },
   methods: {
