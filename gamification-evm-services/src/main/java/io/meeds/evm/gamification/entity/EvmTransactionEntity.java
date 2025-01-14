@@ -56,7 +56,7 @@ public class EvmTransactionEntity implements Serializable {
   @Column(name = "AMOUNT", nullable = false)
   private BigInteger amount;
 
-  @Column(name = "TOKEN_ID", nullable = false)
+  @Column(name = "TOKEN_ID")
   private BigInteger tokenId;
 
   @Column(name = "WALLET_BALANCE", nullable = false)

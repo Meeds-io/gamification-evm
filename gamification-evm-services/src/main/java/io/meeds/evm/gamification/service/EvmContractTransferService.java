@@ -74,8 +74,11 @@ public class EvmContractTransferService {
         Event event = TRANSFER_EVENT;
         long duration = Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION));
         long toBlock = evmBlockchainService.getLastBlock(blockchainNetwork);
-        long fromBlock = toBlock - (duration / BLOCK_TIME_AVERAGE);
         long lastRewardTime = getLastRewardTime(walletAddress, rule.getId());
+        long fromBlock = lastRewardTime;
+        if(lastRewardTime == 0) {
+          fromBlock =  toBlock - (duration / BLOCK_TIME_AVERAGE);
+        }
         if (evmBlockchainService.isERC1155(blockchainNetwork, contractAddress)) {
           event = TRANSFERSINGLE_EVENT;
           evmTransactions = evmBlockchainService.getEvmTransactions(fromBlock, toBlock, contractAddress, blockchainNetwork, event);

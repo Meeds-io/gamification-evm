@@ -295,9 +295,11 @@ public class EvmBlockchainService {
   }
 
   /**
-   * @param address Address to get its erc20 token balance
-   * @return {@link BigInteger} representing the balance of address of erc20 token
-   *         which is * retrieved from the used blockchain.
+   * @param contractAddress Address to get its token balance
+   * @param blockchainNetwork Used provider url
+   * @param functionParams Function parameters
+   * @return {@link BigInteger} representing the balance of address of token which is
+   *          retrieved from the used blockchain.
    */
   public BigInteger balanceOf(String contractAddress, String blockchainNetwork, Map<String, String> functionParams) {
     try {
@@ -353,7 +355,7 @@ public class EvmBlockchainService {
           EvmTransaction transferEvent = new EvmTransaction();
           Map<String, String> funcParams = new HashMap<String, String>();
           funcParams.put("owner", transferEventResponse.to);
-          if (!transferEventResponse.tokenId.toString().isEmpty()) {
+          if (transferEventResponse.tokenId != null) {
             funcParams.put("tokenId", transferEventResponse.tokenId.toString());
             transferEvent.setTokenId(transferEventResponse.tokenId);
           }
