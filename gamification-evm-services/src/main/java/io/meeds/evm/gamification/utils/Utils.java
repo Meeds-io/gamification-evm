@@ -16,9 +16,14 @@
 package io.meeds.evm.gamification.utils;
 
 import io.meeds.evm.gamification.model.EvmTransaction;
+import org.web3j.abi.TypeReference;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.Event;
+import org.web3j.abi.datatypes.generated.Uint256;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -60,6 +65,26 @@ public class Utils {
   public static  final String ERC721_INTERFACE_ID = "0x80ac58cd";
 
   public static  final String ERC1155_INTERFACE_ID = "0xd9b67a26";
+
+  public static final Event   TRANSFER_EVENT       = new Event("Transfer",
+                                                               Arrays.<TypeReference<?>> asList(new TypeReference<Address>(true) {
+                                                                                                                },
+                                                                                                new TypeReference<Address>(true) {
+                                                                                                },
+                                                                                                new TypeReference<Uint256>(false) {
+                                                                                                }));
+
+  public static final Event   TRANSFERSINGLE_EVENT = new Event("TransferSingle",
+                                                               Arrays.<TypeReference<?>> asList(new TypeReference<Address>(true) {
+                                                                                                                },
+                                                                                                new TypeReference<Address>(true) {
+                                                                                                },
+                                                                                                new TypeReference<Address>(true) {
+                                                                                                },
+                                                                                                new TypeReference<Uint256>(false) {
+                                                                                                },
+                                                                                                new TypeReference<Uint256>(false) {
+                                                                                                }));
 
   private Utils() {
 
