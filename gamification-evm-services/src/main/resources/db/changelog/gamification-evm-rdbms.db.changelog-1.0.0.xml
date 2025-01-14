@@ -80,4 +80,9 @@
   <changeSet author="evm-connector" id="1.0.0-9">
     <modifyDataType tableName="EVM_TRANSACTIONS" columnName="WALLET_BALANCE" newDataType="DECIMAL(30,0)"/>
   </changeSet>
+  <changeSet author="evm-connector" id="1.0.0-10">
+    <addColumn tableName="EVM_TRANSACTIONS">
+      <column name="TOKEN_ID" type="BIGINT" />
+    </addColumn>
+  </changeSet>
 </databaseChangeLog>

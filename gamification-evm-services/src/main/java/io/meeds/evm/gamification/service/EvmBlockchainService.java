@@ -27,7 +27,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.wallet.contract.ERC20;
-import org.exoplatform.wallet.contract.ERC20.TransferEventResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -60,6 +59,8 @@ import io.meeds.evm.gamification.model.EvmTransaction;
 
 import static io.meeds.evm.gamification.utils.Utils.ERC1155_INTERFACE_ID;
 import static io.meeds.evm.gamification.utils.Utils.ERC721_INTERFACE_ID;
+import static io.meeds.evm.gamification.utils.Utils.TRANSFER_EVENT;
+import static io.meeds.evm.gamification.utils.Utils.TRANSFERSINGLE_EVENT;
 
 @Service
 public class EvmBlockchainService {
@@ -84,14 +85,6 @@ public class EvmBlockchainService {
   @Autowired
   private EvmTransactionService evmTransactionService;
 
-  public static final Event     TRANSFER_EVENT = new Event("Transfer",
-                                                           Arrays.<TypeReference<?>> asList(new TypeReference<Address>(true) {
-                                                                                                        },
-                                                                                            new TypeReference<Address>(true) {
-                                                                                            },
-                                                                                            new TypeReference<Uint256>(false) {
-                                                                                            }));
-
   /**
    * saves the list of ERC20 Token transfer transactions starting from a block to
    * another
@@ -107,7 +100,12 @@ public class EvmBlockchainService {
                                     String contractAddress,
                                     String blockchainNetwork,
                                     long networkId) {
-    List<EvmTransaction> transferEvents = getEvmTransactions(fromBlock, toBlock, contractAddress, blockchainNetwork);
+    Event event = TRANSFER_EVENT;
+    boolean isERC1155 = isERC1155(blockchainNetwork, contractAddress);
+    if (isERC1155) {
+      event = TRANSFERSINGLE_EVENT;
+    }
+    List<EvmTransaction> transferEvents = getEvmTransactions(fromBlock, toBlock, contractAddress, blockchainNetwork, event);
     if (transferEvents != null && !transferEvents.isEmpty()) {
       transferEvents.forEach(transferEvent -> {
         transferEvent.setContractAddress(contractAddress);
@@ -125,12 +123,12 @@ public class EvmBlockchainService {
    * @param contractAddress The ERC20 token contract address
    * @param blockchainNetwork The url of used provider
    */
-  public List<EvmTransaction> getEvmTransactions(long fromBlock, long toBlock, String contractAddress, String blockchainNetwork) {
+  public List<EvmTransaction> getEvmTransactions(long fromBlock, long toBlock, String contractAddress, String blockchainNetwork, Event event) {
     Web3j networkWeb3j = blockchainConfiguration.getNetworkWeb3j(blockchainNetwork);
     EthFilter ethFilter = new EthFilter(new DefaultBlockParameterNumber(fromBlock),
             new DefaultBlockParameterNumber(toBlock),
             contractAddress);
-    ethFilter.addSingleTopic(EventEncoder.encode(TRANSFER_EVENT));
+    ethFilter.addSingleTopic(EventEncoder.encode(event));
     try {
       EthLog ethLog = networkWeb3j.ethGetLogs(ethFilter).send();
       @SuppressWarnings("rawtypes")
@@ -144,7 +142,7 @@ public class EvmBlockchainService {
               .map(EthLog.LogObject::getTransactionHash)
               .map(transactionHash -> getTransactionReceipt(transactionHash, networkWeb3j))
               .filter(TransactionReceipt::isStatusOK)
-              .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt, contractAddress, blockchainNetwork))
+              .flatMap(transactionReceipt -> getTransferEvents(transactionReceipt, contractAddress, blockchainNetwork, event))
               .toList();
     } catch (IOException e) {
       throw new IllegalStateException("Error retrieving event logs", e);
@@ -161,7 +159,7 @@ public class EvmBlockchainService {
     try {
       Web3j networkWeb3j = blockchainConfiguration.getNetworkWeb3j(blockchainNetwork);
       EvmContract token = new EvmContract();
-      token.setType(detectTokenType(networkWeb3j, contractAddress));
+      token.setType(detectTokenType(blockchainNetwork, contractAddress));
       if (token.getType().equals("ERC-20")) {
         BigInteger decimals = new BigInteger(callFunction(networkWeb3j, contractAddress, FUNC_DECIMALS));
         token.setDecimals(decimals);
@@ -177,15 +175,39 @@ public class EvmBlockchainService {
     return null;
   }
 
-  private String detectTokenType(Web3j web3j, String contractAddress) throws Exception {
-    if (supportsInterface(web3j, contractAddress, ERC721_INTERFACE_ID)) {
-      return "ERC-721";
-    } else if (supportsInterface(web3j, contractAddress, ERC1155_INTERFACE_ID)) {
-      return "ERC-1155";
-    } else if (!(new BigInteger(callFunction(web3j, contractAddress, FUNC_DECIMALS))).equals(BigInteger.ZERO)) {
-      return "ERC-20";
+  /**
+   * Get the Token type from the contract address
+   *
+   * @param blockchainNetwork The url of used provider
+   * @param contractAddress the token contract address
+   * @return token type
+   */
+  public String detectTokenType(String blockchainNetwork, String contractAddress) {
+    try {
+      Web3j web3j = blockchainConfiguration.getNetworkWeb3j(blockchainNetwork);
+      if (supportsInterface(web3j, contractAddress, ERC721_INTERFACE_ID)) {
+        return "ERC-721";
+      } else if (supportsInterface(web3j, contractAddress, ERC1155_INTERFACE_ID)) {
+        return "ERC-1155";
+      } else if (!(new BigInteger(callFunction(web3j, contractAddress, FUNC_DECIMALS))).equals(BigInteger.ZERO)) {
+        return "ERC-20";
+      }
+    } catch (Exception e) {
+      LOG.error("Error  when detecting token type", e);
     }
     return "Unknown type token";
+  }
+
+  /**
+   * Check if the Token is an ERC-1155 or not
+   *
+   * @param blockchainNetwork The url of used provider
+   * @param contractAddress the token contract address
+   * @return true if an ERC-1155
+   */
+  public boolean isERC1155(String blockchainNetwork, String contractAddress) {
+     return detectTokenType(blockchainNetwork, contractAddress).equals("ERC-1155");
+
   }
 
   private boolean supportsInterface(Web3j web3j, String tokenAddress, String interfaceId) throws Exception {
@@ -224,8 +246,10 @@ public class EvmBlockchainService {
       return ((Utf8String) result.get(0)).getValue();
     } else if (function.getOutputParameters().get(0).getType().equals(Uint8.class)) {
       return String.valueOf(((Uint8) result.get(0)).getValue());
+    } else if (function.getOutputParameters().get(0).getType().equals(Uint256.class)) {
+      return String.valueOf(((Uint256) result.get(0)).getValue());
     } else {
-      return "Unexpected output type";
+        return "Unexpected output type";
     }
   }
 
@@ -270,6 +294,52 @@ public class EvmBlockchainService {
     }
   }
 
+  /**
+   * @param contractAddress Address to get its token balance
+   * @param blockchainNetwork Used provider url
+   * @param functionParams Function parameters
+   * @return {@link BigInteger} representing the balance of address of token which is
+   *          retrieved from the used blockchain.
+   */
+  public BigInteger balanceOf(String contractAddress, String blockchainNetwork, Map<String, String> functionParams) {
+    try {
+      Function FUNC_BALANCEOF;
+      boolean isERC1155 = isERC1155(blockchainNetwork, contractAddress);
+      Web3j networkWeb3j = blockchainConfiguration.getNetworkWeb3j(blockchainNetwork);
+      if (isERC1155) {
+        FUNC_BALANCEOF = new Function("balanceOf",
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(160, functionParams.get("owner")),
+                        new org.web3j.abi.datatypes.generated.Uint256(new BigInteger(functionParams.get("tokenId")))),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+      } else {
+        FUNC_BALANCEOF = new Function("balanceOf",
+                Arrays.<Type>asList(new Address(160, functionParams.get("owner"))),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+      }
+      return new BigInteger(callFunction(networkWeb3j, contractAddress, FUNC_BALANCEOF));
+    } catch (Exception e) {
+      throw new IllegalStateException("Error calling balanceOf method", e);
+    }
+  }
+
+  public boolean isBalanceEnough(String contractAddress, String blockchainNetwork, String walletAddress, BigInteger minAmount, List<EvmTransaction> transactions) {
+    boolean isERC1155 = isERC1155(blockchainNetwork, contractAddress);
+    Map<String, String> funcParams = new HashMap<String, String>();
+    funcParams.put("owner", walletAddress);
+    if (isERC1155) {
+      return transactions.stream()
+                         .anyMatch(transaction -> {
+        funcParams.put("tokenId", transaction.getTokenId().toString());
+        BigInteger balanceOf = balanceOf(contractAddress, blockchainNetwork, funcParams);
+        return balanceOf.compareTo(minAmount) >= 0;
+      });
+    } else {
+      BigInteger balanceOf = balanceOf(contractAddress, blockchainNetwork, funcParams);
+      return balanceOf.compareTo(minAmount) >= 0;
+    }
+  }
+
+
   private ERC20 loadERC20Token(String contractAddress, Web3j networkWeb3j) {
     return ERC20.load(contractAddress,
                       networkWeb3j,
@@ -277,19 +347,25 @@ public class EvmBlockchainService {
                       new StaticGasProvider(BigInteger.valueOf(20000000000l), BigInteger.valueOf(300000l)));
   }
 
-  private Stream<EvmTransaction> getTransferEvents(TransactionReceipt transactionReceipt, String contractAddress, String blockchainNetwork) {
+  private Stream<EvmTransaction> getTransferEvents(TransactionReceipt transactionReceipt, String contractAddress, String blockchainNetwork, Event event) {
     try {
-      List<TransferEventResponse> transferEvents = getTransactionTransferEvents(transactionReceipt, contractAddress);
+      List<TransferEventResponse> transferEvents = getTransactionTransferEvents(transactionReceipt, contractAddress, event);
       if (transferEvents != null && !transferEvents.isEmpty()) {
         return transferEvents.stream().map(transferEventResponse -> {
           EvmTransaction transferEvent = new EvmTransaction();
+          Map<String, String> funcParams = new HashMap<String, String>();
+          funcParams.put("owner", transferEventResponse.to);
+          if (transferEventResponse.tokenId != null) {
+            funcParams.put("tokenId", transferEventResponse.tokenId.toString());
+            transferEvent.setTokenId(transferEventResponse.tokenId);
+          }
           transferEvent.setTransactionHash(transferEventResponse.log.getTransactionHash());
           transferEvent.setBlockHash(transferEventResponse.log.getBlockHash());
           transferEvent.setBlockNumber(transferEventResponse.log.getBlockNumber());
           transferEvent.setFromAddress(transferEventResponse.from);
           transferEvent.setToAddress(transferEventResponse.to);
           transferEvent.setAmount(transferEventResponse.value);
-          transferEvent.setWalletBalance(erc20BalanceOf(transferEventResponse.to, contractAddress, blockchainNetwork));
+          transferEvent.setWalletBalance(balanceOf(contractAddress, blockchainNetwork, funcParams));
           return transferEvent;
         });
       }
@@ -313,8 +389,8 @@ public class EvmBlockchainService {
     return null;
   }
 
-  public List<TransferEventResponse> getTransactionTransferEvents(TransactionReceipt transactionReceipt, String contractAddress) {
-    List<EventValuesWithLog> valueList = extractEventParametersWithLog(TRANSFER_EVENT, transactionReceipt);
+  public List<TransferEventResponse> getTransactionTransferEvents(TransactionReceipt transactionReceipt, String contractAddress, Event event) {
+    List<EventValuesWithLog> valueList = extractEventParametersWithLog(event, transactionReceipt);
     ArrayList<TransferEventResponse> responses = new ArrayList<>(valueList.size());
     for (EventValuesWithLog eventValues : valueList) { // NOSONAR
       if (!StringUtils.equalsIgnoreCase(contractAddress, eventValues.getLog().getAddress())) {
@@ -325,10 +401,16 @@ public class EvmBlockchainService {
                  transactionReceipt.getTransactionHash());
         continue;
       }
-      if (eventValues.getIndexedValues().size() != 2) {
+      if (eventValues.getIndexedValues().size() != 2 && event.equals(TRANSFER_EVENT)) {
         LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The indexed values size is {} while it's expected to be '2'",
                  transactionReceipt.getTransactionHash(),
                  eventValues.getIndexedValues().size());
+        continue;
+      }
+      if (eventValues.getIndexedValues().size() != 3 && event.equals(TRANSFERSINGLE_EVENT)) {
+        LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The indexed values size is {} while it's expected to be '3'",
+                transactionReceipt.getTransactionHash(),
+                eventValues.getIndexedValues().size());
         continue;
       }
       if (CollectionUtils.isEmpty(eventValues.getNonIndexedValues())) {
@@ -336,17 +418,30 @@ public class EvmBlockchainService {
                  transactionReceipt.getTransactionHash());
         continue;
       }
-      if (eventValues.getNonIndexedValues().size() != 1) {
+      if (eventValues.getNonIndexedValues().size() != 1 && event.equals(TRANSFER_EVENT)) {
         LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The non-indexed values size is {} while it's expected to be '1'",
                  transactionReceipt.getTransactionHash(),
                  eventValues.getNonIndexedValues().size());
         continue;
       }
+      if (eventValues.getNonIndexedValues().size() != 2 && event.equals(TRANSFERSINGLE_EVENT)) {
+        LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The non-indexed values size is {} while it's expected to be '2'",
+                transactionReceipt.getTransactionHash(),
+                eventValues.getNonIndexedValues().size());
+        continue;
+      }
       TransferEventResponse typedResponse = new TransferEventResponse();
-      typedResponse.log = eventValues.getLog();
-      typedResponse.from = (String) eventValues.getIndexedValues().get(0).getValue();
-      typedResponse.to = (String) eventValues.getIndexedValues().get(1).getValue();
-      typedResponse.value = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
+        typedResponse.log = eventValues.getLog();
+      if (event.equals(TRANSFER_EVENT)) {
+        typedResponse.from = (String) eventValues.getIndexedValues().get(0).getValue();
+        typedResponse.to = (String) eventValues.getIndexedValues().get(1).getValue();
+        typedResponse.value = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
+      } else if (event.equals(TRANSFERSINGLE_EVENT)) {
+        typedResponse.from = (String) eventValues.getIndexedValues().get(1).getValue();
+        typedResponse.to = (String) eventValues.getIndexedValues().get(2).getValue();
+        typedResponse.tokenId = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
+        typedResponse.value = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
+      }
       responses.add(typedResponse);
     }
     return responses;
@@ -393,6 +488,18 @@ public class EvmBlockchainService {
     public org.web3j.protocol.core.methods.response.Log getLog() {
       return log;
     }
+  }
+
+  public static class TransferEventResponse {
+    private org.web3j.protocol.core.methods.response.Log log;
+
+    private String from;
+
+    private String to;
+
+    private BigInteger value;
+
+    private BigInteger tokenId;
   }
 
 }
