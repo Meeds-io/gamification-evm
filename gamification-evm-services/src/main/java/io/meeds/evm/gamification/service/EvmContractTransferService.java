@@ -331,8 +331,8 @@ public class EvmContractTransferService {
     funcParams.put("owner", walletAddress);
     if (trigger.equals(Utils.HOLD_TOKEN_EVENT) && transaction.getTokenId() != null) {
       funcParams.put("tokenId", transaction.getTokenId().toString());
-      evmTrigger.setTokenBalance(evmBlockchainService.balanceOf(contractAddress, blockchainNetwork, funcParams));
     }
+    evmTrigger.setTokenBalance(evmBlockchainService.balanceOf(contractAddress, blockchainNetwork, funcParams));
     return evmTrigger;
   }
 
