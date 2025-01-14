@@ -78,7 +78,7 @@ public class EvmEventPlugin extends EventPlugin {
     if (StringUtils.isNotBlank(eventProperties.get(Utils.DURATION))) {
       isValidFilters = isValidFilters && isValidAmountAndDuration(new BigInteger(triggerDetailsMop.get((Utils.TOKEN_BALANCE))),
                                                                   minAmount,
-                                                                  Integer.parseInt(tokenDecimals),
+                                                                  tokenDecimals,
                                                                   sentDate,
                                                                   Long.parseLong(eventProperties.get(Utils.DURATION)),
                                                                   Long.parseLong(triggerDetailsMop.get(Utils.DURATION)));
@@ -86,7 +86,7 @@ public class EvmEventPlugin extends EventPlugin {
       if (StringUtils.isNotBlank(minAmount) && StringUtils.isNotBlank(tokenDecimals)) {
         isValidFilters = isValidMinAmount(minAmount,
                                           new BigInteger(triggerDetailsMop.get(Utils.MIN_AMOUNT)),
-                                          Integer.parseInt(tokenDecimals));
+                                          tokenDecimals);
       }
     }
     return isValidFilters;
@@ -113,9 +113,13 @@ public class EvmEventPlugin extends EventPlugin {
   }
 
 
-  private boolean isValidMinAmount(String minAmount, BigInteger amountTransferred, Integer tokenDecimals) {
+  private boolean isValidMinAmount(String minAmount, BigInteger amountTransferred, String tokenDecimals) {
     BigInteger base = new BigInteger("10");
-    BigInteger desiredMinAmount = base.pow(tokenDecimals).multiply(new BigInteger(minAmount));
+    BigInteger desiredMinAmount = new BigInteger(minAmount);
+    if (StringUtils.isNotBlank(tokenDecimals)) {
+      Integer decimals = Integer.parseInt(tokenDecimals);
+      desiredMinAmount = base.pow(decimals).multiply(new BigInteger(minAmount));
+    }
     return amountTransferred.compareTo(desiredMinAmount) >= 0;
   }
 
@@ -125,7 +129,7 @@ public class EvmEventPlugin extends EventPlugin {
 
   private boolean isValidAmountAndDuration(BigInteger tokenBalance,
                                            String minAmount,
-                                           Integer tokenDecimals,
+                                           String tokenDecimals,
                                            Long sentDate,
                                            Long duration,
                                            Long desiredDuration) {
@@ -134,7 +138,11 @@ public class EvmEventPlugin extends EventPlugin {
     }
     Long holdingDuration = System.currentTimeMillis() - sentDate;
     BigInteger base = new BigInteger("10");
-    BigInteger desiredMinAmount = base.pow(tokenDecimals).multiply(new BigInteger(minAmount));
+    BigInteger desiredMinAmount = new BigInteger(minAmount);
+    if (StringUtils.isNotBlank(tokenDecimals)) {
+      Integer decimals = Integer.parseInt(tokenDecimals);
+      desiredMinAmount = base.pow(decimals).multiply(new BigInteger(minAmount));
+    }
     return tokenBalance.compareTo(desiredMinAmount) >= 0 && holdingDuration.compareTo(duration) >= 0;
   }
 }
