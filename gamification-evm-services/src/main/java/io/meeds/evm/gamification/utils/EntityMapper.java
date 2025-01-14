@@ -39,6 +39,7 @@ public class EntityMapper {
                               evmTransactionEntity.getContractAddress(),
                               evmTransactionEntity.getTransactionDate(),
                               evmTransactionEntity.getAmount(),
+                              evmTransactionEntity.getTokenId(),
                               evmTransactionEntity.getWalletBalance(),
                               evmTransactionEntity.getBlockNumber(),
                               evmTransactionEntity.getBlockHash());
@@ -57,6 +58,7 @@ public class EntityMapper {
     evmTransactionEntity.setContractAddress(evmTransaction.getContractAddress());
     evmTransactionEntity.setTransactionDate(evmTransaction.getTransactionDate());
     evmTransactionEntity.setAmount(evmTransaction.getAmount());
+    evmTransactionEntity.setTokenId(evmTransaction.getTokenId());
     evmTransactionEntity.setWalletBalance(evmTransaction.getWalletBalance());
     evmTransactionEntity.setBlockNumber(evmTransaction.getBlockNumber());
     evmTransactionEntity.setBlockHash(evmTransaction.getBlockHash());

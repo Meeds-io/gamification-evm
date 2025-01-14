@@ -15,12 +15,13 @@
  */
 package io.meeds.evm.gamification.service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -39,27 +40,32 @@ import io.meeds.wallet.model.Wallet;
 import io.meeds.wallet.service.WalletAccountService;
 import org.springframework.stereotype.Service;
 
+import static io.meeds.gamification.utils.Utils.getUserIdentity;
+
 @Service
 public class EvmTriggerService {
 
-  private static final Log     LOG                        = ExoLogger.getLogger(EvmTriggerService.class);
+  private static final Log       LOG                        = ExoLogger.getLogger(EvmTriggerService.class);
 
-  public static final String   GAMIFICATION_GENERIC_EVENT = "exo.gamification.generic.action";
-
-  @Autowired
-  private IdentityManager      identityManager;
+  public static final String     GAMIFICATION_GENERIC_EVENT = "exo.gamification.generic.action";
 
   @Autowired
-  private ListenerService      listenerService;
+  private IdentityManager        identityManager;
 
   @Autowired
-  private EventService         eventService;
+  private ListenerService        listenerService;
 
   @Autowired
-  private WalletAccountService     walletAccountService;
+  private EventService           eventService;
 
   @Autowired
-  private ThreadPoolTaskExecutor   threadPoolTaskExecutor;
+  private WalletAccountService   walletAccountService;
+
+  @Autowired
+  private ThreadPoolTaskExecutor threadPoolTaskExecutor;
+
+  @Autowired
+  private SpaceService           spaceService;
 
   /**
    * Handle evm trigger asynchronously
@@ -119,6 +125,24 @@ public class EvmTriggerService {
       }
     } catch (Exception e) {
       LOG.error("Cannot broadcast evm gamification event", e);
+    }
+  }
+
+  public List<String> getWalletAddresses(Long spaceId) {
+    if (spaceId == 0) {
+      Set<Wallet> wallets = walletAccountService.listWallets();
+      return wallets.stream().map(Wallet::getAddress).collect(Collectors.toList());
+    } else {
+      List<String> walletAddresses = new ArrayList<>();
+      Space space = spaceService.getSpaceById(String.valueOf(spaceId));
+      String[] members = space.getMembers();
+      Arrays.stream(members).forEach(member -> {
+        Wallet wallet = walletAccountService.getWalletByIdentityId(Long.parseLong(getUserIdentity(member).getId()));
+        if (wallet != null && wallet.getAddress() != null) {
+          walletAddresses.add(wallet.getAddress());
+        }
+      });
+      return walletAddresses;
     }
   }
 }
