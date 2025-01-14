@@ -45,6 +45,8 @@ public class EvmTransaction {
 
   private BigInteger amount;
 
+  private BigInteger tokenId;
+
   private BigInteger walletBalance;
 
   private BigInteger blockNumber;
