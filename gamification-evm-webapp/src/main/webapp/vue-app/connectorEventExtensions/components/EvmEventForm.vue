@@ -137,12 +137,12 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <span v-if="!validTargetAddress" class="error--text">{{ invalidTargetAddress }}</span>
         </div>
         <v-card-text class="px-0">
-          {{ $t('gamification.event.form.minAmount') }}
+          {{ minAmountTitle }}
         </v-card-text>
         <v-text-field
           ref="minAmount"
           v-model="minAmount"
-          :placeholder="$t('gamification.event.form.minAmount.placeholder')"
+          :placeholder="minAmountPlaceholder"
           class="pa-0"
           type="text"
           outlined
@@ -272,6 +272,12 @@ export default {
     },
     isHoldEvent() {
       return this.trigger === 'holdToken';
+    },
+    minAmountTitle() {
+      return this.isHoldEvent ? this.$t('gamification.event.form.minBalance') : this.$t('gamification.event.form.minAmount');
+    },
+    minAmountPlaceholder() {
+      return this.isHoldEvent ? this.$t('gamification.event.form.minBalance.placeholder') : this.$t('gamification.event.form.minAmount.placeholder');
     }
   },
   created() {
