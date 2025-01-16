@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import io.meeds.evm.gamification.utils.Utils;
+import io.meeds.gamification.model.RuleDTO;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -57,10 +58,7 @@ import io.meeds.evm.gamification.blockchain.BlockchainConfiguration;
 import io.meeds.evm.gamification.model.EvmContract;
 import io.meeds.evm.gamification.model.EvmTransaction;
 
-import static io.meeds.evm.gamification.utils.Utils.ERC1155_INTERFACE_ID;
-import static io.meeds.evm.gamification.utils.Utils.ERC721_INTERFACE_ID;
-import static io.meeds.evm.gamification.utils.Utils.TRANSFER_EVENT;
-import static io.meeds.evm.gamification.utils.Utils.TRANSFERSINGLE_EVENT;
+import static io.meeds.evm.gamification.utils.Utils.*;
 
 @Service
 public class EvmBlockchainService {
@@ -100,10 +98,11 @@ public class EvmBlockchainService {
                                     String contractAddress,
                                     String blockchainNetwork,
                                     long networkId) {
-    Event event = TRANSFER_EVENT;
-    boolean isERC1155 = isERC1155(blockchainNetwork, contractAddress);
-    if (isERC1155) {
+    Event event = TRANSFER_EVENT_ERC20;
+    if (isERC1155(blockchainNetwork, contractAddress)) {
       event = TRANSFERSINGLE_EVENT;
+    } else if (isERC721(blockchainNetwork, contractAddress)) {
+      event = TRANSFER_EVENT_ER721;
     }
     List<EvmTransaction> transferEvents = getEvmTransactions(fromBlock, toBlock, contractAddress, blockchainNetwork, event);
     if (transferEvents != null && !transferEvents.isEmpty()) {
@@ -210,6 +209,17 @@ public class EvmBlockchainService {
 
   }
 
+  /**
+   * Check if the Token is an ERC-721 or not
+   *
+   * @param blockchainNetwork The url of used provider
+   * @param contractAddress the token contract address
+   * @return true if an ERC-721
+   */
+  public boolean isERC721(String blockchainNetwork, String contractAddress) {
+    return detectTokenType(blockchainNetwork, contractAddress).equals("ERC-721");
+  }
+
   private boolean supportsInterface(Web3j web3j, String tokenAddress, String interfaceId) throws Exception {
     Function supportsInterfaceFunction = new Function("supportsInterface",
                                                       Arrays.asList(new Bytes4(Utils.hexStringToByteArray(interfaceId))),
@@ -280,21 +290,6 @@ public class EvmBlockchainService {
   }
 
   /**
-   * @param address Address to get its erc20 token balance
-   * @return {@link BigInteger} representing the balance of address of erc20 token
-   *         which is * retrieved from the used blockchain.
-   */
-  public BigInteger erc20BalanceOf(String address, String contractAddress, String blockchainNetwork) {
-    try {
-      Web3j networkWeb3j = blockchainConfiguration.getNetworkWeb3j(blockchainNetwork);
-      ERC20 erc20Token = loadERC20Token(contractAddress, networkWeb3j);
-      return erc20Token.balanceOf(address).send();
-    } catch (Exception e) {
-      throw new IllegalStateException("Error calling balanceOf method", e);
-    }
-  }
-
-  /**
    * @param contractAddress Address to get its token balance
    * @param blockchainNetwork Used provider url
    * @param functionParams Function parameters
@@ -322,29 +317,29 @@ public class EvmBlockchainService {
     }
   }
 
-  public boolean isBalanceEnough(String contractAddress, String blockchainNetwork, String walletAddress, BigInteger minAmount, List<EvmTransaction> transactions) {
+  public boolean isBalanceEnough(String contractAddress, String blockchainNetwork, String walletAddress, RuleDTO rule, List<EvmTransaction> transactions) {
     boolean isERC1155 = isERC1155(blockchainNetwork, contractAddress);
     Map<String, String> funcParams = new HashMap<String, String>();
     funcParams.put("owner", walletAddress);
+    String minAmount = rule.getEvent().getProperties().get(Utils.MIN_AMOUNT);
+    BigInteger desiredMinAmount = new BigInteger(minAmount);
     if (isERC1155) {
+      BigInteger finalDesiredMinAmount = desiredMinAmount;
       return transactions.stream()
                          .anyMatch(transaction -> {
         funcParams.put("tokenId", transaction.getTokenId().toString());
         BigInteger balanceOf = balanceOf(contractAddress, blockchainNetwork, funcParams);
-        return balanceOf.compareTo(minAmount) >= 0;
+        return balanceOf.compareTo(finalDesiredMinAmount) >= 0;
       });
     } else {
+      if (StringUtils.isNotBlank(rule.getEvent().getProperties().get(DECIMALS))) {
+        BigInteger base = new BigInteger("10");
+        Integer decimals = Integer.parseInt(rule.getEvent().getProperties().get(DECIMALS));
+        desiredMinAmount = base.pow(decimals).multiply(desiredMinAmount);
+      }
       BigInteger balanceOf = balanceOf(contractAddress, blockchainNetwork, funcParams);
-      return balanceOf.compareTo(minAmount) >= 0;
+      return balanceOf.compareTo(desiredMinAmount) >= 0;
     }
-  }
-
-
-  private ERC20 loadERC20Token(String contractAddress, Web3j networkWeb3j) {
-    return ERC20.load(contractAddress,
-                      networkWeb3j,
-                      new ReadonlyTransactionManager(networkWeb3j, Address.DEFAULT.toString()),
-                      new StaticGasProvider(BigInteger.valueOf(20000000000l), BigInteger.valueOf(300000l)));
   }
 
   private Stream<EvmTransaction> getTransferEvents(TransactionReceipt transactionReceipt, String contractAddress, String blockchainNetwork, Event event) {
@@ -396,55 +391,97 @@ public class EvmBlockchainService {
       if (!StringUtils.equalsIgnoreCase(contractAddress, eventValues.getLog().getAddress())) {
         continue;
       }
-      if (CollectionUtils.isEmpty(eventValues.getIndexedValues())) {
-        LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The indexed values size is 0",
-                 transactionReceipt.getTransactionHash());
-        continue;
+      if (event.equals(TRANSFER_EVENT_ERC20)) {
+        if (CollectionUtils.isEmpty(eventValues.getIndexedValues())) {
+          LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The indexed values size is 0",
+                  transactionReceipt.getTransactionHash());
+          continue;
+        }
+        if (eventValues.getIndexedValues().size() != 2) {
+          LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The indexed values size is {} while it's expected to be '2'",
+                  transactionReceipt.getTransactionHash(),
+                  eventValues.getIndexedValues().size());
+          continue;
+        }
+        if (CollectionUtils.isEmpty(eventValues.getNonIndexedValues())) {
+          LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The non-indexed values size is 0",
+                  transactionReceipt.getTransactionHash());
+          continue;
+        }
+        if (eventValues.getNonIndexedValues().size() != 1) {
+          LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The non-indexed values size is {} while it's expected to be '1'",
+                  transactionReceipt.getTransactionHash(),
+                  eventValues.getNonIndexedValues().size());
+          continue;
+        }
       }
-      if (eventValues.getIndexedValues().size() != 2 && event.equals(TRANSFER_EVENT)) {
-        LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The indexed values size is {} while it's expected to be '2'",
-                 transactionReceipt.getTransactionHash(),
-                 eventValues.getIndexedValues().size());
-        continue;
+      if (event.equals(TRANSFER_EVENT_ER721)) {
+        if (CollectionUtils.isEmpty(eventValues.getIndexedValues())) {
+          LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The indexed values size is 0",
+                  transactionReceipt.getTransactionHash());
+          continue;
+        }
+        if (eventValues.getIndexedValues().size() != 3) {
+          LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The indexed values size is {} while it's expected to be '3'",
+                  transactionReceipt.getTransactionHash(),
+                  eventValues.getIndexedValues().size());
+          continue;
+        }
+        if (eventValues.getNonIndexedValues().size() != 0) {
+          LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The non-indexed values size is {} while it's expected to be '0'",
+                  transactionReceipt.getTransactionHash(),
+                  eventValues.getNonIndexedValues().size());
+          continue;
+        }
       }
-      if (eventValues.getIndexedValues().size() != 3 && event.equals(TRANSFERSINGLE_EVENT)) {
-        LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The indexed values size is {} while it's expected to be '3'",
-                transactionReceipt.getTransactionHash(),
-                eventValues.getIndexedValues().size());
-        continue;
+      if (event.equals(TRANSFERSINGLE_EVENT)) {
+        if (CollectionUtils.isEmpty(eventValues.getIndexedValues())) {
+          LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The indexed values size is 0",
+                  transactionReceipt.getTransactionHash());
+          continue;
+        }
+        if (eventValues.getIndexedValues().size() != 3) {
+          LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The indexed values size is {} while it's expected to be '3'",
+                  transactionReceipt.getTransactionHash(),
+                  eventValues.getIndexedValues().size());
+          continue;
+        }
+        if (CollectionUtils.isEmpty(eventValues.getNonIndexedValues())) {
+          LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The non-indexed values size is 0",
+                  transactionReceipt.getTransactionHash());
+          continue;
+        }
+        if (eventValues.getNonIndexedValues().size() != 2) {
+          LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The non-indexed values size is {} while it's expected to be '2'",
+                  transactionReceipt.getTransactionHash(),
+                  eventValues.getNonIndexedValues().size());
+          continue;
+        }
       }
-      if (CollectionUtils.isEmpty(eventValues.getNonIndexedValues())) {
-        LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The non-indexed values size is 0",
-                 transactionReceipt.getTransactionHash());
-        continue;
-      }
-      if (eventValues.getNonIndexedValues().size() != 1 && event.equals(TRANSFER_EVENT)) {
-        LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The non-indexed values size is {} while it's expected to be '1'",
-                 transactionReceipt.getTransactionHash(),
-                 eventValues.getNonIndexedValues().size());
-        continue;
-      }
-      if (eventValues.getNonIndexedValues().size() != 2 && event.equals(TRANSFERSINGLE_EVENT)) {
-        LOG.info("Can't parse 'Transfer' event logs of transaction with hash {}. The non-indexed values size is {} while it's expected to be '2'",
-                transactionReceipt.getTransactionHash(),
-                eventValues.getNonIndexedValues().size());
-        continue;
-      }
-      TransferEventResponse typedResponse = new TransferEventResponse();
-        typedResponse.log = eventValues.getLog();
-      if (event.equals(TRANSFER_EVENT)) {
-        typedResponse.from = (String) eventValues.getIndexedValues().get(0).getValue();
-        typedResponse.to = (String) eventValues.getIndexedValues().get(1).getValue();
-        typedResponse.value = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
-      } else if (event.equals(TRANSFERSINGLE_EVENT)) {
-        typedResponse.from = (String) eventValues.getIndexedValues().get(1).getValue();
-        typedResponse.to = (String) eventValues.getIndexedValues().get(2).getValue();
-        typedResponse.tokenId = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
-        typedResponse.value = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
-      }
+      TransferEventResponse typedResponse = newTransferEventResponse(eventValues, event);
       responses.add(typedResponse);
     }
     return responses;
+  }
+
+  private TransferEventResponse newTransferEventResponse(EventValuesWithLog eventValues, Event event) {
+    TransferEventResponse typedResponse = new TransferEventResponse();
+    typedResponse.log = eventValues.getLog();
+    if (event.equals(TRANSFER_EVENT_ERC20)) {
+      typedResponse.from = (String) eventValues.getIndexedValues().get(0).getValue();
+      typedResponse.to = (String) eventValues.getIndexedValues().get(1).getValue();
+      typedResponse.value = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
+    } else if (event.equals(TRANSFER_EVENT_ER721)) {
+      typedResponse.from = (String) eventValues.getIndexedValues().get(0).getValue();
+      typedResponse.to = (String) eventValues.getIndexedValues().get(1).getValue();
+      typedResponse.tokenId = (BigInteger) eventValues.getIndexedValues().get(2).getValue();
+    }else if (event.equals(TRANSFERSINGLE_EVENT)) {
+      typedResponse.from = (String) eventValues.getIndexedValues().get(1).getValue();
+      typedResponse.to = (String) eventValues.getIndexedValues().get(2).getValue();
+      typedResponse.tokenId = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
+      typedResponse.value = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
+    }
+    return typedResponse;
   }
 
   protected List<EventValuesWithLog> extractEventParametersWithLog(Event event, TransactionReceipt transactionReceipt) {
