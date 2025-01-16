@@ -40,7 +40,7 @@ public class EvmContractScanTask {
   private EvmContractTransferService evmContractTransferService;
 
   @ContainerTransactional
-  @Scheduled(cron = "${gamification.evm.transactionScan.cron:0 */2 * * * *}")
+  @Scheduled(cron = "${gamification.evm.transactionScan.cron:0 */5 * * * *}")
   public synchronized void scanForContractTransactions() {
 
     List<RuleDTO> enabledRules = evmContractTransferService.getEnabledEvmRules();
