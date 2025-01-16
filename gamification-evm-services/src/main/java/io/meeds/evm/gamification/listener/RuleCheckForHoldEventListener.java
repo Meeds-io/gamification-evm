@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static io.meeds.evm.gamification.utils.Utils.*;
 import static io.meeds.gamification.utils.Utils.POST_CREATE_RULE_EVENT;
 import static io.meeds.gamification.utils.Utils.POST_UPDATE_RULE_EVENT;
 import static io.meeds.gamification.utils.Utils.getUserIdentity;
@@ -86,30 +87,34 @@ public class RuleCheckForHoldEventListener extends Listener<Long, String> {
     Boolean enabledProg = evmRule.getProgram().isEnabled();
     if (enabledProg) {
       Long spaceId = evmRule.getProgram().getSpaceId();
-      BigInteger minAmount = new BigInteger(evmRule.getEvent().getProperties().get(Utils.MIN_AMOUNT));
-      BigInteger base = new BigInteger("10");
-      Integer tokenDecimals = Integer.parseInt(evmRule.getEvent().getProperties().get(Utils.TOKEN_DECIMALS));
-      BigInteger desiredMinAmount = base.pow(tokenDecimals).multiply(minAmount);
       String contractAddress = evmRule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase();
       String blockchainNetwork = evmRule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
       Long networkId = Long.parseLong(evmRule.getEvent().getProperties().get(Utils.NETWORK_ID));
       Long duration = Long.parseLong(evmRule.getEvent().getProperties().get(Utils.DURATION));
+      String trigger = evmRule.getEvent().getTrigger();
+      org.web3j.abi.datatypes.Event blockchainEvent;
+      if (evmBlockchainService.isERC1155(blockchainNetwork, contractAddress)) {
+        blockchainEvent = TRANSFERSINGLE_EVENT;
+      } else if (evmBlockchainService.isERC721(blockchainNetwork, contractAddress)) {
+        blockchainEvent = TRANSFER_EVENT_ER721;
+      } else {
+        blockchainEvent = TRANSFER_EVENT_ERC20;
+      }
       if (spaceId == 0) {
         Set<Wallet> wallets = walletAccountService.listWallets();
         List<String> walletsAddresses = wallets.stream().map(Wallet::getAddress).collect(Collectors.toList());
         walletsAddresses.forEach(walletAddress -> {
           if (event.getEventName().equals(POST_CREATE_RULE_EVENT)) {
-            BigInteger walletBalance = evmBlockchainService.erc20BalanceOf(walletAddress, contractAddress, blockchainNetwork);
-            if (walletBalance.compareTo(desiredMinAmount) >= 0) {
-              EvmTransaction lastTransaction = evmTransactionService.getLastScannedTransactionByWalletAddress(contractAddress,
-                                                                                                              networkId,
-                                                                                                              walletAddress);
-              if (lastTransaction != null) {
-                if (Utils.isValidDurationHoldingToken(lastTransaction, duration)) {
-                  evmContractTransferService.handleTriggerForHoldEvent(evmRule, lastTransaction, walletAddress);
-                }
-              }
-            }
+            evmContractTransferService.handleHoldEvent(blockchainNetwork,
+                                                       contractAddress,
+                                                       walletAddress,
+                                                       networkId,
+                                                       duration,
+                                                       evmRule,
+                                                       blockchainEvent,
+                                                       trigger,
+                                                       null);
+
           } else if (event.getEventName().equals(POST_UPDATE_RULE_EVENT)) {
             evmContractTransferService.saveLastRewardTime(walletAddress, evmRule.getId());
           }
@@ -122,17 +127,15 @@ public class RuleCheckForHoldEventListener extends Listener<Long, String> {
           Long identityId = Long.parseLong(getUserIdentity(member).getId());
           String walletAddress = walletAccountService.getWalletByIdentityId(identityId).getAddress();
           if (event.getEventName().equals(POST_CREATE_RULE_EVENT)) {
-            BigInteger walletBalance = evmBlockchainService.erc20BalanceOf(walletAddress, contractAddress, blockchainNetwork);
-            if (walletBalance.compareTo(desiredMinAmount) >= 0) {
-              EvmTransaction lastTransaction = evmTransactionService.getLastScannedTransactionByWalletAddress(contractAddress,
-                                                                                                              networkId,
-                                                                                                              walletAddress);
-              if (lastTransaction != null) {
-                if (Utils.isValidDurationHoldingToken(lastTransaction, duration)) {
-                  evmContractTransferService.handleTriggerForHoldEvent(evmRule, lastTransaction, walletAddress);
-                }
-              }
-            }
+            evmContractTransferService.handleHoldEvent(blockchainNetwork,
+                                                       contractAddress,
+                                                       walletAddress,
+                                                       networkId,
+                                                       duration,
+                                                       evmRule,
+                                                       blockchainEvent,
+                                                       trigger,
+                                                       null);
           } else if (event.getEventName().equals(POST_UPDATE_RULE_EVENT)) {
             evmContractTransferService.saveLastRewardTime(walletAddress, evmRule.getId());
           }
@@ -140,5 +143,4 @@ public class RuleCheckForHoldEventListener extends Listener<Long, String> {
       }
     }
   }
-
 }
