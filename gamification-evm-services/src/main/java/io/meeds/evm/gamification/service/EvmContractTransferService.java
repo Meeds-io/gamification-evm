@@ -238,9 +238,11 @@ public class EvmContractTransferService {
                 .toList();
   }
 
-  public List<RuleDTO> getHoldEventEvmRules() {
+  public List<RuleDTO> getEnabledHoldEventEvmRules() {
     RuleFilter ruleFilter = new RuleFilter(true);
     ruleFilter.setEventType(Utils.CONNECTOR_NAME);
+    ruleFilter.setStatus(EntityStatusType.ENABLED);
+    ruleFilter.setProgramStatus(EntityStatusType.ENABLED);
     ruleFilter.setDateFilterType(DateFilterType.STARTED);
     List<RuleDTO> rules = ruleService.getRules(ruleFilter, 0, -1);
     return rules.stream()
