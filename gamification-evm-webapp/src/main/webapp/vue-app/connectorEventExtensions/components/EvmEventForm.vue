@@ -41,7 +41,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         {{ $t('gamification.event.form.contractAddress') }}
       </v-card-text>
       <v-text-field
-        v-if="!erc20Token"
+        v-if="!token"
         ref="contractAddress"
         v-model="contractAddress"
         :placeholder="$t('gamification.event.form.contractAddress.placeholder')"
@@ -51,7 +51,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         outlined
         required
         dense
-        @keyup.enter="retrieveERC20Token"
+        @keyup.enter="retrieveTokenDetails"
         @input="handleAddress"
         @change="checkContractAddress(contractAddress)">
         <template #append-outer>
@@ -66,7 +66,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
                 dark
                 v-bind="attrs"
                 v-on="on"
-                @click="retrieveERC20Token">
+                @click="retrieveTokenDetails">
                 <v-icon
                   :color="isValidAddress ? 'success' : 'info'"
                   class="text-header-title">
@@ -92,7 +92,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
           <v-btn
             icon
             class="ms-2"
-            @click="resetERC20Token()">
+            @click="resetToken()">
             <v-icon size="18" class="icon-default-color mx-auto">fa-edit</v-icon>
           </v-btn>
         </div>
@@ -117,9 +117,9 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </v-tooltip>
       </div>
       <span v-if="isInValidAddressFormat" class="error--text">{{ $t('gamification.event.detail.invalidContractAddress.error') }}</span>
-      <span v-else-if="isInvalidERC20Address" class="error--text">{{ $t('gamification.event.detail.invalidERC20ContractAddress.error') }}</span>
-      <span v-else-if="emptyERC20Token">{{ $t('gamification.event.detail.verifyToken.message') }}</span>
-      <div v-if="erc20Token">
+      <span v-else-if="isInvalidAddress" class="error--text">{{ $t('gamification.event.detail.invalidTokenContractAddress.error') }}</span>
+      <span v-else-if="emptyToken">{{ $t('gamification.event.detail.verifyToken.message') }}</span>
+      <div v-if="token">
         <div v-if="!isHoldEvent">
           <v-card-text class="px-0">
             {{ addressLabel }}
@@ -204,8 +204,8 @@ export default {
       endTypingKeywordTimeout: 50,
       isValidAddress: false,
       typing: false,
-      erc20Token: null,
-      isValidERC20Address: true,
+      token: null,
+      isValidTokenAddress: true,
       loading: false,
       loadingNetworks: false,
       networks: [],
@@ -223,16 +223,16 @@ export default {
   },
   computed: {
     tokenName() {
-      return this.erc20Token?.name;
+      return this.token?.name;
     },
     tokenSymbol() {
-      return this.erc20Token?.symbol;
+      return this.token?.symbol;
     },
-    tokenType() {
+    /*tokenType() {
       return this.erc20Token?.type === 'ERC-20' ? this.$t('gamification.event.form.token') : this.$t('gamification.event.form.nft');
-    },
+    },*/
     isERC1155Token() {
-      return this.erc20Token?.type === 'ERC-1155';
+      return this.token?.type === 'ERC-1155';
     },
     networkVerificationMessage() {
       return this.$t('gamification.event.form.contractAddress.tooltip', { 0: this.selected?.name });
@@ -240,11 +240,11 @@ export default {
     isInValidAddressFormat() {
       return !this.typing && this.contractAddress && !this.isValidAddress;
     },
-    isInvalidERC20Address() {
-      return !this.typing && this.contractAddress && !this.isValidERC20Address;
+    isInvalidAddress() {
+      return !this.typing && this.contractAddress && !this.isValidTokenAddress;
     },
-    emptyERC20Token() {
-      return !this.typing && this.contractAddress && !this.erc20Token;
+    emptyToken() {
+      return !this.typing && this.contractAddress && !this.token;
     },
     explorerLink() {
       const networkId = this.selected.networkId;
@@ -278,6 +278,9 @@ export default {
     },
     minAmountPlaceholder() {
       return this.isHoldEvent ? this.$t('gamification.event.form.minBalance.placeholder') : this.$t('gamification.event.form.minAmount.placeholder');
+    },
+    tokenType() {
+      return this.token?.type;
     }
   },
   created() {
@@ -289,7 +292,7 @@ export default {
       this.networkId = this.selected.networkId;
       this.handleAddress();
       if ( oldVal !== null && newVal !== oldVal) {
-        this.erc20Token = null;
+        this.token = null;
       }
     },
     durationNumber() {
@@ -315,7 +318,7 @@ export default {
           this.typing = false;
           if (this.contractAddress) {
             this.isValidAddress = this.checkContractAddress(this.contractAddress);
-            this.isValidERC20Address = true;
+            this.isValidTokenAddress = true;
           }
           if (this.targetAddress) {
             this.validTargetAddress = this.checkContractAddress(this.targetAddress);
@@ -329,32 +332,49 @@ export default {
       const addressUrlRegex = /^(0x)?[0-9a-f]{40}$/i;
       return addressUrlRegex.test(contractAddress);
     },
-    retrieveERC20Token() {
+    retrieveTokenDetails() {
       if (this.isValidAddress) {
         this.loading = true;
         return this.$evmConnectorService.getTokenDetailsByAddress({contractAddress: this.contractAddress, blockchainNetwork: this.selected?.providerUrl})
           .then(token => {
-            this.erc20Token = token;
-            this.eventProperties = {
-              contractAddress: this.contractAddress,
-              blockchainNetwork: this.selected?.providerUrl,
-              networkId: this.selected?.networkId,
-              tokenName: token.name,
-              tokenSymbol: token.symbol,
-              tokenDecimals: token.decimals,
-            };
+            console.warn('token', token);
+            this.token = token;
+            if (this.isERC20(token.type)) {
+              this.eventProperties = { contractAddress: this.contractAddress,
+                blockchainNetwork: this.selected?.providerUrl,
+                networkId: this.selected?.networkId,
+                tokenName: token.name,
+                tokenSymbol: token.symbol,
+                tokenDecimals: token.decimals,
+                tokenType: token.type
+              };
+            } else if (this.isERC721(token.type)) {
+              this.eventProperties = { contractAddress: this.contractAddress,
+                blockchainNetwork: this.selected?.providerUrl,
+                networkId: this.selected?.networkId,
+                tokenName: token.name,
+                tokenSymbol: token.symbol,
+                tokenType: token.type
+              };
+            } else if (this.isERC1155(token.type)) {
+              this.eventProperties = { contractAddress: this.contractAddress,
+                blockchainNetwork: this.selected?.providerUrl,
+                networkId: this.selected?.networkId,
+                tokenType: token.type
+              };
+            }
             document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
           })
           .then(() => this.loading = false )
           .catch(() => {
-            this.isValidERC20Address = false;
-            this.erc20Token = null;
+            this.isValidTokenAddress = false;
+            this.token = null;
             this.loading = false;
           });
       }
     },
-    resetERC20Token() {
-      this.erc20Token = null;
+    resetToken() {
+      this.token = null;
     },
     retrieveNetworks() {
       this.loadingNetworks = true;
@@ -367,11 +387,25 @@ export default {
             this.selected = this.networks.find(network => network.providerUrl === this.properties.blockchainNetwork);
             this.networkId = this.selected.networkId;
             this.selectedNetwork = this.networks.indexOf(this.selected);
-            this.erc20Token = {
-              name: this.properties?.tokenName,
-              symbol: this.properties?.tokenSymbol,
-              decimals: this.properties?.tokenDecimals
-            };
+            console.log('this.properties', this.properties);
+            if (this.isERC20(this.properties.type)) {
+              this.token = {
+                name: this.properties?.tokenName,
+                symbol: this.properties?.tokenSymbol,
+                decimals: this.properties?.tokenDecimals,
+                type: this.properties?.tokenType
+              };
+            } else if (this.isERC721(this.properties.type)) {
+              this.token = {
+                name: this.properties?.tokenName,
+                symbol: this.properties?.tokenSymbol,
+                type: this.properties?.tokenType
+              };
+            } else if (this.isERC1155(this.properties.type)) {
+              this.token = {
+                type: this.properties?.tokenType
+              };
+            }
             this.minAmount = this.properties?.minAmount;
             this.targetAddress = this.properties?.targetAddress;
             this.durationFilter = this.properties?.frequency;
@@ -386,39 +420,108 @@ export default {
     },
     selectedAmount(minAmount) {
       if (this.targetAddress) {
-        this.eventProperties = {
-          contractAddress: this.contractAddress,
-          blockchainNetwork: this.selected?.providerUrl,
-          networkId: this.selected?.networkId,
-          tokenName: this.erc20Token.name,
-          tokenSymbol: this.erc20Token.symbol,
-          tokenDecimals: this.erc20Token.decimals,
-          targetAddress: this.targetAddress,
-          minAmount: minAmount
-        };
-      } else {
-        if (this.properties?.duration && this.properties?.frequency) {
+        if (this.isERC20(this.tokenType)) {
           this.eventProperties = {
             contractAddress: this.contractAddress,
             blockchainNetwork: this.selected?.providerUrl,
             networkId: this.selected?.networkId,
-            tokenName: this.erc20Token.name,
-            tokenSymbol: this.erc20Token.symbol,
-            tokenDecimals: this.erc20Token.decimals,
-            minAmount: minAmount,
-            duration: this.properties?.duration,
-            frequency: this.properties?.frequency
-          };
-        } else {
-          this.eventProperties = {
-            contractAddress: this.contractAddress,
-            blockchainNetwork: this.selected?.providerUrl,
-            networkId: this.selected?.networkId,
-            tokenName: this.erc20Token.name,
-            tokenSymbol: this.erc20Token.symbol,
-            tokenDecimals: this.erc20Token.decimals,
+            tokenName: this.token.name,
+            tokenSymbol: this.token.symbol,
+            tokenDecimals: this.token.decimals,
+            tokenType: this.token.type,
+            targetAddress: this.targetAddress,
             minAmount: minAmount
           };
+        } else if (this.isERC721(this.tokenType)) {
+          this.eventProperties = {
+            contractAddress: this.contractAddress,
+            blockchainNetwork: this.selected?.providerUrl,
+            networkId: this.selected?.networkId,
+            tokenName: this.token.name,
+            tokenSymbol: this.token.symbol,
+            tokenType: this.token.type,
+            targetAddress: this.targetAddress,
+            minAmount: minAmount
+          };
+        } else if (this.isERC1155(this.tokenType)) {
+          this.eventProperties = {
+            contractAddress: this.contractAddress,
+            blockchainNetwork: this.selected?.providerUrl,
+            networkId: this.selected?.networkId,
+            tokenType: this.token.type,
+            targetAddress: this.targetAddress,
+            minAmount: minAmount
+          };
+        }
+      } else {
+        if (this.properties?.duration && this.properties?.frequency) {
+          if (this.isERC20(this.tokenType)) {
+            this.eventProperties = {
+              contractAddress: this.contractAddress,
+              blockchainNetwork: this.selected?.providerUrl,
+              networkId: this.selected?.networkId,
+              tokenName: this.token.name,
+              tokenSymbol: this.token.symbol,
+              tokenDecimals: this.token.decimals,
+              tokenType: this.token.type,
+              minAmount: minAmount,
+              duration: this.properties?.duration,
+              frequency: this.properties?.frequency
+            };
+          } else if (this.isERC721(this.tokenType)) {
+            this.eventProperties = {
+              contractAddress: this.contractAddress,
+              blockchainNetwork: this.selected?.providerUrl,
+              networkId: this.selected?.networkId,
+              tokenName: this.token.name,
+              tokenSymbol: this.token.symbol,
+              tokenType: this.token.type,
+              minAmount: minAmount,
+              duration: this.properties?.duration,
+              frequency: this.properties?.frequency
+            };
+          } else if (this.isERC1155(this.tokenType)) {
+            this.eventProperties = {
+              contractAddress: this.contractAddress,
+              blockchainNetwork: this.selected?.providerUrl,
+              networkId: this.selected?.networkId,
+              tokenType: this.token.type,
+              minAmount: minAmount,
+              duration: this.properties?.duration,
+              frequency: this.properties?.frequency
+            };
+          }
+        } else {
+          if (this.isERC20(this.tokenType)) {
+            this.eventProperties = {
+              contractAddress: this.contractAddress,
+              blockchainNetwork: this.selected?.providerUrl,
+              networkId: this.selected?.networkId,
+              tokenName: this.type.name,
+              tokenSymbol: this.type.symbol,
+              tokenDecimals: this.type.decimals,
+              tokenType: this.token.type,
+              minAmount: minAmount
+            };
+          } else if (this.isERC721(this.tokenType)) {
+            this.eventProperties = {
+              contractAddress: this.contractAddress,
+              blockchainNetwork: this.selected?.providerUrl,
+              networkId: this.selected?.networkId,
+              tokenName: this.type.name,
+              tokenSymbol: this.type.symbol,
+              tokenType: this.token.type,
+              minAmount: minAmount
+            };
+          } else if (this.isERC1155(this.tokenType)) {
+            this.eventProperties = {
+              contractAddress: this.contractAddress,
+              blockchainNetwork: this.selected?.providerUrl,
+              networkId: this.selected?.networkId,
+              tokenType: this.token.type,
+              minAmount: minAmount
+            };
+          }
         }
       }
       document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
@@ -427,26 +530,71 @@ export default {
       this.validTargetAddress = this.checkContractAddress(targetAddress);
       if (this.validTargetAddress) {
         if (this.minAmount) {
-          this.eventProperties = {
-            contractAddress: this.contractAddress,
-            blockchainNetwork: this.selected?.providerUrl,
-            networkId: this.selected?.networkId,
-            tokenName: this.erc20Token.name,
-            tokenSymbol: this.erc20Token.symbol,
-            tokenDecimals: this.erc20Token.decimals,
-            targetAddress: targetAddress,
-            minAmount: this.minAmount
-          };
+          if (this.isERC20(this.tokenType)) {
+            this.eventProperties = {
+              contractAddress: this.contractAddress,
+              blockchainNetwork: this.selected?.providerUrl,
+              networkId: this.selected?.networkId,
+              tokenName: this.token.name,
+              tokenSymbol: this.token.symbol,
+              tokenDecimals: this.token.decimals,
+              tokenType: this.token.type,
+              targetAddress: targetAddress,
+              minAmount: this.minAmount
+            };
+          } else if (this.isERC721(this.tokenType)) {
+            this.eventProperties = {
+              contractAddress: this.contractAddress,
+              blockchainNetwork: this.selected?.providerUrl,
+              networkId: this.selected?.networkId,
+              tokenName: this.token.name,
+              tokenSymbol: this.token.symbol,
+              tokenType: this.token.type,
+              targetAddress: targetAddress,
+              minAmount: this.minAmount
+            };
+          } else if (this.isERC1155(this.tokenType)) {
+            this.eventProperties = {
+              contractAddress: this.contractAddress,
+              blockchainNetwork: this.selected?.providerUrl,
+              networkId: this.selected?.networkId,
+              tokenType: this.token.type,
+              targetAddress: targetAddress,
+              minAmount: this.minAmount
+            };
+          }
+
         } else {
-          this.eventProperties = {
-            contractAddress: this.contractAddress,
-            blockchainNetwork: this.selected?.providerUrl,
-            networkId: this.selected?.networkId,
-            tokenName: this.erc20Token.name,
-            tokenSymbol: this.erc20Token.symbol,
-            tokenDecimals: this.erc20Token.decimals,
-            targetAddress: targetAddress
-          };
+          if (this.isERC20(this.tokenType)) {
+            this.eventProperties = {
+              contractAddress: this.contractAddress,
+              blockchainNetwork: this.selected?.providerUrl,
+              networkId: this.selected?.networkId,
+              tokenName: this.token.name,
+              tokenSymbol: this.token.symbol,
+              tokenDecimals: this.token.decimals,
+              tokenType: this.token.type,
+              targetAddress: targetAddress
+            };
+          } else if (this.isERC721(this.tokenType)) {
+            this.eventProperties = {
+              contractAddress: this.contractAddress,
+              blockchainNetwork: this.selected?.providerUrl,
+              networkId: this.selected?.networkId,
+              tokenName: this.token.name,
+              tokenSymbol: this.token.symbol,
+              tokenType: this.token.type,
+              targetAddress: targetAddress
+            };
+          } else if (this.isERC1155(this.tokenType)) {
+            this.eventProperties = {
+              contractAddress: this.contractAddress,
+              blockchainNetwork: this.selected?.providerUrl,
+              networkId: this.selected?.networkId,
+              tokenType: this.token.type,
+              targetAddress: targetAddress
+            };
+          }
         }
         document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
       }
@@ -456,17 +604,43 @@ export default {
       durationTimestamp.setMonth(durationTimestamp.getMonth() + months);
       durationTimestamp.setDate(durationTimestamp.getDate() + weeks * 7 + days);
       durationTimestamp = (durationTimestamp - new Date());
-      this.eventProperties = {
-        contractAddress: this.contractAddress,
-        blockchainNetwork: this.selected?.providerUrl,
-        networkId: this.selected?.networkId,
-        tokenName: this.erc20Token.name,
-        tokenSymbol: this.erc20Token.symbol,
-        tokenDecimals: this.erc20Token.decimals,
-        minAmount: this.minAmount,
-        duration: durationTimestamp,
-        frequency: months !== 0 ? 'MONTHS' : weeks !== 0 ? 'WEEKS' : 'DAYS'
-      };
+      if (this.isERC20(this.tokenType)) {
+        this.eventProperties = {
+          contractAddress: this.contractAddress,
+          blockchainNetwork: this.selected?.providerUrl,
+          networkId: this.selected?.networkId,
+          tokenName: this.token.name,
+          tokenSymbol: this.token.symbol,
+          tokenDecimals: this.token.decimals,
+          tokenType: this.token.type,
+          minAmount: this.minAmount,
+          duration: durationTimestamp,
+          frequency: months !== 0 ? 'MONTHS' : weeks !== 0 ? 'WEEKS' : 'DAYS'
+        };
+      } else if (this.isERC721(this.tokenType)) {
+        this.eventProperties = {
+          contractAddress: this.contractAddress,
+          blockchainNetwork: this.selected?.providerUrl,
+          networkId: this.selected?.networkId,
+          tokenName: this.token.name,
+          tokenSymbol: this.token.symbol,
+          tokenType: this.token.type,
+          minAmount: this.minAmount,
+          duration: durationTimestamp,
+          frequency: months !== 0 ? 'MONTHS' : weeks !== 0 ? 'WEEKS' : 'DAYS'
+        };
+      } else if (this.isERC1155(this.tokenType)) {
+        this.eventProperties = {
+          contractAddress: this.contractAddress,
+          blockchainNetwork: this.selected?.providerUrl,
+          networkId: this.selected?.networkId,
+          tokenType: this.token.type,
+          minAmount: this.minAmount,
+          duration: durationTimestamp,
+          frequency: months !== 0 ? 'MONTHS' : weeks !== 0 ? 'WEEKS' : 'DAYS'
+        };
+      }
+
       document.dispatchEvent(new CustomEvent('event-form-filled', {detail: this.eventProperties}));
     },
     changeDuration() {
@@ -486,7 +660,16 @@ export default {
       } else {
         return this.dayInMilliseconds * this.averageDaysInAMonth;
       }
-    }
+    },
+    isERC20(tokenType) {
+      return tokenType === 'ERC-20';
+    },
+    isERC721(tokenType) {
+      return tokenType === 'ERC-721';
+    },
+    isERC1155(tokenType) {
+      return tokenType === 'ERC-1155';
+    },
   }
 };
 </script>
