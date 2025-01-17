@@ -53,7 +53,7 @@ public class EvmTransactionEntity implements Serializable {
   @Column(name = "TRANSACTION_DATE", nullable = false)
   private Long       transactionDate;
 
-  @Column(name = "AMOUNT", nullable = false)
+  @Column(name = "AMOUNT")
   private BigInteger amount;
 
   @Column(name = "TOKEN_ID")
