@@ -19,12 +19,14 @@ import EvmConnectorEventForm from './components/EvmEventForm.vue';
 import EvmConnectorEvent from './components/EvmEvent.vue';
 import EvmConnectorEventDisplay from './components/EvmEventDisplay.vue';
 import EVMConnectorNetworkItem from './components/EvmNetworkItem.vue';
+import EvmConnectorTokenDetails from './components/EvmTokenDetails.vue';
 
 const components = {
   'evm-connector-event-form': EvmConnectorEventForm,
   'evm-connector-event': EvmConnectorEvent,
   'evm-connector-event-display': EvmConnectorEventDisplay,
   'evm-connector-network-item': EVMConnectorNetworkItem,
+  'evm-connector-token-details': EvmConnectorTokenDetails,
 };
 
 for (const key in components) {
