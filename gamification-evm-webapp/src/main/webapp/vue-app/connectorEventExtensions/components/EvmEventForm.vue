@@ -96,25 +96,10 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
             <v-icon size="18" class="icon-default-color mx-auto">fa-edit</v-icon>
           </v-btn>
         </div>
-        <v-tooltip
-          bottom>
-          <template #activator="{ on, attrs }">
-            <a
-              :href="explorerLink"
-              target="_blank"
-              class="text-color d-flex flex-row mt-3">
-              <v-chip
-                v-if="!isERC1155Token"
-                color="primary"
-                v-bind="attrs"
-                v-on="on">
-                <span class="mx-2 text-truncate"> {{ tokenName }} ({{ tokenSymbol }}) </span>
-              </v-chip>
-              <span class="ma-auto">{{ tokenType }}</span>
-            </a>
-          </template>
-          <span>{{ $t('gamification.event.form.openExplorer') }}</span>
-        </v-tooltip>
+        <evm-connector-token-details
+          :token="token"
+          :network-id="networkId"
+          :network="networks[networks.indexOf(this.selected)]" />
       </div>
       <span v-if="isInValidAddressFormat" class="error--text">{{ $t('gamification.event.detail.invalidContractAddress.error') }}</span>
       <span v-else-if="isInvalidAddress" class="error--text">{{ $t('gamification.event.detail.invalidTokenContractAddress.error') }}</span>
@@ -228,9 +213,6 @@ export default {
     tokenSymbol() {
       return this.token?.symbol;
     },
-    /*tokenType() {
-      return this.erc20Token?.type === 'ERC-20' ? this.$t('gamification.event.form.token') : this.$t('gamification.event.form.nft');
-    },*/
     isERC1155Token() {
       return this.token?.type === 'ERC-1155';
     },
@@ -245,21 +227,6 @@ export default {
     },
     emptyToken() {
       return !this.typing && this.contractAddress && !this.token;
-    },
-    explorerLink() {
-      const networkId = this.selected.networkId;
-      switch (networkId) {
-      case 1:
-        return `https://etherscan.io/token/${this.contractAddress}`;
-      case 137:
-        return `https://polygonscan.com/token/${this.contractAddress}`;
-      case 80002:
-        return `https://amoy.polygonscan.com/token/${this.contractAddress}`;
-      case 11155111:
-        return `https://sepolia.etherscan.io/token/${this.contractAddress}`;
-      default:
-        return '';
-      }
     },
     addressLabel() {
       return this.trigger === 'sendToken' ? this.$t('gamification.event.form.recipientAddress') : this.$t('gamification.event.form.senderAddress');
@@ -337,7 +304,6 @@ export default {
         this.loading = true;
         return this.$evmConnectorService.getTokenDetailsByAddress({contractAddress: this.contractAddress, blockchainNetwork: this.selected?.providerUrl})
           .then(token => {
-            console.warn('token', token);
             this.token = token;
             if (this.isERC20(token.type)) {
               this.eventProperties = { contractAddress: this.contractAddress,
@@ -387,7 +353,6 @@ export default {
             this.selected = this.networks.find(network => network.providerUrl === this.properties.blockchainNetwork);
             this.networkId = this.selected.networkId;
             this.selectedNetwork = this.networks.indexOf(this.selected);
-            console.log('this.properties', this.properties);
             if (this.isERC20(this.properties.type)) {
               this.token = {
                 name: this.properties?.tokenName,
