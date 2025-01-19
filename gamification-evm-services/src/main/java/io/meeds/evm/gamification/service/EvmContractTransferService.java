@@ -67,70 +67,46 @@ public class EvmContractTransferService {
     String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase();
     long networkId = Long.parseLong(rule.getEvent().getProperties().get(Utils.NETWORK_ID));
     List<String> walletsAddresses = evmTriggerService.getWalletAddresses(rule.getProgram().getSpaceId());
-    BigInteger minAmount = new BigInteger(rule.getEvent().getProperties().get(Utils.MIN_AMOUNT));
     if (CollectionUtils.isNotEmpty(walletsAddresses)) {
       walletsAddresses.forEach(walletAddress -> {
-        List<EvmTransaction> evmTransactions = new ArrayList<>();
-        Event event = TRANSFER_EVENT;
-        long duration = Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION));
-        long toBlock = evmBlockchainService.getLastBlock(blockchainNetwork);
-        long lastRewardTime = getLastRewardTime(walletAddress, rule.getId());
-        long fromBlock = lastRewardTime;
-        if(lastRewardTime == 0) {
-          fromBlock =  toBlock - (duration / BLOCK_TIME_AVERAGE);
-        }
+        Event event = TRANSFER_EVENT_ERC20;
         if (evmBlockchainService.isERC1155(blockchainNetwork, contractAddress)) {
           event = TRANSFERSINGLE_EVENT;
-          evmTransactions = evmBlockchainService.getEvmTransactions(fromBlock, toBlock, contractAddress, blockchainNetwork, event);
-
+        } else if (evmBlockchainService.isERC721(blockchainNetwork, contractAddress)) {
+          event = TRANSFER_EVENT_ER721;
         }
-        List<EvmTransaction> toAddressEvmTransactions = evmTransactions.stream()
-                                                                       .filter(transaction -> (StringUtils.equals(transaction.getToAddress(),
-                                                                                                                  walletAddress)))
-                                                                       .collect(Collectors.toList());
-        boolean isBalanceOfEnough = evmBlockchainService.isBalanceEnough(contractAddress,
-                                                                         blockchainNetwork,
-                                                                         walletAddress,
-                                                                         minAmount,
-                                                                         toAddressEvmTransactions);
-        if (isBalanceOfEnough) {
-          List<EvmTransaction> transactions = evmTransactionService.getFilteredTransactionsByWalletAddress(contractAddress,
-                                                                                                           networkId,
-                                                                                                           walletAddress,
-                                                                                                           Utils.convertDateStringToTimestamp(rule.getCreatedDate()),
-                                                                                                           lastRewardTime,
-                                                                                                           trigger);
-          if (trigger.equals(Utils.HOLD_TOKEN_EVENT)) {
-            if (CollectionUtils.isEmpty(transactions)) {
-              handleWithEvmTansactions(blockchainNetwork,
-                                       contractAddress,
-                                       walletAddress,
-                                       networkId,
-                                       event,
-                                       fromBlock,
-                                       toBlock,
-                                       duration,
-                                       evmTransactions,
-                                       toAddressEvmTransactions,
-                                       rule,
-                                       trigger);
-            } else {
-              handleEvmTrigger(rule,
-                               transactions.get(transactions.size() - 1),
-                               trigger,
-                               contractAddress,
-                               networkId,
-                               blockchainNetwork,
-                               walletAddress);
-            }
-          } else {
-            if (CollectionUtils.isNotEmpty(transactions)) {
-               transactions.forEach(transaction -> { try { handleEvmTrigger(rule,
-               transaction, trigger, contractAddress, networkId, blockchainNetwork,
-               walletAddress); } catch (Exception e) {
-               LOG.warn("Error broadcasting EVM event for transaction {} and trigger {}",
-               transaction.getTransactionHash(), trigger, e); } });
-            }
+        long lastRewardTime = getLastRewardTime(walletAddress, rule.getId());
+        List<EvmTransaction> transactions = evmTransactionService.getFilteredTransactionsByWalletAddress(contractAddress,
+                                                                                                         networkId,
+                                                                                                         walletAddress,
+                                                                                                         Utils.convertDateStringToTimestamp(rule.getCreatedDate()),
+                                                                                                         lastRewardTime,
+                                                                                                         trigger);
+        if (trigger.equals(Utils.HOLD_TOKEN_EVENT)) {
+          long duration = Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION));
+          if (System.currentTimeMillis() - lastRewardTime >= duration) {
+            handleHoldEvent(blockchainNetwork,
+                            contractAddress,
+                            walletAddress,
+                            networkId,
+                            duration,
+                            rule,
+                            event,
+                            trigger,
+                            transactions);
+          }
+        } else {
+          if (CollectionUtils.isNotEmpty(transactions)) {
+            transactions.forEach(transaction -> {
+              try {
+                handleEvmTrigger(rule, transaction, trigger, contractAddress, networkId, blockchainNetwork, walletAddress);
+              } catch (Exception e) {
+                LOG.warn("Error broadcasting EVM event for transaction {} and trigger {}",
+                         transaction.getTransactionHash(),
+                         trigger,
+                         e);
+              }
+            });
           }
         }
       });
@@ -153,13 +129,13 @@ public class EvmContractTransferService {
       evmTransactions = evmBlockchainService.getEvmTransactions(fromBlock, toBlock, contractAddress, blockchainNetwork, event);
       toAddressEvmTransactions = evmTransactions.stream()
                                                 .filter(transaction -> (StringUtils.equals(transaction.getToAddress(),
-                                                                                           walletAddress)))
+                                                                                      walletAddress)))
                                                 .collect(Collectors.toList());
 
     }
     List<EvmTransaction> fromAddressEvmTransactions = evmTransactions.stream()
                                                                      .filter(transaction -> (StringUtils.equals(transaction.getFromAddress(),
-                                                                                                               walletAddress)))
+                                                                                                           walletAddress)))
                                                                      .collect(Collectors.toList());
 
     if (CollectionUtils.isEmpty(fromAddressEvmTransactions)) {
@@ -211,7 +187,56 @@ public class EvmContractTransferService {
                          walletAddress);
       }
     }
+  }
 
+  public void handleHoldEvent(String blockchainNetwork,
+                              String contractAddress,
+                              String walletAddress,
+                              long networkId,
+                              long duration,
+                              RuleDTO rule,
+                              Event event,
+                              String trigger,
+                              List<EvmTransaction> transactions) {
+    long toBlock = evmBlockchainService.getLastBlock(blockchainNetwork);
+    long fromBlock = toBlock - ((duration / 1000) / BLOCK_TIME_AVERAGE);
+    List<EvmTransaction> evmTransactions = new ArrayList<>();
+    if (evmBlockchainService.isERC1155(blockchainNetwork, contractAddress)) {
+      evmTransactions = evmBlockchainService.getEvmTransactions(fromBlock, toBlock, contractAddress, blockchainNetwork, event);
+    }
+    List<EvmTransaction> toAddressEvmTransactions = evmTransactions.stream()
+                                                                   .filter(transaction -> (StringUtils.equals(transaction.getToAddress(),
+                                                                                                         walletAddress)))
+                                                                   .collect(Collectors.toList());
+    boolean isBalanceOfEnough = evmBlockchainService.isBalanceEnough(contractAddress,
+                                                                     blockchainNetwork,
+                                                                     walletAddress,
+                                                                     rule,
+                                                                     toAddressEvmTransactions);
+    if (isBalanceOfEnough) {
+      if (CollectionUtils.isEmpty(transactions)) {
+        handleWithEvmTansactions(blockchainNetwork,
+                                 contractAddress,
+                                 walletAddress,
+                                 networkId,
+                                 event,
+                                 fromBlock,
+                                 toBlock,
+                                 duration,
+                                 evmTransactions,
+                                 toAddressEvmTransactions,
+                                 rule,
+                                 trigger);
+      } else {
+        handleEvmTrigger(rule,
+                         transactions.get(transactions.size() - 1),
+                         trigger,
+                         contractAddress,
+                         networkId,
+                         blockchainNetwork,
+                         walletAddress);
+      }
+    }
   }
 
   public List<RuleDTO> getEnabledEvmRules() {
@@ -266,8 +291,8 @@ public class EvmContractTransferService {
                                           duration,
                                           walletAddress,
                                           null);
-     evmTriggerService.handleTriggerAsync(evmTrigger);
-     saveLastRewardTime(walletAddress, rule.getId());
+    evmTriggerService.handleTriggerAsync(evmTrigger);
+    saveLastRewardTime(walletAddress, rule.getId());
   }
 
   private void handleEvmTrigger(RuleDTO rule,

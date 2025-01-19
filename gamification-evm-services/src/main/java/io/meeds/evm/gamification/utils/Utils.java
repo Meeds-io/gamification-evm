@@ -66,12 +66,20 @@ public class Utils {
 
   public static  final String ERC1155_INTERFACE_ID = "0xd9b67a26";
 
-  public static final Event   TRANSFER_EVENT       = new Event("Transfer",
+  public static final Event   TRANSFER_EVENT_ERC20       = new Event("Transfer",
                                                                Arrays.<TypeReference<?>> asList(new TypeReference<Address>(true) {
                                                                                                                 },
                                                                                                 new TypeReference<Address>(true) {
                                                                                                 },
                                                                                                 new TypeReference<Uint256>(false) {
+                                                                                                }));
+
+  public static final Event   TRANSFER_EVENT_ER721 = new Event("Transfer",
+                                                               Arrays.<TypeReference<?>> asList(new TypeReference<Address>(true) {
+                                                                                                                },
+                                                                                                new TypeReference<Address>(true) {
+                                                                                                },
+                                                                                                new TypeReference<Uint256>(true) {
                                                                                                 }));
 
   public static final Event   TRANSFERSINGLE_EVENT = new Event("TransferSingle",

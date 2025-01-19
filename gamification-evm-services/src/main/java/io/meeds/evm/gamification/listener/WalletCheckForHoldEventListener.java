@@ -94,11 +94,11 @@ public class WalletCheckForHoldEventListener extends Listener<Wallet, String> {
           Long networkId = Long.parseLong(holdEventEvmRule.getEvent().getProperties().get(Utils.NETWORK_ID));
           Long duration = Long.parseLong(holdEventEvmRule.getEvent().getProperties().get(Utils.DURATION));
           List<EvmTransaction> evmTransactions = new ArrayList<>();
-          org.web3j.abi.datatypes.Event blockchainEvent = TRANSFER_EVENT;
+          org.web3j.abi.datatypes.Event blockchainEvent = TRANSFER_EVENT_ERC20;
           long lastRewardTime = evmContractTransferService.getLastRewardTime(walletAddress, holdEventEvmRule.getId());
           if (System.currentTimeMillis() - lastRewardTime >= duration) {
             long toBlock = evmBlockchainService.getLastBlock(blockchainNetwork);
-            long fromBlock =  toBlock - (duration / BLOCK_TIME_AVERAGE);
+            long fromBlock =  toBlock - ((duration/1000) / BLOCK_TIME_AVERAGE);
             if (evmBlockchainService.isERC1155(blockchainNetwork, contractAddress)) {
               blockchainEvent = TRANSFERSINGLE_EVENT;
               evmTransactions = evmBlockchainService.getEvmTransactions(fromBlock,
@@ -114,7 +114,7 @@ public class WalletCheckForHoldEventListener extends Listener<Wallet, String> {
             boolean isBalanceOfEnough = evmBlockchainService.isBalanceEnough(contractAddress,
                                                                              blockchainNetwork,
                                                                              walletAddress,
-                                                                             minAmount,
+                                                                             holdEventEvmRule,
                                                                              toAddressEvmTransactions);
             if (isBalanceOfEnough) {
               List<EvmTransaction> transactions = evmTransactionService.getFilteredTransactionsByWalletAddress(contractAddress,
