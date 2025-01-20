@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -17,6 +18,7 @@ public class EvmTokenController {
   EvmBlockchainService evmBlockchainService;
 
   @GetMapping
+  @Secured("users")
   @Operation(summary = "Retrieves Token details", method = "GET")
   @ApiResponse(responseCode = "200", description = "Request fulfilled")
   @ApiResponse(responseCode = "404", description = "Not found")
@@ -35,6 +37,7 @@ public class EvmTokenController {
   }
 
   @GetMapping("/type")
+  @Secured("users")
   @Operation(summary = "Retrieves Token type", method = "GET")
   @ApiResponse(responseCode = "200", description = "Request fulfilled")
   @ApiResponse(responseCode = "404", description = "Not found")
