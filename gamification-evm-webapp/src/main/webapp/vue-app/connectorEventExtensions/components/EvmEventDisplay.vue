@@ -22,7 +22,14 @@
       {{ $t('gamification.event.detail.display') }}
     </div>
     <div v-sanitized-html="eventDetails" class="py-4"></div>
+    <v-progress-circular
+      v-if="loading"
+      indeterminate
+      color="primary"
+      size="20"
+      class="ms-3 my-auto" />
     <a
+      v-else
       :href="explorerLink"
       target="_blank"
       class="text-color">
@@ -49,7 +56,8 @@ export default {
       averageDaysInAMonth: 30.44,
       dayInMilliseconds: 1000 * 60 * 60 * 24,
       tokenType: null,
-      token: null
+      token: null,
+      loading: true
     };
   },
   computed: {
@@ -144,6 +152,7 @@ export default {
         } else {
           this.token = { type: this.properties?.tokenType };
         }
+        this.loading = false;
       } else {
         this.$evmConnectorService.getTokenTypeByAddress({contractAddress: this.contractAddress, blockchainNetwork: this.blockchainNetwork})
           .then(tokenType => {
@@ -154,6 +163,9 @@ export default {
             } else {
               this.token = { type: tokenType };
             }
+          })
+          .finally(() => {
+            this.loading = false;
           });
       }
 
