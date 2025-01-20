@@ -18,38 +18,25 @@
 -->
 <template>
   <div>
-    <div class="subtitle-1 font-weight-bold mb-2">
-      {{ $t('gamification.event.detail.display.contractAddress') }}
+    <div class="text-header">
+      {{ $t('gamification.event.detail.display') }}
     </div>
+    <div v-sanitized-html="eventDetails" class="py-4"></div>
+    <v-progress-linear
+      v-if="loading"
+      indeterminate
+      color="primary"
+      size="20"
+      class="ms-3 my-auto" />
     <a
+      v-else
       :href="explorerLink"
       target="_blank"
-      class="text-color d-flex flex-row">
-      <v-avatar size="24" class="border-color">
-        <v-img :src="networkImageUrl" />
-      </v-avatar>
-      <div class="text-font-size my-auto ms-2 text-truncate">
-        {{ contractAddress }}
-      </div>
+      class="text-color">
+      <evm-connector-token-details
+        :token="token"
+        :network-id="networkId" />
     </a>
-    <div v-if="targetAddress" class="subtitle-1 font-weight-bold mb-2 mt-4">
-      {{ addressLabel }}
-    </div>
-    <div class="text-font-size align-self-start">
-      {{ targetAddress }}
-    </div>
-    <div v-if="minAmount" class="subtitle-1 font-weight-bold mb-2 mt-4">
-      {{ minAmountTitle }}
-    </div>
-    <div class="text-font-size align-self-start">
-      {{ minAmount }}
-    </div>
-    <div v-if="duration" class="subtitle-1 font-weight-bold mb-2 mt-4">
-      {{ $t('gamification.event.form.duration') }}
-    </div>
-    <div class="text-font-size align-self-start">
-      {{ durationToDisplay }}
-    </div>
   </div>
 </template>
 <script>
@@ -67,7 +54,10 @@ export default {
   data() {
     return {
       averageDaysInAMonth: 30.44,
-      dayInMilliseconds: 1000 * 60 * 60 * 24
+      dayInMilliseconds: 1000 * 60 * 60 * 24,
+      tokenType: null,
+      token: null,
+      loading: true
     };
   },
   computed: {
@@ -100,19 +90,6 @@ export default {
     duration() {
       return this.properties?.duration;
     },
-    targetAddress() {
-      return this.properties?.targetAddress;
-    },
-    networkImageUrl() {
-      if (this.networkId === 137 || this.networkId === 80002) {
-        return '/gamification-evm/images/polygonLogo.svg';
-      } else {
-        return '/gamification-evm/images/EethereumLogo.svg';
-      }
-    },
-    addressLabel() {
-      return this.trigger === 'sendToken' ? this.$t('gamification.event.form.recipientAddress') : this.$t('gamification.event.form.senderAddress');
-    },
     durationNumber() {
       const freq = this.properties?.frequency;
       const freqInMilliseconds = this.getFreqInMilliseconds(freq);
@@ -133,9 +110,28 @@ export default {
     isHoldEvent() {
       return this.trigger === 'holdToken';
     },
+    isSendEvent() {
+      return this.trigger === 'sendToken';
+    },
     minAmountTitle() {
       return this.isHoldEvent ? this.$t('gamification.event.form.minBalance') : this.$t('gamification.event.form.minAmount');
+    },
+    holdEventDetails() {
+      return this.$t('gamification.event.detail.display.details.hold', {0: this.$t('gamification.event.detail.display.hold'), 1: '<span class="font-weight-bold">', 2: this.minAmount, 3: '</span>', 4: this.durationToDisplay});
+    },
+    sendEventDetails() {
+      return this.$t('gamification.event.detail.display.details.sendAndReceive', {0: this.$t('gamification.event.detail.display.send') ,1: '<span class="font-weight-bold">', 2: this.minAmount, 3: '</span>'});
+    },
+    receiveEventDetails() {
+      return this.$t('gamification.event.detail.display.details.sendAndReceive', {0: this.$t('gamification.event.detail.display.receive') ,1: '<span class="font-weight-bold">', 2: this.minAmount, 3: '</span>'});
+    },
+    eventDetails() {
+      return this.isHoldEvent? this.holdEventDetails : this.isSendEvent? this.sendEventDetails : this.receiveEventDetails;
     }
+  },
+  mounted() {
+    this.getToken();
+
   },
   methods: {
     getFreqInMilliseconds(freq) {
@@ -146,6 +142,34 @@ export default {
       } else {
         return this.dayInMilliseconds * this.averageDaysInAMonth;
       }
+    },
+    getToken() {
+      if (this.properties?.tokenType) {
+        if (this.properties?.tokenType === 'ERC-20' || this.properties?.tokenType === 'ERC-721') {
+          this.token = { symbol: this.properties?.tokenSymbol,
+            name: this.properties?.tokenName,
+            type: this.properties?.tokenType };
+        } else {
+          this.token = { type: this.properties?.tokenType };
+        }
+        this.loading = false;
+      } else {
+        this.$evmConnectorService.getTokenTypeByAddress({contractAddress: this.contractAddress, blockchainNetwork: this.blockchainNetwork})
+          .then(tokenType => {
+            if (tokenType === 'ERC-20' || tokenType === 'ERC-721') {
+              this.token = { symbol: this.properties?.tokenSymbol,
+                name: this.properties?.tokenName,
+                type: tokenType };
+            } else {
+              this.token = { type: tokenType };
+            }
+          })
+          .finally(() => {
+            this.loading = false;
+          });
+      }
+
+
     }
   }
 };
