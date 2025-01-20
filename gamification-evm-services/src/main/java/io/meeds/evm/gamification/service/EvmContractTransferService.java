@@ -201,6 +201,7 @@ public class EvmContractTransferService {
     long toBlock = evmBlockchainService.getLastBlock(blockchainNetwork);
     long fromBlock = toBlock - ((duration / 1000) / BLOCK_TIME_AVERAGE);
     List<EvmTransaction> evmTransactions = new ArrayList<>();
+    saveLastRewardTime(walletAddress, rule.getId());
     if (evmBlockchainService.isERC1155(blockchainNetwork, contractAddress)) {
       evmTransactions = evmBlockchainService.getEvmTransactions(fromBlock, toBlock, contractAddress, blockchainNetwork, event);
     }
@@ -292,7 +293,6 @@ public class EvmContractTransferService {
                                           walletAddress,
                                           null);
     evmTriggerService.handleTriggerAsync(evmTrigger);
-    saveLastRewardTime(walletAddress, rule.getId());
   }
 
   private void handleEvmTrigger(RuleDTO rule,
@@ -326,7 +326,6 @@ public class EvmContractTransferService {
                                    transaction.getFromAddress());
       }
       evmTriggerService.handleTriggerAsync(evmTrigger);
-      saveLastRewardTime(walletAddress, rule.getId());
     }
     if (trigger.equals(Utils.HOLD_TOKEN_EVENT)
         && Utils.isValidDurationHoldingToken(transaction, Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION)))) {
