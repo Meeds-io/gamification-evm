@@ -22,7 +22,7 @@
       {{ $t('gamification.event.detail.display') }}
     </div>
     <div v-sanitized-html="eventDetails" class="py-4"></div>
-    <v-progress-circular
+    <v-progress-linear
       v-if="loading"
       indeterminate
       color="primary"
