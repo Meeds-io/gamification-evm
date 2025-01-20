@@ -85,13 +85,13 @@ public class RuleCheckForHoldEventListener extends Listener<Long, String> {
     Long ruleId = event.getSource();
     RuleDTO evmRule = ruleService.findRuleById(ruleId);
     Boolean enabledProg = evmRule.getProgram().isEnabled();
-    if (enabledProg) {
+    String trigger = evmRule.getEvent().getTrigger();
+    if (enabledProg && trigger.equals(HOLD_TOKEN_EVENT)) {
       Long spaceId = evmRule.getProgram().getSpaceId();
       String contractAddress = evmRule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase();
       String blockchainNetwork = evmRule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
       Long networkId = Long.parseLong(evmRule.getEvent().getProperties().get(Utils.NETWORK_ID));
       Long duration = Long.parseLong(evmRule.getEvent().getProperties().get(Utils.DURATION));
-      String trigger = evmRule.getEvent().getTrigger();
       org.web3j.abi.datatypes.Event blockchainEvent;
       if (evmBlockchainService.isERC1155(blockchainNetwork, contractAddress)) {
         blockchainEvent = TRANSFERSINGLE_EVENT;

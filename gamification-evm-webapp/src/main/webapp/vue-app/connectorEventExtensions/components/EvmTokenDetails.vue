@@ -50,8 +50,8 @@ export default {
       type: Object,
       default: null
     },
-    network: {
-      type: Object,
+    networkId: {
+      type: Number,
       default: null,
     },
   },
@@ -78,14 +78,18 @@ export default {
         return '/gamification-evm/images/NFT.webp';
       }
     },
-    networkName() {
-      return this.network?.name;
-    },
     networkImageUrl() {
-      if (this.networkName === 'Polygon') {
-        return '/gamification-evm/images/polygonLogo.svg';
-      } else {
+      switch (this.networkId) {
+      case 1:
         return '/gamification-evm/images/ethereumLogo.svg';
+      case 137:
+        return '/gamification-evm/images/polygonLogo.svg';
+      case 80002:
+        return '/gamification-evm/images/polygonLogo.svg';
+      case 11155111:
+        return '/gamification-evm/images/ethereumLogo.svg';
+      default:
+        return '';
       }
     }
   }
