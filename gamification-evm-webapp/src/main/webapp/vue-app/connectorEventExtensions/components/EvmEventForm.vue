@@ -98,8 +98,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
         </div>
         <evm-connector-token-details
           :token="token"
-          :network-id="networkId"
-          :network="networks[networks.indexOf(this.selected)]" />
+          :network-id="networkId" />
       </div>
       <span v-if="isInValidAddressFormat" class="error--text">{{ $t('gamification.event.detail.invalidContractAddress.error') }}</span>
       <span v-else-if="isInvalidAddress" class="error--text">{{ $t('gamification.event.detail.invalidTokenContractAddress.error') }}</span>
@@ -462,9 +461,9 @@ export default {
               contractAddress: this.contractAddress,
               blockchainNetwork: this.selected?.providerUrl,
               networkId: this.selected?.networkId,
-              tokenName: this.type.name,
-              tokenSymbol: this.type.symbol,
-              tokenDecimals: this.type.decimals,
+              tokenName: this.token.name,
+              tokenSymbol: this.token.symbol,
+              tokenDecimals: this.token.decimals,
               tokenType: this.token.type,
               minAmount: minAmount
             };
@@ -473,8 +472,8 @@ export default {
               contractAddress: this.contractAddress,
               blockchainNetwork: this.selected?.providerUrl,
               networkId: this.selected?.networkId,
-              tokenName: this.type.name,
-              tokenSymbol: this.type.symbol,
+              tokenName: this.token.name,
+              tokenSymbol: this.token.symbol,
               tokenType: this.token.type,
               minAmount: minAmount
             };
