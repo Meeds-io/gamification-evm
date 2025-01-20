@@ -99,6 +99,7 @@ public class WalletCheckForHoldEventListener extends Listener<Wallet, String> {
           if (System.currentTimeMillis() - lastRewardTime >= duration) {
             long toBlock = evmBlockchainService.getLastBlock(blockchainNetwork);
             long fromBlock =  toBlock - ((duration/1000) / BLOCK_TIME_AVERAGE);
+            evmContractTransferService.saveLastRewardTime(walletAddress, holdEventEvmRule.getId());
             if (evmBlockchainService.isERC1155(blockchainNetwork, contractAddress)) {
               blockchainEvent = TRANSFERSINGLE_EVENT;
               evmTransactions = evmBlockchainService.getEvmTransactions(fromBlock,
