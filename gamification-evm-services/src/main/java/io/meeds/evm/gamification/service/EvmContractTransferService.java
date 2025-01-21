@@ -366,7 +366,7 @@ public class EvmContractTransferService {
     long lastRewardTime = 0;
     SettingValue<?> settingValue = settingService.get(SETTING_CONTEXT,
                                                       SETTING_SCOPE,
-                                                      SETTING_LAST_TIME_CHECK_KEY + ruleId.toString() + "#" + walletAddress);
+                                                      SETTING_LAST_TIME_CHECK_KEY + ruleId.toString() + "#" + walletAddress.toLowerCase());
     if (settingValue != null && settingValue.getValue() != null) {
       lastRewardTime = Long.parseLong(settingValue.getValue().toString());
     }
@@ -376,7 +376,7 @@ public class EvmContractTransferService {
   public void saveLastRewardTime(String walletAddress, Long ruleId) {
     settingService.set(SETTING_CONTEXT,
                        SETTING_SCOPE,
-                       SETTING_LAST_TIME_CHECK_KEY + ruleId.toString() + "#" + walletAddress,
+                       SETTING_LAST_TIME_CHECK_KEY + ruleId.toString() + "#" + walletAddress.toLowerCase(),
                        SettingValue.create(System.currentTimeMillis()));
   }
 }
