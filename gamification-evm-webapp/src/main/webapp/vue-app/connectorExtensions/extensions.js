@@ -23,6 +23,7 @@ export function init() {
     icon: 'fab fa-ethereum',
     iconColorClass: 'text-color',
     title: 'EVM Blockchain',
+    actionLabel: 'gamification.label.evm.action.form',
     description: 'gamification.admin.evm.label.description',
     rank: 40,
   });
