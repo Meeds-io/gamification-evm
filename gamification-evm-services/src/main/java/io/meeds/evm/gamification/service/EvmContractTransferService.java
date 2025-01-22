@@ -326,6 +326,7 @@ public class EvmContractTransferService {
                                    transaction.getFromAddress());
       }
       evmTriggerService.handleTriggerAsync(evmTrigger);
+      saveLastRewardTime(walletAddress, rule.getId());
     }
     if (trigger.equals(Utils.HOLD_TOKEN_EVENT)
         && Utils.isValidDurationHoldingToken(transaction, Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION)))) {
