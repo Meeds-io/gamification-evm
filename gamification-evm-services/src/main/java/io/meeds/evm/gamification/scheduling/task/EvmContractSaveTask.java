@@ -15,6 +15,7 @@
  */
 package io.meeds.evm.gamification.scheduling.task;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.meeds.common.ContainerTransactional;
@@ -24,6 +25,7 @@ import io.meeds.evm.gamification.utils.Utils;
 import io.meeds.gamification.model.RuleDTO;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
@@ -58,27 +60,39 @@ public class EvmContractSaveTask {
   @Scheduled(cron = "${gamification.evm.transactionSave.cron:0 */15 * * * *}")
   public synchronized void saveEVMContractTransactions() {
     try {
-      List<RuleDTO> rules = evmContractTransferService.getEvmRules();
-      if (CollectionUtils.isNotEmpty(rules)) {
-        LOG.info("Start listening evm token transfers for {} configured rules", rules.size());
-        rules.forEach(rule -> {
-          String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
-          String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
-          String networkId = rule.getEvent().getProperties().get(Utils.NETWORK_ID);
-          long lastBlock = evmBlockchainService.getLastBlock(blockchainNetwork);
-          long lastCheckedBlock = getLastCheckedBlock(contractAddress, networkId);
-          if (lastCheckedBlock == 0) {
-            // If this is the first time that it's started, save the last block as
-            // last checked one
-            saveLastCheckedBlock(lastBlock, contractAddress, networkId);
-            return;
+      List<RuleDTO> evmRules = evmContractTransferService.getEvmRules();
+      if (CollectionUtils.isNotEmpty(evmRules)) {
+        LOG.info("Start listening evm token transfers for {} configured rules", evmRules.size());
+        List<RuleDTO> rules = new ArrayList<>();
+        evmRules.forEach(rule -> {
+          boolean isRuleExists = false;
+          if (rules != null) {
+            isRuleExists = rules.stream()
+                    .anyMatch(ruleDTO -> ruleDTO.getEvent().getProperties().get(Utils.NETWORK_ID)
+                            .compareTo(rule.getEvent().getProperties().get(Utils.NETWORK_ID)) == 0
+                            && StringUtils.equals(ruleDTO.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase(),
+                            rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase()));
           }
-          evmBlockchainService.saveTokenTransactions(lastCheckedBlock + 1,
-                                                     lastBlock,
-                                                     contractAddress.toLowerCase(),
-                                                     blockchainNetwork,
-                                                     Long.parseLong(networkId));
-          saveLastCheckedBlock(lastBlock, contractAddress, networkId);
+          if (!isRuleExists) {
+            String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
+            String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS);
+            String networkId = rule.getEvent().getProperties().get(Utils.NETWORK_ID);
+            long lastBlock = evmBlockchainService.getLastBlock(blockchainNetwork);
+            long lastCheckedBlock = getLastCheckedBlock(contractAddress, networkId);
+            if (lastCheckedBlock == 0) {
+              // If this is the first time that it's started, save the last block as
+              // last checked one
+              saveLastCheckedBlock(lastBlock, contractAddress, networkId);
+              return;
+            }
+            evmBlockchainService.saveTokenTransactions(lastCheckedBlock + 1,
+                    lastBlock,
+                    contractAddress.toLowerCase(),
+                    blockchainNetwork,
+                    Long.parseLong(networkId));
+            saveLastCheckedBlock(lastBlock, contractAddress, networkId);
+            rules.add(rule);
+          }
         });
         LOG.info("End listening evm token transfers");
       }
