@@ -91,6 +91,7 @@ public class EvmContractSaveTask {
                     blockchainNetwork,
                     Long.parseLong(networkId));
             saveLastCheckedBlock(lastBlock, contractAddress, networkId);
+            rules.add(rule);
           }
         });
         LOG.info("End listening evm token transfers");
