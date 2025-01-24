@@ -1,0 +1,148 @@
+/*
+ * This file is part of the Meeds project (https://meeds.io/).
+ * Copyright (C) 2020 - 2024 Meeds Association contact@meeds.io
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ */
+package io.meeds.evm.gamification.service;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.exoplatform.social.core.space.model.Space;
+import org.exoplatform.social.core.space.spi.SpaceService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+import org.exoplatform.commons.api.persistence.ExoTransactional;
+import org.exoplatform.services.listener.ListenerService;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
+import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.manager.IdentityManager;
+
+import io.meeds.evm.gamification.model.EvmTrigger;
+import io.meeds.evm.gamification.utils.Utils;
+import io.meeds.gamification.model.EventDTO;
+import io.meeds.gamification.service.EventService;
+import io.meeds.wallet.model.Wallet;
+import io.meeds.wallet.service.WalletAccountService;
+import org.springframework.stereotype.Service;
+
+import static io.meeds.gamification.utils.Utils.getUserIdentity;
+
+@Service
+public class EvmTriggerService {
+
+  private static final Log       LOG                        = ExoLogger.getLogger(EvmTriggerService.class);
+
+  public static final String     GAMIFICATION_GENERIC_EVENT = "exo.gamification.generic.action";
+
+  @Autowired
+  private IdentityManager        identityManager;
+
+  @Autowired
+  private ListenerService        listenerService;
+
+  @Autowired
+  private EventService           eventService;
+
+  @Autowired
+  private WalletAccountService   walletAccountService;
+
+  @Autowired
+  private ThreadPoolTaskExecutor threadPoolTaskExecutor;
+
+  @Autowired
+  private SpaceService           spaceService;
+
+  /**
+   * Handle evm trigger asynchronously
+   *
+   * @param evmTrigger evm retrieved trigger
+   */
+  public void handleTriggerAsync(EvmTrigger evmTrigger) {
+    threadPoolTaskExecutor.execute(() -> handleTriggerAsyncInternal(evmTrigger));
+  }
+
+  @ExoTransactional
+  public void handleTriggerAsyncInternal(EvmTrigger evmTrigger) {
+    processEvent(evmTrigger);
+  }
+
+  private void processEvent(EvmTrigger evmTrigger) {
+    Wallet wallet = walletAccountService.getWalletByAddress(evmTrigger.getWalletAddress());
+    String receiverId = wallet.getId();
+    if (StringUtils.isNotBlank(receiverId)) {
+      Identity socialIdentity = identityManager.getOrCreateUserIdentity(receiverId);
+      if (socialIdentity != null) {
+        String eventDetails = "{" + Utils.CONTRACT_ADDRESS + ": " + evmTrigger.getContractAddress() + ", "
+                              + Utils.BLOCKCHAIN_NETWORK + ": " + evmTrigger.getBlockchainNetwork() + ", "
+                              + Utils.TARGET_ADDRESS + ": " + evmTrigger.getTargetAddress() + ", "
+                              + Utils.MIN_AMOUNT + ": " + evmTrigger.getAmount() + ", "
+                              + Utils.SENT_DATE + ": " + evmTrigger.getSentDate() + ", "
+                              + Utils.TOKEN_BALANCE + ": " + evmTrigger.getTokenBalance() + ", "
+                              + Utils.DURATION + ": " + evmTrigger.getDuration() + "}";
+        broadcastEvmEvent(evmTrigger.getTrigger(),
+                          receiverId,
+                          evmTrigger.getNetworkId() + "#" + evmTrigger.getTransactionHash(),
+                          evmTrigger.getType(),
+                          eventDetails,
+                          evmTrigger.getTransactionHash());
+      }
+    }
+  }
+
+  private void broadcastEvmEvent(String ruleTitle,
+                                 String receiverId,
+                                 String objectId,
+                                 String objectType,
+                                 String eventDetails,
+                                 String txHash) {
+    try {
+      List<EventDTO> events = eventService.getEventsByTitle(ruleTitle, 0, -1);
+      if (CollectionUtils.isNotEmpty(events)) {
+        Map<String, String> gam = new HashMap<>();
+        gam.put("senderId", receiverId);
+        gam.put("receiverId", receiverId);
+        gam.put("objectId", objectId);
+        gam.put("objectType", objectType);
+        gam.put("ruleTitle", ruleTitle);
+        gam.put("eventDetails", eventDetails);
+        listenerService.broadcast(GAMIFICATION_GENERIC_EVENT, gam, "");
+        LOG.info("Evm action {} broadcasted for user {} on transaction with hash {}", ruleTitle, receiverId, txHash);
+      }
+    } catch (Exception e) {
+      LOG.error("Cannot broadcast evm gamification event", e);
+    }
+  }
+
+  public List<String> getWalletAddresses(Long spaceId) {
+    if (spaceId == 0) {
+      Set<Wallet> wallets = walletAccountService.listWallets();
+      return wallets.stream().map(Wallet::getAddress).collect(Collectors.toList());
+    } else {
+      List<String> walletAddresses = new ArrayList<>();
+      Space space = spaceService.getSpaceById(String.valueOf(spaceId));
+      String[] members = space.getMembers();
+      Arrays.stream(members).forEach(member -> {
+        Wallet wallet = walletAccountService.getWalletByIdentityId(Long.parseLong(getUserIdentity(member).getId()));
+        if (wallet != null && wallet.getAddress() != null) {
+          walletAddresses.add(wallet.getAddress());
+        }
+      });
+      return walletAddresses;
+    }
+  }
+}
