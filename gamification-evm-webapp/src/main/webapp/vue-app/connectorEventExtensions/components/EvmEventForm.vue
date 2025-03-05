@@ -352,20 +352,20 @@ export default {
             this.selected = this.networks.find(network => network.providerUrl === this.properties.blockchainNetwork);
             this.networkId = this.selected.networkId;
             this.selectedNetwork = this.networks.indexOf(this.selected);
-            if (this.isERC20(this.properties.type)) {
+            if (this.isERC20(this.properties.tokenType)) {
               this.token = {
                 name: this.properties?.tokenName,
                 symbol: this.properties?.tokenSymbol,
                 decimals: this.properties?.tokenDecimals,
                 type: this.properties?.tokenType
               };
-            } else if (this.isERC721(this.properties.type)) {
+            } else if (this.isERC721(this.properties.tokenType)) {
               this.token = {
                 name: this.properties?.tokenName,
                 symbol: this.properties?.tokenSymbol,
                 type: this.properties?.tokenType
               };
-            } else if (this.isERC1155(this.properties.type)) {
+            } else if (this.isERC1155(this.properties.tokenType)) {
               this.token = {
                 type: this.properties?.tokenType
               };
