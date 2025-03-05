@@ -28,6 +28,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
       size="20"
       class="ms-3 my-auto" />
     <v-chip-group
+      v-else
       v-model="selectedNetwork"
       :show-arrows="false"
       active-class="primary white--text">
@@ -212,9 +213,6 @@ export default {
     tokenSymbol() {
       return this.token?.symbol;
     },
-    isERC1155Token() {
-      return this.token?.type === 'ERC-1155';
-    },
     networkVerificationMessage() {
       return this.$t('gamification.event.form.contractAddress.tooltip', { 0: this.selected?.name });
     },
@@ -298,10 +296,13 @@ export default {
       const addressUrlRegex = /^(0x)?[0-9a-f]{40}$/i;
       return addressUrlRegex.test(contractAddress);
     },
+    getTokenDetailsByAddress(tokenAddress, blockchainNetwork) {
+      return this.$evmConnectorService.getTokenDetailsByAddress({contractAddress: tokenAddress, blockchainNetwork: blockchainNetwork});
+    },
     retrieveTokenDetails() {
       if (this.isValidAddress) {
         this.loading = true;
-        return this.$evmConnectorService.getTokenDetailsByAddress({contractAddress: this.contractAddress, blockchainNetwork: this.selected?.providerUrl})
+        return this.getTokenDetailsByAddress( this.contractAddress, this.selected?.providerUrl)
           .then(token => {
             this.token = token;
             if (this.isERC20(token.type)) {
@@ -348,38 +349,44 @@ export default {
           this.networks = data;
         }).finally(() => {
           if (this.properties) {
-            this.contractAddress = this.properties?.contractAddress;
-            this.selected = this.networks.find(network => network.providerUrl === this.properties.blockchainNetwork);
-            this.networkId = this.selected.networkId;
-            this.selectedNetwork = this.networks.indexOf(this.selected);
-            if (this.isERC20(this.properties.type)) {
-              this.token = {
-                name: this.properties?.tokenName,
-                symbol: this.properties?.tokenSymbol,
-                decimals: this.properties?.tokenDecimals,
-                type: this.properties?.tokenType
-              };
-            } else if (this.isERC721(this.properties.type)) {
-              this.token = {
-                name: this.properties?.tokenName,
-                symbol: this.properties?.tokenSymbol,
-                type: this.properties?.tokenType
-              };
-            } else if (this.isERC1155(this.properties.type)) {
-              this.token = {
-                type: this.properties?.tokenType
-              };
-            }
-            this.minAmount = this.properties?.minAmount;
-            this.targetAddress = this.properties?.targetAddress;
-            this.durationFilter = this.properties?.frequency;
-            this.durationNumber = (this.properties?.duration / this.getFreqInMilliseconds(this.durationFilter)).toFixed();
-            this.readOnly = true;
-            this.isValidAddress = true;
+            this.getTokenType(this.properties?.contractAddress, this.properties.blockchainNetwork)
+              .then(tokenType => {
+                this.contractAddress = this.properties?.contractAddress;
+                this.selected = this.networks.find(network => network.providerUrl === this.properties.blockchainNetwork);
+                this.networkId = this.selected.networkId;
+                this.selectedNetwork = this.networks.indexOf(this.selected);
+                if ( this.isERC20(tokenType)) {
+                  this.token = {
+                    name: this.properties?.tokenName,
+                    symbol: this.properties?.tokenSymbol,
+                    decimals: this.properties?.tokenDecimals,
+                    type: tokenType
+                  };
+                } else if (this.isERC721(tokenType)) {
+                  this.token = {
+                    name: this.properties?.tokenName,
+                    symbol: this.properties?.tokenSymbol,
+                    type: tokenType
+                  };
+                } else if (this.isERC1155(tokenType)) {
+                  this.token = {
+                    type: tokenType
+                  };
+                }
+                this.minAmount = this.properties?.minAmount;
+                this.targetAddress = this.properties?.targetAddress;
+                if (this.isHoldEvent) {
+                  this.durationFilter = this.properties?.frequency;
+                  this.durationNumber = (this.properties?.duration / this.getFreqInMilliseconds(this.durationFilter)).toFixed();
+                }
+                this.readOnly = true;
+                this.isValidAddress = true;
+                this.loadingNetworks = false;
+              });
           } else {
             document.dispatchEvent(new CustomEvent('event-form-unfilled'));
+            this.loadingNetworks = false;
           }
-          this.loadingNetworks = false;
         });
     },
     selectedAmount(minAmount) {
@@ -634,6 +641,10 @@ export default {
     isERC1155(tokenType) {
       return tokenType === 'ERC-1155';
     },
+    getTokenType(tokenAddress, blockchainNetwork) {
+      return this.getTokenDetailsByAddress(tokenAddress, blockchainNetwork)
+        .then(data => { return this.tokenType = data.type; });
+    }
   }
 };
 </script>
