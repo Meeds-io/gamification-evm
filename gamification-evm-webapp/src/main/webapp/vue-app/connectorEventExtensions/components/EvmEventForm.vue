@@ -375,8 +375,10 @@ export default {
                 }
                 this.minAmount = this.properties?.minAmount;
                 this.targetAddress = this.properties?.targetAddress;
-                this.durationFilter = this.properties?.frequency;
-                this.durationNumber = (this.properties?.duration / this.getFreqInMilliseconds(this.durationFilter)).toFixed();
+                if (this.isHoldEvent) {
+                  this.durationFilter = this.properties?.frequency;
+                  this.durationNumber = (this.properties?.duration / this.getFreqInMilliseconds(this.durationFilter)).toFixed();
+                }
                 this.readOnly = true;
                 this.isValidAddress = true;
                 this.loadingNetworks = false;
