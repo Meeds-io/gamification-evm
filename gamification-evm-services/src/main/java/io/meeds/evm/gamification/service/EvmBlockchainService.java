@@ -18,6 +18,7 @@ package io.meeds.evm.gamification.service;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.meeds.evm.gamification.utils.Utils;
@@ -135,7 +136,17 @@ public class EvmBlockchainService {
       if (CollectionUtils.isEmpty(ethLogs)) {
         return Collections.emptyList();
       }
-      return ethLogs.stream()
+      List<EthLog.LogObject> uniqueLogs = ethLogs.stream()
+              .map(logResult -> (EthLog.LogObject) logResult.get())
+              .collect(Collectors.toMap(
+                      EthLog.LogObject::getTransactionHash,
+                      log -> log,
+                      (existing, replacement) -> existing
+              ))
+              .values()
+              .stream()
+              .collect(Collectors.toList());
+      return uniqueLogs.stream()
               .map(logResult -> (EthLog.LogObject) logResult.get())
               .filter(logObject -> !logObject.isRemoved())
               .map(EthLog.LogObject::getTransactionHash)
