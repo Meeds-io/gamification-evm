@@ -136,7 +136,7 @@ public class EvmBlockchainService {
       if (CollectionUtils.isEmpty(ethLogs)) {
         return Collections.emptyList();
       }
-      List<EthLog.LogObject> uniqueLogs = ethLogs.stream()
+      return ethLogs.stream()
               .map(logResult -> (EthLog.LogObject) logResult.get())
               .collect(Collectors.toMap(
                       EthLog.LogObject::getTransactionHash,
@@ -145,8 +145,6 @@ public class EvmBlockchainService {
               ))
               .values()
               .stream()
-              .collect(Collectors.toList());
-      return uniqueLogs.stream()
               .map(logResult -> (EthLog.LogObject) logResult.get())
               .filter(logObject -> !logObject.isRemoved())
               .map(EthLog.LogObject::getTransactionHash)
