@@ -84,7 +84,7 @@ public class EvmEventPlugin extends EventPlugin {
                                                                   Long.parseLong(triggerDetailsMop.get(Utils.DURATION)));
     } else {
       if (StringUtils.isNotBlank(minAmount) && StringUtils.isNotBlank(tokenDecimals)) {
-        isValidFilters = isValidMinAmount(minAmount,
+        isValidFilters = isValidFilters && isValidMinAmount(minAmount,
                                           new BigInteger(triggerDetailsMop.get(Utils.MIN_AMOUNT)),
                                           tokenDecimals);
       }
