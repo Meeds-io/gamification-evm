@@ -16,14 +16,14 @@
 package io.meeds.evm.gamification.listener;
 
 import jakarta.annotation.PostConstruct;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import io.meeds.wallet.model.Wallet;
-import io.meeds.evm.gamification.model.EvmTransaction;
 import io.meeds.evm.gamification.service.EvmBlockchainService;
 import io.meeds.evm.gamification.service.EvmContractTransferService;
-import io.meeds.evm.gamification.service.EvmTransactionService;
 import io.meeds.evm.gamification.utils.Utils;
 import io.meeds.gamification.model.RuleDTO;
 import io.meeds.gamification.service.RuleService;
@@ -36,7 +36,6 @@ import org.exoplatform.services.listener.ListenerService;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -67,9 +66,6 @@ public class RuleCheckForHoldEventListener extends Listener<Long, String> {
   private EvmBlockchainService       evmBlockchainService;
 
   @Autowired
-  private EvmTransactionService      evmTransactionService;
-
-  @Autowired
   private EvmContractTransferService evmContractTransferService;
 
   @PostConstruct
@@ -83,64 +79,67 @@ public class RuleCheckForHoldEventListener extends Listener<Long, String> {
   @ExoTransactional
   public void onEvent(Event<Long, String> event) {
     Long ruleId = event.getSource();
-    RuleDTO evmRule = ruleService.findRuleById(ruleId);
-    Boolean enabledProg = evmRule.getProgram().isEnabled();
-    String trigger = evmRule.getEvent().getTrigger();
-    if (enabledProg && trigger.equals(HOLD_TOKEN_EVENT)) {
-      Long spaceId = evmRule.getProgram().getSpaceId();
-      String contractAddress = evmRule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase();
-      String blockchainNetwork = evmRule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
-      Long networkId = Long.parseLong(evmRule.getEvent().getProperties().get(Utils.NETWORK_ID));
-      Long duration = Long.parseLong(evmRule.getEvent().getProperties().get(Utils.DURATION));
-      org.web3j.abi.datatypes.Event blockchainEvent;
-      if (evmBlockchainService.isERC1155(blockchainNetwork, contractAddress)) {
-        blockchainEvent = TRANSFERSINGLE_EVENT;
-      } else if (evmBlockchainService.isERC721(blockchainNetwork, contractAddress)) {
-        blockchainEvent = TRANSFER_EVENT_ER721;
-      } else {
-        blockchainEvent = TRANSFER_EVENT_ERC20;
-      }
-      if (spaceId == 0) {
-        Set<Wallet> wallets = walletAccountService.listWallets();
-        List<String> walletsAddresses = wallets.stream().map(Wallet::getAddress).collect(Collectors.toList());
-        walletsAddresses.forEach(walletAddress -> {
-          if (event.getEventName().equals(POST_CREATE_RULE_EVENT)) {
-            evmContractTransferService.handleHoldEvent(blockchainNetwork,
-                                                       contractAddress,
-                                                       walletAddress,
-                                                       networkId,
-                                                       duration,
-                                                       evmRule,
-                                                       blockchainEvent,
-                                                       trigger,
-                                                       null);
+    RuleDTO rule = ruleService.findRuleById(ruleId);
+    if (rule.getProgram() == null
+        || !rule.getProgram().isEnabled()
+        || rule.getEvent() == null
+        || !StringUtils.equals(HOLD_TOKEN_EVENT, rule.getEvent().getTrigger())) {
+      return;
+    }
+    String trigger = rule.getEvent().getTrigger();
+    Long spaceId = rule.getProgram().getSpaceId();
+    String contractAddress = rule.getEvent().getProperties().get(Utils.CONTRACT_ADDRESS).toLowerCase();
+    String blockchainNetwork = rule.getEvent().getProperties().get(Utils.BLOCKCHAIN_NETWORK);
+    Long networkId = Long.parseLong(rule.getEvent().getProperties().get(Utils.NETWORK_ID));
+    Long duration = Long.parseLong(rule.getEvent().getProperties().get(Utils.DURATION));
+    org.web3j.abi.datatypes.Event blockchainEvent;
+    if (evmBlockchainService.isERC1155(blockchainNetwork, contractAddress)) {
+      blockchainEvent = TRANSFERSINGLE_EVENT;
+    } else if (evmBlockchainService.isERC721(blockchainNetwork, contractAddress)) {
+      blockchainEvent = TRANSFER_EVENT_ER721;
+    } else {
+      blockchainEvent = TRANSFER_EVENT_ERC20;
+    }
+    if (spaceId == 0) {
+      Set<Wallet> wallets = walletAccountService.listWallets();
+      List<String> walletsAddresses = wallets.stream().map(Wallet::getAddress).collect(Collectors.toList());
+      walletsAddresses.forEach(walletAddress -> {
+        if (event.getEventName().equals(POST_CREATE_RULE_EVENT)) {
+          evmContractTransferService.handleHoldEvent(blockchainNetwork,
+                                                     contractAddress,
+                                                     walletAddress,
+                                                     networkId,
+                                                     duration,
+                                                     rule,
+                                                     blockchainEvent,
+                                                     trigger,
+                                                     null);
 
-          } else if (event.getEventName().equals(POST_UPDATE_RULE_EVENT)) {
-            evmContractTransferService.saveLastRewardTime(walletAddress, evmRule.getId());
-          }
-        });
+        } else if (event.getEventName().equals(POST_UPDATE_RULE_EVENT)) {
+          evmContractTransferService.saveLastRewardTime(walletAddress, rule.getId());
+        }
+      });
 
-      } else {
-        Space space = spaceService.getSpaceById(String.valueOf(spaceId));
-        String[] members = space.getMembers();
-        Arrays.stream(members).forEach(member -> {
-          Long identityId = Long.parseLong(getUserIdentity(member).getId());
-          String walletAddress = walletAccountService.getWalletByIdentityId(identityId).getAddress();
-          if (event.getEventName().equals(POST_CREATE_RULE_EVENT)) {
-            evmContractTransferService.handleHoldEvent(blockchainNetwork,
-                                                       contractAddress,
-                                                       walletAddress,
-                                                       networkId,
-                                                       duration,
-                                                       evmRule,
-                                                       blockchainEvent,
-                                                       trigger,
-                                                       null);
-          } else if (event.getEventName().equals(POST_UPDATE_RULE_EVENT)) {
-            evmContractTransferService.saveLastRewardTime(walletAddress, evmRule.getId());
-          }
-        });
-      }
+    } else {
+      Space space = spaceService.getSpaceById(String.valueOf(spaceId));
+      String[] members = space.getMembers();
+      Arrays.stream(members).forEach(member -> {
+        Long identityId = Long.parseLong(getUserIdentity(member).getId());
+        String walletAddress = walletAccountService.getWalletByIdentityId(identityId).getAddress();
+        if (event.getEventName().equals(POST_CREATE_RULE_EVENT)) {
+          evmContractTransferService.handleHoldEvent(blockchainNetwork,
+                                                     contractAddress,
+                                                     walletAddress,
+                                                     networkId,
+                                                     duration,
+                                                     rule,
+                                                     blockchainEvent,
+                                                     trigger,
+                                                     null);
+        } else if (event.getEventName().equals(POST_UPDATE_RULE_EVENT)) {
+          evmContractTransferService.saveLastRewardTime(walletAddress, rule.getId());
+        }
+      });
     }
   }
 }
