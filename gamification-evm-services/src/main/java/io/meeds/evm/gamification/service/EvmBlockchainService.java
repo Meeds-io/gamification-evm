@@ -28,7 +28,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.wallet.contract.ERC20;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -52,8 +51,6 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.core.methods.response.EthLog.LogResult;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.tx.Contract;
-import org.web3j.tx.ReadonlyTransactionManager;
-import org.web3j.tx.gas.StaticGasProvider;
 
 import io.meeds.evm.gamification.blockchain.BlockchainConfiguration;
 import io.meeds.evm.gamification.model.EvmContract;

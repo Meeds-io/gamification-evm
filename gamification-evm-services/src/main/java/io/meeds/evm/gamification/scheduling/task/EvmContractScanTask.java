@@ -31,18 +31,21 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.web3j.protocol.exceptions.ClientConnectionException;
 
 @Component
 public class EvmContractScanTask {
-  private static final Logger        LOG = LoggerFactory.getLogger(EvmContractSaveTask.class);
+
+  private static final Logger        LOG = LoggerFactory.getLogger(EvmContractScanTask.class);
 
   @Autowired
   private EvmContractTransferService evmContractTransferService;
 
+  private int                        blockchainConnectionErrorCount = 0;
+
   @ContainerTransactional
   @Scheduled(cron = "${gamification.evm.transactionScan.cron:0 */5 * * * *}")
-  public synchronized void scanForContractTransactions() {
-
+  public synchronized void scanForContractTransactions() { // NOSONAR
     List<RuleDTO> enabledRules = evmContractTransferService.getEnabledEvmRules();
     if (CollectionUtils.isNotEmpty(enabledRules)) {
       List<RuleDTO> rules = new ArrayList<>();
@@ -63,6 +66,17 @@ public class EvmContractScanTask {
             evmContractTransferService.scanForContractTransactions(rule);
             rules.add(rule);
           }
+        } catch (ClientConnectionException e) {
+          if (blockchainConnectionErrorCount == 0) {
+            LOG.error("Error connecting to Blockchain", e);
+          } else if (blockchainConnectionErrorCount < 10) {
+            LOG.warn("Error connecting to Blockchain: {}", e.getMessage());
+          } else if (blockchainConnectionErrorCount == 10) {
+            LOG.warn("Error connecting to Blockchain (Log level will be switched to debug): {}", e.getMessage());
+          } else {
+            LOG.debug("Error connecting to Blockchain: {}", e.getMessage());
+          }
+          blockchainConnectionErrorCount++;
         } catch (Exception e) {
           LOG.error("An error occurred while rewarding for {} rule", rule.getTitle(), e);
         }
