@@ -198,7 +198,10 @@ public class EvmBlockchainService {
         return "ERC-20";
       }
     } catch (Exception e) {
-      LOG.error("Error  when detecting token type", e);
+      LOG.debug("Error when detecting token type of contract '{}' on blockchain networdk '{}'",
+                contractAddress,
+                blockchainNetwork,
+                e);
     }
     return "Unknown type token";
   }
