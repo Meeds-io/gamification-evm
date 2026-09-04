@@ -18,20 +18,26 @@
  */
 package io.meeds.evm.gamification.entity;
 
-import jakarta.persistence.*;
-import lombok.Data;
-
 import java.io.Serializable;
 import java.math.BigInteger;
+
+import io.meeds.common.persistence.PortableSequence;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Data;
 
 @Entity(name = "EvmTransaction")
 @Table(name = "EVM_TRANSACTIONS")
 @Data
 public class EvmTransactionEntity implements Serializable {
 
+  private static final long serialVersionUID = 7759586745753255487L;
+
   @Id
-  @SequenceGenerator(name = "SEQ_EVM_TRANSACTIONS_ID", sequenceName = "SEQ_EVM_TRANSACTIONS_ID", allocationSize = 1)
-  @GeneratedValue(strategy = GenerationType.AUTO, generator = "SEQ_EVM_TRANSACTIONS_ID")
+  @PortableSequence(name = "SEQ_EVM_TRANSACTIONS_ID")
   @Column(name = "ID", nullable = false)
   private Long       id;
 
