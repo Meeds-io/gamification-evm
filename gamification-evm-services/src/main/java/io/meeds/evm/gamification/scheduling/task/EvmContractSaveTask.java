@@ -23,6 +23,7 @@ import io.meeds.evm.gamification.service.EvmBlockchainService;
 import io.meeds.evm.gamification.service.EvmContractTransferService;
 import io.meeds.evm.gamification.utils.Utils;
 import io.meeds.gamification.model.RuleDTO;
+import io.meeds.spring.kernel.ClusterTaskScheduler;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -57,7 +58,7 @@ public class EvmContractSaveTask {
   private EvmContractTransferService evmContractTransferService;
 
   @ContainerTransactional
-  @Scheduled(cron = "${gamification.evm.transactionSave.cron:0 */15 * * * *}")
+  @Scheduled(cron = "${gamification.evm.transactionSave.cron:0 */15 * * * *}", scheduler = ClusterTaskScheduler.NAME)
   public synchronized void saveEVMContractTransactions() {
     try {
       List<RuleDTO> evmRules = evmContractTransferService.getEvmRules();
