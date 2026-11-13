@@ -22,6 +22,7 @@ import io.meeds.common.ContainerTransactional;
 import io.meeds.evm.gamification.service.EvmContractTransferService;
 import io.meeds.evm.gamification.utils.Utils;
 import io.meeds.gamification.model.RuleDTO;
+import io.meeds.spring.kernel.ClusterTaskScheduler;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -44,7 +45,7 @@ public class EvmContractScanTask {
   private int                        blockchainConnectionErrorCount = 0;
 
   @ContainerTransactional
-  @Scheduled(cron = "${gamification.evm.transactionScan.cron:0 */5 * * * *}")
+  @Scheduled(cron = "${gamification.evm.transactionScan.cron:0 */5 * * * *}", scheduler = ClusterTaskScheduler.NAME)
   public synchronized void scanForContractTransactions() { // NOSONAR
     List<RuleDTO> enabledRules = evmContractTransferService.getEnabledEvmRules();
     if (CollectionUtils.isNotEmpty(enabledRules)) {
